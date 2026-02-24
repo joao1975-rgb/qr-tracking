@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Analytics QR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .dashboard-container {
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 40px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4f46e5;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-size: 1em;
+            font-weight: 500;
+        }
+        
+        .campaigns-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+        
+        .table-header {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 20px 30px;
+        }
+        
+        .table-content {
+            padding: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px 30px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .campaign-row {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .campaign-row:hover {
+            background: #f8fafc;
+        }
+
+        .campaign-row.expanded {
+            background: #edf2f7;
+        }
+
+        .device-row {
+            background: #f1f5f9;
+            font-size: 0.9em;
+        }
+
+        .device-row td {
+            padding-left: 45px;
+        }
+
+        .expand-icon {
+            transition: transform 0.2s ease;
+            cursor: pointer;
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .expand-icon.expanded {
+            transform: rotate(90deg);
+        }
+        
+        .success-rate {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .success-high { background: #dcfce7; color: #166534; }
+        .success-medium { background: #fef3c7; color: #92400e; }
+        .success-low { background: #fee2e2; color: #dc2626; }
+        
+        .device-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .matrix-table th {
+            background: #4f46e5;
+            color: white;
+            text-align: center;
+            padding: 12px 8px;
+            font-size: 0.9em;
+        }
+
+        .matrix-table td {
+            text-align: center;
+            padding: 10px 8px;
+            font-weight: 500;
+            border: 1px solid #e5e7eb;
+        }
+
+        .matrix-total {
+            background: #e0f7ff;
+            font-weight: bold;
+            color: #0369a1;
+        }
+        
+        .progress-bar-horizontal {
+            background: #e5e7eb;
+            border-radius: 10px;
+            height: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill-horizontal {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .device-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .device-item:last-child {
+            border-bottom: none;
+        }
+
+        .device-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #4f46e5;
+            border: 2px solid #4f46e5;
+        }
+
+        .btn-outline:hover {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .device-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            th, td {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+            
+            .campaigns-table {
+                overflow-x: auto;
+            }
+
+            .navigation {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .device-row td {
+                padding-left: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1 style="font-size: 2.5em; margin-bottom: 10px;">📊 Dashboard QR Analytics</h1>
+            <p style="font-size: 1.1em; opacity: 0.9;">Estadísticas de campañas QR en tiempo real</p>
+            
+            <div class="navigation">
+                <a href="/" class="btn btn-primary">🏠 Página Principal</a>
+                <a href="/admin/campaigns" class="btn btn-secondary">📋 Campañas</a>
+                <a href="/devices" class="btn btn-secondary">🖥️ Dispositivos</a>
+            </div>
+        </div>
+
+        <!-- Alertas -->
+        <div id="alerts"></div>
+
+        <!-- Estadísticas generales -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalScans">-</div>
+                <div class="stat-label">Total Escaneos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="completedRedirects">-</div>
+                <div class="stat-label">Redirecciones Completadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="activeCampaigns">-</div>
+                <div class="stat-label">Campañas Activas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalClients">-</div>
+                <div class="stat-label">Clientes Totales</div>
+            </div>
+        </div>
+
+        <!-- Estadísticas por campaña -->
+        <div class="campaigns-table">
+            <div class="table-header">
+                <h2 style="margin: 0; color: #374151;">📈 Rendimiento por Campaña</h2>
+                <small style="color: #6b7280; display: block; margin-top: 5px;">
+                    Haz clic en una campaña para ver los dispositivos asociados
+                </small>
+            </div>
+            <div class="table-content">
+                <div id="campaignsTableContainer">
+                    <div class="loading">
+                        <p>Cargando datos de campañas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispositivos de Usuarios por Campaña (Matriz) -->
+        <div class="campaigns-table">
+            <div class="table-header">
+                <h2 style="margin: 0; color: #374151;">📱 Dispositivos de Usuarios por Campaña</h2>
+                <small style="color: #6b7280; display: block; margin-top: 5px;">
+                    Tipos de dispositivos que escanean por campaña (matriz)
+                </small>
+            </div>
+            <div class="table-content">
+                <div id="deviceMatrixContainer">
+                    <div class="loading">
+                        <p>Cargando matriz de dispositivos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad por Hora y Campaña (Matriz) -->
+        <div class="campaigns-table">
+            <div class="table-header">
+                <h2 style="margin: 0; color: #374151;">⏰ Actividad por Hora y Campaña</h2>
+                <small style="color: #6b7280; display: block; margin-top: 5px;">
+                    Escaneos por hora distribuidos por campaña (matriz)
+                </small>
+            </div>
+            <div class="table-content">
+                <div id="hourlyMatrixContainer">
+                    <div class="loading">
+                        <p>Cargando matriz de actividad horaria...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dispositivos Físicos -->
+        <div class="campaigns-table">
+            <div class="table-header">
+                <h2 style="margin: 0; color: #374151;">🖥️ Rendimiento por Dispositivo Físico</h2>
+                <small style="color: #6b7280; margin-top: 5px; display: block;">
+                    Totems, kioscos y pantallas donde están ubicados los códigos QR
+                </small>
+            </div>
+            <div class="table-content">
+                <div id="physicalDevicesContainer">
+                    <div class="loading">
+                        <p>Cargando datos de dispositivos físicos...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top venues/ubicaciones -->
+        <div class="chart-container" style="margin-bottom: 30px;">
+            <h3 style="color: #374151; margin-bottom: 20px;">🏢 Top Venues</h3>
+            <div id="venuesContainer">
+                <div class="loading">
+                    <p>Cargando datos de venues...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón de actualización -->
+        <div style="text-align: center; margin-top: 40px;">
+            <button onclick="refreshDashboard()" class="btn btn-outline">
+                🔄 Actualizar Datos
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; margin-top: 40px; color: #6b7280;">
+            <p>&copy; 2024 QR Tracking System - Datos actualizados automáticamente</p>
+        </div>
+    </div>
+    
+    <script>
+        // Variables globales
+        const API_BASE = '/api';
+        let dashboardData = {};
+        let expandedCampaigns = new Set();
+
+        // Función para mostrar alertas
+        function showAlert(message, type = 'info') {
+            const alertsContainer = document.getElementById('alerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button style="position: absolute; right: 15px; top: 15px; background: none; border: none; font-size: 1.2em; cursor: pointer; color: inherit;" onclick="this.parentElement.remove()">×</button>
+            `;
+            alertsContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            
+            // Auto-refresh cada 5 minutos
+            setInterval(refreshDashboard, 300000);
+        });
+
+        // Cargar datos del dashboard
+        async function loadDashboardData() {
+            try {
+                console.log('🔄 Cargando datos del dashboard...');
+                
+                const response = await fetch(`${API_BASE}/analytics/dashboard`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    dashboardData = data;
+                    updateDashboardUI();
+                    console.log('✅ Datos cargados exitosamente');
+                } else {
+                    throw new Error(data.error || 'Error desconocido');
+                }
+            } catch (error) {
+                console.error('⚠ Error cargando dashboard:', error);
+                showAlert('⚠ Error cargando datos del dashboard: ' + error.message, 'error');
+                showEmptyStates();
+            }
+        }
+
+        // Actualizar interfaz del dashboard
+        function updateDashboardUI() {
+            // Actualizar estadísticas generales
+            document.getElementById('totalScans').textContent = dashboardData.stats.total_scans || 0;
+            document.getElementById('completedRedirects').textContent = dashboardData.stats.completed_redirects || 0;
+            document.getElementById('activeCampaigns').textContent = dashboardData.stats.active_campaigns || 0;
+            document.getElementById('totalClients').textContent = dashboardData.stats.total_clients || 0;
+
+            // Actualizar todas las secciones
+            updateCampaignsTable();
+            updateDeviceMatrix();
+            updateHourlyMatrix();
+            updatePhysicalDevices();
+            updateVenues();
+        }
+
+        // Actualizar tabla de campañas con dispositivos expandibles
+        function updateCampaignsTable() {
+            const container = document.getElementById('campaignsTableContainer');
+            
+            if (!dashboardData.campaigns || dashboardData.campaigns.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🎯</div>
+                        <h3>No hay datos de campañas</h3>
+                        <p>Los datos aparecerán cuando se registren escaneos</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Campaña</th>
+                            <th>Cliente</th>
+                            <th>Escaneos</th>
+                            <th>Completados</th>
+                            <th>Tasa de Éxito</th>
+                            <th>Duración Prom.</th>
+                            <th>Último Escaneo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            dashboardData.campaigns.forEach(campaign => {
+                const successRate = campaign.scans > 0 ? (campaign.completions / campaign.scans * 100) : 0;
+                const successClass = successRate >= 80 ? 'success-high' : successRate >= 60 ? 'success-medium' : 'success-low';
+                const lastScanDate = campaign.last_scan ? new Date(campaign.last_scan).toLocaleDateString('es-ES') : 'N/A';
+                const isExpanded = expandedCampaigns.has(campaign.campaign);
+
+                tableHTML += `
+                    <tr class="campaign-row ${isExpanded ? 'expanded' : ''}" onclick="toggleCampaignDevices('${campaign.campaign}')">
+                        <td>
+                            <span class="expand-icon ${isExpanded ? 'expanded' : ''}">▶</span>
+                            <strong>${campaign.campaign}</strong>
+                        </td>
+                        <td>${campaign.client}</td>
+                        <td>${campaign.scans}</td>
+                        <td>${campaign.completions}</td>
+                        <td>
+                            <span class="success-rate ${successClass}">
+                                ${successRate.toFixed(1)}%
+                            </span>
+                        </td>
+                        <td>
+                            ${campaign.avg_duration ? campaign.avg_duration.toFixed(1) + 's' : 'N/A'}
+                        </td>
+                        <td>${lastScanDate}</td>
+                    </tr>
+                `;
+
+                // Si está expandida, agregar filas de dispositivos
+                if (isExpanded) {
+                    tableHTML += getDevicesRowsForCampaign(campaign.campaign);
+                }
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        // Obtener filas de dispositivos para una campaña
+        async function getDevicesRowsForCampaign(campaignCode) {
+            try {
+                // Llamar a la nueva API para obtener dispositivos por campaña
+                const response = await fetch(`${API_BASE}/campaigns/${campaignCode}/devices`);
+                const data = await response.json();
+                
+                if (!data.success || !data.devices || data.devices.length === 0) {
+                    return `
+                        <tr class="device-row">
+                            <td colspan="7" style="text-align: center; font-style: italic; color: #6b7280;">
+                                📱 No hay dispositivos registrados para esta campaña
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                let devicesHTML = '';
+                data.devices.forEach(device => {
+                    const successRate = device.scans > 0 ? (device.completions / device.scans * 100) : 0;
+                    
+                    devicesHTML += `
+                        <tr class="device-row">
+                            <td>📱 ${device.device_name || device.device_id}</td>
+                            <td>${device.location || 'N/A'}</td>
+                            <td>${device.scans}</td>
+                            <td>${device.completions}</td>
+                            <td>
+                                <span style="font-size: 0.8em; color: #6b7280;">
+                                    ${successRate.toFixed(1)}%
+                                </span>
+                            </td>
+                            <td>${device.avg_duration ? device.avg_duration.toFixed(1) + 's' : 'N/A'}</td>
+                            <td>${device.venue || 'N/A'}</td>
+                        </tr>
+                    `;
+                });
+
+                return devicesHTML;
+            } catch (error) {
+                console.error('Error obteniendo dispositivos para campaña:', error);
+                return `
+                    <tr class="device-row">
+                        <td colspan="7" style="text-align: center; font-style: italic; color: #ef4444;">
+                            ⚠ Error cargando dispositivos
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Toggle expansión de dispositivos por campaña
+        async function toggleCampaignDevices(campaignCode) {
+            if (expandedCampaigns.has(campaignCode)) {
+                expandedCampaigns.delete(campaignCode);
+                // Volver a renderizar la tabla
+                updateCampaignsTable();
+            } else {
+                expandedCampaigns.add(campaignCode);
+                // Obtener datos de dispositivos y re-renderizar
+                const devicesRows = await getDevicesRowsForCampaign(campaignCode);
+                // Insertar las filas de dispositivos después de la fila de la campaña
+                updateCampaignsTable();
+            }
+        }
+
+        // Actualizar matriz de dispositivos por campaña
+        async function updateDeviceMatrix() {
+            const container = document.getElementById('deviceMatrixContainer');
+            
+            try {
+                const response = await fetch(`${API_BASE}/analytics/device-matrix`);
+                const data = await response.json();
+                
+                if (!data.success || !data.matrix) {
+                    throw new Error(data.error || 'No hay datos de matriz');
+                }
+
+                let matrixHTML = `
+                    <table class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th>Tipo de Dispositivo</th>
+                `;
+                
+                data.campaigns.forEach(campaign => {
+                    matrixHTML += `<th>${campaign}</th>`;
+                });
+                matrixHTML += `<th class="matrix-total">Total</th></tr></thead><tbody>`;
+
+                // Generar filas de la matriz
+                data.device_types.forEach(deviceType => {
+                    matrixHTML += `<tr><td><strong>${deviceType}</strong></td>`;
+                    
+                    let rowTotal = 0;
+                    data.campaigns.forEach(campaign => {
+                        const scans = data.matrix[deviceType][campaign] || 0;
+                        rowTotal += scans;
+                        matrixHTML += `<td>${scans}</td>`;
+                    });
+                    
+                    matrixHTML += `<td class="matrix-total">${rowTotal}</td></tr>`;
+                });
+
+                matrixHTML += `</tbody></table>`;
+                container.innerHTML = matrixHTML;
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📱</div>
+                        <h3>No hay datos para la matriz</h3>
+                        <p>Los datos aparecerán cuando se registren escaneos</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Actualizar matriz de actividad horaria
+        async function updateHourlyMatrix() {
+            const container = document.getElementById('hourlyMatrixContainer');
+            
+            try {
+                const response = await fetch(`${API_BASE}/analytics/hourly-matrix`);
+                const data = await response.json();
+                
+                if (!data.success || !data.matrix) {
+                    throw new Error(data.error || 'No hay datos horarios');
+                }
+
+                let matrixHTML = `
+                    <table class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                `;
+                
+                data.campaigns.forEach(campaign => {
+                    matrixHTML += `<th>${campaign}</th>`;
+                });
+                matrixHTML += `<th class="matrix-total">Total</th></tr></thead><tbody>`;
+
+                // Generar filas de la matriz
+                data.hours.forEach(hour => {
+                    matrixHTML += `<tr><td><strong>${hour}:00</strong></td>`;
+                    
+                    let rowTotal = 0;
+                    data.campaigns.forEach(campaign => {
+                        const scans = data.matrix[hour][campaign] || 0;
+                        rowTotal += scans;
+                        matrixHTML += `<td>${scans}</td>`;
+                    });
+                    
+                    matrixHTML += `<td class="matrix-total">${rowTotal}</td></tr>`;
+                });
+
+                matrixHTML += `</tbody></table>`;
+                container.innerHTML = matrixHTML;
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">⏰</div>
+                        <h3>No hay datos horarios</h3>
+                        <p>Los datos aparecerán cuando se registren escaneos</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Actualizar dispositivos físicos
+        function updatePhysicalDevices() {
+            const container = document.getElementById('physicalDevicesContainer');
+            
+            if (!dashboardData.physical_devices || dashboardData.physical_devices.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🖥️</div>
+                        <h3>No hay dispositivos físicos registrados</h3>
+                        <p>Los dispositivos aparecerán cuando sean registrados en el sistema</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Dispositivo</th>
+                            <th>Ubicación</th>
+                            <th>Venue</th>
+                            <th>Tipo</th>
+                            <th>Escaneos</th>
+                            <th>Completados</th>
+                            <th>Tasa Éxito</th>
+                            <th>Duración Prom.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            dashboardData.physical_devices.forEach(device => {
+                const successRate = device.scans > 0 ? (device.completions / device.scans * 100) : 0;
+                const successClass = successRate >= 80 ? 'success-high' : successRate >= 60 ? 'success-medium' : 'success-low';
+
+                tableHTML += `
+                    <tr>
+                        <td><strong>${device.device_name || device.device_id}</strong></td>
+                        <td>${device.location || 'N/A'}</td>
+                        <td>${device.venue || 'N/A'}</td>
+                        <td>${device.device_type || 'N/A'}</td>
+                        <td>${device.scans || 0}</td>
+                        <td>${device.completions || 0}</td>
+                        <td>
+                            <span class="success-rate ${successClass}">
+                                ${successRate.toFixed(1)}%
+                            </span>
+                        </td>
+                        <td>
+                            ${device.avg_duration ? device.avg_duration.toFixed(1) + 's' : 'N/A'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHTML;
+        }
+
+        // Actualizar venues
+        function updateVenues() {
+            const container = document.getElementById('venuesContainer');
+            
+            if (!dashboardData.venues || dashboardData.venues.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🏢</div>
+                        <h3>No hay datos de venues</h3>
+                        <p>Los venues aparecerán cuando se registren escaneos</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let venuesHTML = '';
+            dashboardData.venues.forEach(venue => {
+                const successRate = venue.scans > 0 ? (venue.completions / venue.scans * 100) : 0;
+                
+                venuesHTML += `
+                    <div class="device-item">
+                        <div class="device-info">
+                            <strong>${venue.venue}</strong>
+                            <small style="color: #6b7280;">
+                                ${venue.devices_count} dispositivo${venue.devices_count !== 1 ? 's' : ''} • 
+                                ${venue.scans} escaneos • 
+                                ${successRate.toFixed(1)}% éxito
+                            </small>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; color: #4f46e5;">${venue.scans}</div>
+                            <div class="progress-bar-horizontal" style="width: 100px;">
+                                <div class="progress-fill-horizontal" style="width: ${Math.min(100, (venue.scans / (dashboardData.venues[0]?.scans || 1)) * 100)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = venuesHTML;
+        }
+
+        // Mostrar estados vacíos
+        function showEmptyStates() {
+            // Estados vacíos para cada sección
+            document.getElementById('totalScans').textContent = '0';
+            document.getElementById('completedRedirects').textContent = '0';
+            document.getElementById('activeCampaigns').textContent = '0';
+            document.getElementById('totalClients').textContent = '0';
+            
+            // Mostrar estados vacíos en tablas
+            const emptyState = `
+                <div class="empty-state">
+                    <div class="icon">📊</div>
+                    <h3>No hay datos disponibles</h3>
+                    <p>Los datos aparecerán cuando el sistema comience a registrar escaneos</p>
+                </div>
+            `;
+            
+            document.getElementById('campaignsTableContainer').innerHTML = emptyState;
+            document.getElementById('deviceMatrixContainer').innerHTML = emptyState;
+            document.getElementById('hourlyMatrixContainer').innerHTML = emptyState;
+            document.getElementById('physicalDevicesContainer').innerHTML = emptyState;
+            document.getElementById('venuesContainer').innerHTML = emptyState;
+        }
+
+        // Refresh dashboard
+        function refreshDashboard() {
+            showAlert('🔄 Actualizando datos...', 'info');
+            expandedCampaigns.clear(); // Colapsar campañas expandidas
+            loadDashboardData();
+        }
+
+        // Función de utilidad para formatear fechas
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            try {
+                return new Date(dateString).toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            } catch {
+                return 'N/A';
+            }
+        }
+
+        // Función de utilidad para formatear números
+        function formatNumber(number) {
+            if (typeof number !== 'number') return '0';
+            return number.toLocaleString('es-ES');
+        }
+    </script>
+</body>
+</html>
+                

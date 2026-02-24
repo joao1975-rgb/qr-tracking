@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner de Códigos QR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📱 Escáner QR</h1>
+            <p class="subtitle">Escanea códigos QR con tu cámara o sube una imagen</p>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="main-content">
+            <!-- Sección del escáner -->
+            <div class="scanner-section">
+                <div class="camera-container">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    
+                    <!-- Overlay del escáner -->
+                    <div class="scanner-overlay">
+                        <div class="scanner-frame"></div>
+                    </div>
+                    
+                    <!-- Estado del escáner -->
+                    <div id="status" class="scanner-status">
+                        <p>Presiona "Iniciar Escáner" para comenzar</p>
+                    </div>
+                </div>
+
+                <!-- Controles del escáner -->
+                <div class="scanner-controls">
+                    <button id="start-scan" class="btn btn-primary">📷 Iniciar Escáner</button>
+                    <button id="stop-scan" class="btn btn-secondary" style="display: none;">⏹️ Detener</button>
+                </div>
+            </div>
+
+            <!-- Sección de subida de archivos -->
+            <div class="upload-section">
+                <h3>📁 O sube una imagen</h3>
+                <p>Selecciona una imagen que contenga un código QR</p>
+                <input type="file" id="file-input" class="file-input" accept="image/*">
+                <label for="file-input" class="btn btn-outline">📸 Seleccionar Imagen</label>
+            </div>
+
+            <!-- Información de uso -->
+            <div class="info-section">
+                <h3>ℹ️ Cómo usar el escáner</h3>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <p>Presiona "Iniciar Escáner" y permite el acceso a tu cámara</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <p>Apunta tu cámara hacia el código QR o sube una imagen</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <p>El código será detectado automáticamente</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <p>Confirma si deseas continuar al destino</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de resultados -->
+    <div id="result-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Resultado del Escáner</h2>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message">Mensaje del resultado</p>
+                <div class="modal-actions">
+                    <button id="cancel-redirect" class="btn btn-secondary">❌ Cancelar</button>
+                    <button id="confirm-redirect" class="btn btn-primary">✅ Continuar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de carga -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>Cargando...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

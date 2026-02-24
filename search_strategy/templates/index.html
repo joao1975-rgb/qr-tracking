@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Tracker - Inicio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .logo {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #4f46e5;
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+        
+        .feature {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .feature-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .feature h3 {
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .feature p {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f8fafc;
+            color: #4f46e5;
+            border: 2px solid #4f46e5;
+        }
+        
+        .btn-secondary:hover {
+            background: #4f46e5;
+            color: white;
+        }
+        
+        .info {
+            background: #e0e7ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            color: #4338ca;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                padding: 40px 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">📱</div>
+            <h1>QR Tracking System</h1>
+            <p class="subtitle">
+                Sistema avanzado de tracking para códigos QR con análisis de dispositivos físicos y métricas detalladas
+            </p>
+            
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h3>Analytics</h3>
+                    <p>Estadísticas detalladas de escaneos y conversiones</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Campañas</h3>
+                    <p>Gestión de múltiples campañas publicitarias</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📍</div>
+                    <h3>Ubicaciones</h3>
+                    <p>Tracking por dispositivos físicos y venues</p>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <a href="/dashboard" class="btn btn-primary">
+                    📊 Ver Dashboard
+                </a>
+                <a href="/generate-qr" class="btn btn-secondary">
+                    📱 Generar QRs
+                </a>
+            </div>
+            
+            <div class="info">
+                <h4 style="margin-bottom: 10px;">💡 Información del Sistema</h4>
+                <p style="margin-bottom: 8px;"><strong>Versión:</strong> 2.1.0</p>
+                <p style="margin-bottom: 8px;"><strong>Características:</strong> Device Tracking, Physical Devices, Venue Analytics</p>
+                <p><strong>API Health:</strong> <a href="/health" target="_blank" style="color: #4338ca;">Verificar Estado</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
