@@ -244,7 +244,9 @@ CREATE TABLE IF NOT EXISTS scans (
     utm_term TEXT,
     utm_content TEXT,
     cpu_cores INTEGER,
-    device_pixel_ratio REAL
+    device_pixel_ratio REAL,
+    device_brand TEXT,
+    device_model TEXT
 );
 
 -- Tabla de generación de QR
@@ -330,7 +332,9 @@ CREATE TABLE IF NOT EXISTS scans (
     utm_term TEXT,
     utm_content TEXT,
     cpu_cores INTEGER,
-    device_pixel_ratio REAL
+    device_pixel_ratio REAL,
+    device_brand TEXT,
+    device_model TEXT
 );
 
 -- Tabla de generación de QR

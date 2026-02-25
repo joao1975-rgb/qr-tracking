@@ -91,7 +91,7 @@ import io
 import base64
 from datetime import datetime, timedelta
 import uuid
-import user_agents
+from device_detector import DeviceDetector
 import ipaddress
 from urllib.parse import urlparse, parse_qs, unquote, urlencode, quote
 
@@ -636,7 +636,9 @@ def create_basic_schema(conn):
                 utm_term TEXT,
                 utm_content TEXT,
                 cpu_cores INTEGER,
-                device_pixel_ratio REAL
+                device_pixel_ratio REAL,
+                device_brand TEXT,
+                device_model TEXT
             )
         """)
         
@@ -738,7 +740,9 @@ def create_basic_schema(conn):
             utm_term TEXT,
             utm_content TEXT,
             cpu_cores INTEGER,
-            device_pixel_ratio REAL
+            device_pixel_ratio REAL,
+            device_brand TEXT,
+            device_model TEXT
         );
     """)
     
@@ -788,7 +792,9 @@ def migrate_database(conn):
         'utm_term': 'TEXT',
         'utm_content': 'TEXT',
         'cpu_cores': 'INTEGER',
-        'device_pixel_ratio': 'REAL'
+        'device_pixel_ratio': 'REAL',
+        'device_brand': 'TEXT',
+        'device_model': 'TEXT'
     }
     
     # Agregar columnas que no existan
@@ -828,32 +834,39 @@ def get_db_connection():
 # ================================
 
 def detect_device_info(user_agent_string: str) -> Dict[str, str]:
-    """Detectar información del dispositivo desde User-Agent"""
+    """Detectar información del dispositivo desde User-Agent usando device-detector"""
     try:
-        user_agent = user_agents.parse(user_agent_string)
+        device = DeviceDetector(user_agent_string).parse()
         
         # Determinar tipo de dispositivo
-        if user_agent.is_mobile:
-            device_type = "Mobile"
-        elif user_agent.is_tablet:
-            device_type = "Tablet"
-        elif user_agent.is_pc:
-            device_type = "Desktop"
-        else:
-            device_type = "Unknown"
+        device_type = device.device_type() if device.device_type() else "Unknown"
+        device_brand = device.device_brand() if device.device_brand() else "Unknown"
+        device_model = device.device_model() if device.device_model() else "Unknown"
         
+        os_info = device.os_name()
+        if device.os_version():
+            os_info = f"{os_info} {device.os_version()}"
+            
+        client_info = device.client_name()
+        if device.client_version():
+            client_info = f"{client_info} {device.client_version()}"
+            
         return {
             "device_type": device_type,
-            "browser": f"{user_agent.browser.family} {user_agent.browser.version_string}",
-            "operating_system": f"{user_agent.os.family} {user_agent.os.version_string}",
-            "is_mobile": user_agent.is_mobile,
-            "is_tablet": user_agent.is_tablet,
-            "is_pc": user_agent.is_pc
+            "device_brand": device_brand,
+            "device_model": device_model,
+            "browser": client_info if client_info else "Unknown",
+            "operating_system": os_info if os_info else "Unknown",
+            "is_mobile": device_type in ["smartphone", "feature phone", "phablet"],
+            "is_tablet": device_type == "tablet",
+            "is_pc": device_type == "desktop"
         }
     except Exception as e:
         logger.warning(f"Error detectando dispositivo: {e}")
         return {
             "device_type": "Unknown",
+            "device_brand": "Unknown",
+            "device_model": "Unknown",
             "browser": "Unknown",
             "operating_system": "Unknown",
             "is_mobile": False,
@@ -1868,14 +1881,16 @@ async def track_qr_scan(request: Request):
                     campaign_code, client, destination, device_id, device_name, 
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
-                    utm_source, utm_medium, utm_campaign, utm_term, utm_content
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+                    device_brand, device_model
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
                 datetime.now().isoformat(),
-                utm_source, utm_medium, utm_campaign, utm_term, utm_content
+                utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+                device_info.get("device_brand", "Unknown"), device_info.get("device_model", "Unknown")
             ))
             conn.commit()
             scan_id = cursor.lastrowid
