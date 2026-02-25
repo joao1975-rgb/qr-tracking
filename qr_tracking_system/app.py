@@ -14,7 +14,7 @@ Funcionalidades:
 - Servir archivos HTML estáticos
 """
 
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -426,46 +426,10 @@ async def health_check():
 # ENDPOINT DE TRACKING PRINCIPAL
 # ================================
 
-@app.get("/track")
-async def track_qr_scan(request: Request):
-    """Endpoint principal de tracking de QR"""
+def process_scan_background(campaign_code: str, params: dict, user_agent_string: str, client_ip: str, session_id: str, destination: str):
+    """Procesar el escaneo en segundo plano para no bloquear la redirección"""
     try:
-        # Obtener parámetros de la URL
-        params = dict(request.query_params)
-        
-        # Parámetros requeridos
-        campaign_code = params.get("campaign")
-        if not campaign_code:
-            raise HTTPException(status_code=400, detail="Parámetro 'campaign' requerido")
-        
-        # Parámetros opcionales
-        client = params.get("client", "")
-        destination = params.get("destination", "")
-        device_id = params.get("device_id", "")
-        device_name = params.get("device_name", "")
-        location = params.get("location", "")
-        venue = params.get("venue", "")
-        
-        # Generar session_id único
-        session_id = str(uuid.uuid4())
-        
-        # Detectar información del dispositivo del usuario
-        user_agent = request.headers.get("User-Agent", "")
-        device_info = detect_device_info(user_agent)
-        client_ip = get_client_ip(request)
-        
-        # Si no se proporciona destino, buscar en la base de datos
-        if not destination and campaign_code:
-            with get_db_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT destination FROM campaigns WHERE campaign_code = ?", (campaign_code,))
-                result = cursor.fetchone()
-                if result:
-                    destination = result["destination"]
-        
-        # Si aún no hay destino, usar uno por defecto
-        if not destination:
-            destination = f"https://google.com/search?q={campaign_code}"
+        device_info = detect_device_info(user_agent_string)
         
         # Registrar el escaneo en la base de datos
         with get_db_connection() as conn:
@@ -478,98 +442,74 @@ async def track_qr_scan(request: Request):
                     user_agent, ip_address, session_id, scan_timestamp
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                campaign_code, client, destination, device_id, device_name,
-                location, venue, device_info["device_type"], device_info["device_brand"],
-                device_info["device_model"], device_info["browser"],
-                device_info["operating_system"], user_agent, client_ip, session_id,
+                campaign_code, 
+                params.get("client", ""), 
+                destination, 
+                params.get("device_id", ""), 
+                params.get("device_name", ""),
+                params.get("location", ""), 
+                params.get("venue", ""), 
+                device_info["device_type"], 
+                device_info["device_brand"],
+                device_info["device_model"], 
+                device_info["browser"],
+                device_info["operating_system"], 
+                user_agent_string, 
+                client_ip, 
+                session_id,
                 datetime.now().isoformat()
             ))
             conn.commit()
-            scan_id = cursor.lastrowid
+            
+        logger.info(f"QR procesado en background: {campaign_code} desde {device_info['device_brand']} {device_info['device_model']} - IP: {client_ip}")
+    except Exception as e:
+        logger.error(f"Error procesando tracking asíncrono: {e}")
+
+@app.get("/track")
+async def track_qr_scan(request: Request, background_tasks: BackgroundTasks):
+    """Endpoint principal hiper-rápido de tracking de QR"""
+    try:
+        # Obtener parámetros de la URL
+        params = dict(request.query_params)
         
-        # Log del escaneo
-        logger.info(f"QR escaneado: {campaign_code} desde {device_info['device_brand']} {device_info['device_model']} - IP: {client_ip}")
+        # Parámetros requeridos
+        campaign_code = params.get("campaign")
+        if not campaign_code:
+            raise HTTPException(status_code=400, detail="Parámetro 'campaign' requerido")
+            
+        destination = params.get("destination", "")
+        session_id = str(uuid.uuid4())
         
-        # Crear respuesta HTML con redirección automática
-        html_response = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Redirigiendo...</title>
-            <style>
-                body {{
-                    font-family: Arial, sans-serif;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    margin: 0;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    text-align: center;
-                }}
-                .container {{
-                    background: rgba(255, 255, 255, 0.1);
-                    padding: 40px;
-                    border-radius: 15px;
-                    backdrop-filter: blur(10px);
-                }}
-                .loading {{
-                    width: 40px;
-                    height: 40px;
-                    border: 4px solid rgba(255,255,255,0.3);
-                    border-radius: 50%;
-                    border-top-color: white;
-                    animation: spin 1s ease-in-out infinite;
-                    margin: 20px auto;
-                }}
-                @keyframes spin {{
-                    to {{ transform: rotate(360deg); }}
-                }}
-            </style>
-            <meta http-equiv="refresh" content="3;url={destination}">
-        </head>
-        <body>
-            <div class="container">
-                <h1>🎯 QR Tracking</h1>
-                <div class="loading"></div>
-                <p>Redirigiendo a {client or 'destino'}...</p>
-                <p><small>Campaña: {campaign_code}</small></p>
-                <p><a href="{destination}" style="color: white;">Ir manualmente si no redirije</a></p>
-            </div>
-            <script>
-                // Registrar que la redirección se completó después de 3 segundos
-                setTimeout(() => {{
-                    fetch('/api/track/complete', {{
-                        method: 'POST',
-                        headers: {{'Content-Type': 'application/json'}},
-                        body: JSON.stringify({{
-                            session_id: '{session_id}',
-                            scan_id: {scan_id},
-                            completion_time: new Date().toISOString()
-                        }})
-                    }}).catch(console.error);
-                    
-                    // Redirigir
-                    window.location.href = '{destination}';
-                }}, 3000);
-                
-                // Registrar tiempo de permanencia al salir
-                window.addEventListener('beforeunload', () => {{
-                    navigator.sendBeacon('/api/track/complete', JSON.stringify({{
-                        session_id: '{session_id}',
-                        scan_id: {scan_id},
-                        completion_time: new Date().toISOString()
-                    }}));
-                }});
-            </script>
-        </body>
-        </html>
-        """
+        # Si no se proporciona destino explícito en params, buscar en la base de datos
+        if not destination and campaign_code:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT destination FROM campaigns WHERE campaign_code = ?", (campaign_code,))
+                result = cursor.fetchone()
+                if result:
+                    destination = result["destination"]
         
-        return HTMLResponse(content=html_response)
+        # Si aún no hay destino, usar uno por defecto preventivo
+        if not destination:
+            destination = f"https://google.com/search?q={campaign_code}"
+            
+        # Detectar la cabecera User-Agent (rápido)
+        user_agent = request.headers.get("User-Agent", "")
+        client_ip = get_client_ip(request)
+        
+        # Enviar todo el trabajo pesado a una tarea de fondo (BackgroundTasks)
+        background_tasks.add_task(
+            process_scan_background,
+            campaign_code=campaign_code,
+            params=params,
+            user_agent_string=user_agent,
+            client_ip=client_ip,
+            session_id=session_id,
+            destination=destination
+        )
+        
+        # Redirigir INSTANTÁNEAMENTE usando 307 Temporary Redirect
+        return RedirectResponse(url=destination, status_code=307)
         
     except HTTPException:
         raise
