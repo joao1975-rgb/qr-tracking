@@ -43,7 +43,7 @@ Correcciones v2.7.3:
 - MEJORADO: Analytics con datos de marketing (UTM) para efectividad de campañas
 """
 
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse, StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -1824,7 +1824,7 @@ async def health_check():
 # ================================
 
 @app.get("/track")
-async def track_qr_scan(request: Request):
+async def track_qr_scan(request: Request, background_tasks: BackgroundTasks):
     """Endpoint principal de tracking de QR"""
     try:
         # Obtener parámetros de la URL
@@ -1855,7 +1855,6 @@ async def track_qr_scan(request: Request):
         
         # Detectar información del dispositivo del usuario
         user_agent = request.headers.get("User-Agent", "")
-        device_info = detect_device_info(user_agent)
         client_ip = get_client_ip(request)
         
         # Buscar información de la campaña en la base de datos
@@ -1873,7 +1872,36 @@ async def track_qr_scan(request: Request):
         if not destination:
             destination = f"https://google.com/search?q={campaign_code}"
         
-        # Registrar el escaneo en la base de datos (incluyendo UTM)
+        # Lanzar procesamiento analítico en segundo plano para no bloquear al usuario
+        background_tasks.add_task(
+            process_scan_background,
+            campaign_code, client, destination, device_id, device_name,
+            location, venue, user_agent, client_ip, session_id,
+            utm_source, utm_medium, utm_campaign, utm_term, utm_content
+        )
+        
+        # Redirigir inmediatamente con un status de redirección permanente (307/302)
+        return RedirectResponse(url=destination, status_code=307)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error en tracking: {e}")
+        return RedirectResponse(url=f"https://google.com/search?q={campaign_code}", status_code=302)
+
+def process_scan_background(campaign_code: str, client: str, destination: str, 
+                          device_id: str, device_name: str, location: str, venue: str, 
+                          user_agent: str, client_ip: str, session_id: str,
+                          utm_source: str, utm_medium: str, utm_campaign: str, 
+                          utm_term: str, utm_content: str):
+    """
+    Procesa y guarda los datos analíticos del escaneo en segundo plano (Zero Latency)
+    """
+    try:
+        # Detectar información del dispositivo
+        device_info = detect_device_info(user_agent)
+        
+        # Registrar el escaneo en la base de datos
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -1893,171 +1921,12 @@ async def track_qr_scan(request: Request):
                 device_info.get("device_brand", "Unknown"), device_info.get("device_model", "Unknown")
             ))
             conn.commit()
-            scan_id = cursor.lastrowid
+            
+        # Log del escaneo
+        scans_logger.info(f"QR escaneado (Background): campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
         
-        # Log del escaneo (logger específico para scans)
-        scans_logger.info(f"QR escaneado: campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
-        
-        # Crear respuesta HTML con redirección automática mejorada
-        html_response = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Redirigiendo...</title>
-            <link rel="preconnect" href="https://fonts.googleapis.com">
-            <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-            <link rel="stylesheet" href="/static/css/main.css">
-            <style>
-                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-                body {{
-                    font-family: 'Plus Jakarta Sans', sans-serif;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    text-align: center;
-                }}
-                .container {{
-                    background: rgba(255, 255, 255, 0.1);
-                    padding: 50px 40px;
-                    border-radius: 20px;
-                    backdrop-filter: blur(15px);
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                    max-width: 400px;
-                    width: 90%;
-                }}
-                h1 {{ font-size: 28px; margin-bottom: 10px; }}
-                .countdown {{
-                    font-size: 72px;
-                    font-weight: 700;
-                    margin: 30px 0;
-                    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                }}
-                .progress-bar {{
-                    width: 100%;
-                    height: 6px;
-                    background: rgba(255,255,255,0.2);
-                    border-radius: 3px;
-                    overflow: hidden;
-                    margin: 20px 0;
-                }}
-                .progress {{
-                    height: 100%;
-                    background: white;
-                    border-radius: 3px;
-                    animation: shrink 3s linear forwards;
-                }}
-                @keyframes shrink {{
-                    from {{ width: 100%; }}
-                    to {{ width: 0%; }}
-                }}
-                .client-name {{ font-size: 18px; opacity: 0.9; margin-bottom: 5px; }}
-                .campaign-code {{ font-size: 12px; opacity: 0.6; }}
-                .manual-link {{
-                    display: inline-block;
-                    margin-top: 25px;
-                    color: white;
-                    opacity: 0.8;
-                    text-decoration: none;
-                    font-size: 14px;
-                    padding: 10px 20px;
-                    border: 1px solid rgba(255,255,255,0.3);
-                    border-radius: 25px;
-                    transition: all 0.3s;
-                }}
-                .manual-link:hover {{
-                    opacity: 1;
-                    background: rgba(255,255,255,0.1);
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>🎯 QR Tracking</h1>
-                <div class="countdown" id="countdown">3</div>
-                <div class="progress-bar"><div class="progress"></div></div>
-                <p class="client-name">Redirigiendo a {client or 'destino'}...</p>
-                <p class="campaign-code">Campaña: {campaign_code}</p>
-                <a href="{destination}" class="manual-link">Ir manualmente →</a>
-            </div>
-            <script>
-                const sessionId = '{session_id}';
-                const scanId = {scan_id};
-                const destination = '{destination}';
-                
-                // Capturar datos adicionales del dispositivo (incluyendo CPU cores y DPR)
-                const deviceData = {{
-                    session_id: sessionId,
-                    screen_resolution: screen.width + 'x' + screen.height,
-                    viewport_size: window.innerWidth + 'x' + window.innerHeight,
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    language: navigator.language,
-                    platform: navigator.platform,
-                    connection_type: navigator.connection ? navigator.connection.effectiveType : 'unknown',
-                    cpu_cores: navigator.hardwareConcurrency || null,
-                    device_pixel_ratio: window.devicePixelRatio || null
-                }};
-                
-                // Enviar datos adicionales
-                fetch('/api/track/device-data', {{
-                    method: 'POST',
-                    headers: {{'Content-Type': 'application/json'}},
-                    body: JSON.stringify(deviceData)
-                }}).catch(console.error);
-                
-                // Countdown visual
-                let count = 3;
-                const countdownEl = document.getElementById('countdown');
-                const interval = setInterval(() => {{
-                    count--;
-                    if (count > 0) {{
-                        countdownEl.textContent = count;
-                    }} else {{
-                        clearInterval(interval);
-                        countdownEl.textContent = '✓';
-                    }}
-                }}, 1000);
-                
-                // Redirigir después de 3 segundos
-                setTimeout(() => {{
-                    // Registrar completado
-                    fetch('/api/track/complete', {{
-                        method: 'POST',
-                        headers: {{'Content-Type': 'application/json'}},
-                        body: JSON.stringify({{
-                            session_id: sessionId,
-                            scan_id: scanId,
-                            completion_time: new Date().toISOString()
-                        }})
-                    }}).catch(console.error);
-                    
-                    window.location.href = destination;
-                }}, 3000);
-                
-                // Beacon al salir
-                window.addEventListener('beforeunload', () => {{
-                    navigator.sendBeacon('/api/track/complete', JSON.stringify({{
-                        session_id: sessionId,
-                        scan_id: scanId,
-                        completion_time: new Date().toISOString()
-                    }}));
-                }});
-            </script>
-        </body>
-        </html>
-        """
-        
-        return HTMLResponse(content=html_response)
-        
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error en tracking: {e}")
-        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+        logger.error(f"Error procesando escaneo en background: {e}")
 
 # ================================
 # APIs DE ADMINISTRACIÓN (BACKUPS/LOGS)
