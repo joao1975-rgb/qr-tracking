@@ -1,0 +1,1 @@
+2026-02-25 00:13:09,523 - qr_tracking - ERROR - [app.py:567] - Error inicializando base de datos: no such column: utm_source

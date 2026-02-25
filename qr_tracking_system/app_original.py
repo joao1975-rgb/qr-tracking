@@ -50,36 +50,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import sqlite3
-
-# ================================
-# CONFIGURACIÓN PARA CLOUD (PostgreSQL/SQLite)
-# ================================
-import os
-import re as regex_module
-
-# Cargar variables de entorno desde .env si existe
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
-# Configuración de base de datos
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///qr_tracking.db")
-IS_POSTGRES = DATABASE_URL.startswith("postgresql")
-
-# Importar psycopg2 si usamos PostgreSQL
-if IS_POSTGRES:
-    try:
-        import psycopg2
-        import psycopg2.extras
-        POSTGRES_AVAILABLE = True
-    except ImportError:
-        POSTGRES_AVAILABLE = False
-        print("⚠️  ADVERTENCIA: psycopg2 no instalado. Ejecute: pip install psycopg2-binary")
-else:
-    POSTGRES_AVAILABLE = False
-
 import json
 import os
 import shutil
@@ -118,41 +88,6 @@ except ImportError:
     print("⚠️  ADVERTENCIA: Biblioteca 'Pillow' no instalada.")
     print("   Ejecute: pip install Pillow")
 
-
-# ================================
-# ADAPTADOR DE QUERIES SQL
-# ================================
-
-def adapt_query(query: str) -> str:
-    """
-    Adapta una consulta SQL de SQLite a PostgreSQL si es necesario.
-    """
-    if not IS_POSTGRES:
-        return query
-    
-    adapted = query
-    
-    # Reemplazar ? por %s (placeholders)
-    adapted = adapted.replace("?", "%s")
-    
-    # datetime('now', '-X hours/days') → NOW() - INTERVAL 'X hours/days'
-    adapted = regex_module.sub(
-        r"datetime\s*\(\s*'now'\s*,\s*'(-?\d+)\s*(hours?|days?|minutes?|seconds?)'\s*\)",
-        r"NOW() - INTERVAL '\1 \2'",
-        adapted,
-        flags=regex_module.IGNORECASE
-    )
-    
-    # datetime('now') → NOW()
-    adapted = regex_module.sub(
-        r"datetime\s*\(\s*'now'\s*\)",
-        "NOW()",
-        adapted,
-        flags=regex_module.IGNORECASE
-    )
-    
-    return adapted
-
 # ================================
 # CONFIGURACIÓN DE DIRECTORIOS
 # ================================
@@ -169,8 +104,7 @@ for directory in [LOGS_DIR, BACKUPS_DIR, STATIC_DIR, TEMPLATES_DIR]:
     os.makedirs(directory, exist_ok=True)
 
 # Base de datos
-# Ruta de base de datos (solo para SQLite)
-DATABASE_PATH = os.path.join(BASE_DIR, "qr_tracking.db") if not IS_POSTGRES else DATABASE_URL
+DATABASE_PATH = os.path.join(BASE_DIR, "qr_tracking.db")
 
 # ================================
 # CONFIGURACIÓN DE LOGGING AVANZADO
@@ -270,14 +204,7 @@ def create_backup(backup_type: str = "auto") -> Optional[str]:
     
     Returns:
         Ruta del backup creado o None si falla
-        
-    NOTA: En PostgreSQL (Cloud/Neon), los backups se manejan automáticamente.
     """
-    # En PostgreSQL, los backups los maneja Neon automáticamente
-    if IS_POSTGRES:
-        logger.info("Backups automáticos manejados por Neon en modo PostgreSQL")
-        return None
-        
     try:
         if not os.path.exists(DATABASE_PATH):
             logger.warning("No existe base de datos para respaldar")
@@ -548,20 +475,14 @@ class RestoreRequest(BaseModel):
 def init_database():
     """Inicializar la base de datos con el esquema"""
     try:
-        with get_db_connection() as conn:
+        with sqlite3.connect(DATABASE_PATH) as conn:
             # Crear esquema básico
             create_basic_schema(conn)
             # Verificar que las tablas existan
             cursor = conn.cursor()
-            if IS_POSTGRES:
-                cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-                tables = cursor.fetchall()
-                table_names = [t['table_name'] if isinstance(t, dict) else t[0] for t in tables]
-            else:
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-                tables = cursor.fetchall()
-                table_names = [table[0] if isinstance(table, tuple) else table['name'] for table in tables]
-            logger.info(f"Tablas en base de datos: {table_names}")
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = cursor.fetchall()
+            logger.info(f"Tablas en base de datos: {[table[0] for table in tables]}")
         logger.info("Base de datos inicializada correctamente")
     except Exception as e:
         logger.error(f"Error inicializando base de datos: {e}")
@@ -570,107 +491,6 @@ def create_basic_schema(conn):
     """Crear esquema básico si no existe el archivo SQL"""
     cursor = conn.cursor()
     
-    if IS_POSTGRES:
-        # PostgreSQL Schema
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS campaigns (
-                id SERIAL PRIMARY KEY,
-                campaign_code TEXT NOT NULL UNIQUE,
-                client TEXT NOT NULL,
-                destination TEXT NOT NULL,
-                description TEXT,
-                active BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS physical_devices (
-                id SERIAL PRIMARY KEY,
-                device_id TEXT NOT NULL UNIQUE,
-                device_name TEXT,
-                device_type TEXT,
-                location TEXT,
-                venue TEXT,
-                description TEXT,
-                active BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS scans (
-                id SERIAL PRIMARY KEY,
-                campaign_code TEXT NOT NULL,
-                client TEXT,
-                destination TEXT,
-                device_id TEXT,
-                device_name TEXT,
-                location TEXT,
-                venue TEXT,
-                user_device_type TEXT,
-                browser TEXT,
-                operating_system TEXT,
-                screen_resolution TEXT,
-                viewport_size TEXT,
-                timezone TEXT,
-                language TEXT,
-                platform TEXT,
-                connection_type TEXT,
-                user_agent TEXT,
-                ip_address TEXT,
-                country TEXT,
-                city TEXT,
-                session_id TEXT,
-                scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                redirect_completed BOOLEAN DEFAULT FALSE,
-                redirect_timestamp TIMESTAMP,
-                duration_seconds REAL,
-                campaign_id INTEGER,
-                physical_device_id INTEGER,
-                utm_source TEXT,
-                utm_medium TEXT,
-                utm_campaign TEXT,
-                utm_term TEXT,
-                utm_content TEXT,
-                cpu_cores INTEGER,
-                device_pixel_ratio REAL
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS qr_generations (
-                id SERIAL PRIMARY KEY,
-                campaign_id INTEGER,
-                physical_device_id INTEGER,
-                qr_size INTEGER,
-                generated_by TEXT,
-                generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        # Crear índices para PostgreSQL (ignorar si ya existen)
-        indices = [
-            "CREATE INDEX IF NOT EXISTS idx_scans_campaign ON scans(campaign_code)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_device ON scans(device_id)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(scan_timestamp)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_session ON scans(session_id)",
-            "CREATE INDEX IF NOT EXISTS idx_campaigns_client ON campaigns(client)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_ip ON scans(ip_address)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_utm_source ON scans(utm_source)"
-        ]
-        for idx in indices:
-            try:
-                cursor.execute(idx)
-            except:
-                pass
-        
-        conn.commit()
-        return
-    
-    # SQLite Schema (original)
     # Crear tabla campaigns
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS campaigns (
@@ -773,12 +593,8 @@ def migrate_database(conn):
     cursor = conn.cursor()
     
     # Obtener columnas existentes en la tabla scans
-    if IS_POSTGRES:
-        cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scans'")
-        existing_columns = [col['column_name'] if isinstance(col, dict) else col[0] for col in cursor.fetchall()]
-    else:
-        cursor.execute("PRAGMA table_info(scans)")
-        existing_columns = [col[1] for col in cursor.fetchall()]
+    cursor.execute("PRAGMA table_info(scans)")
+    existing_columns = [col[1] for col in cursor.fetchall()]
     
     # Columnas nuevas a agregar (v2.7.3)
     new_columns = {
@@ -795,13 +611,7 @@ def migrate_database(conn):
     for column_name, column_type in new_columns.items():
         if column_name not in existing_columns:
             try:
-                try:
-                    if IS_POSTGRES:
-                        cursor.execute(f"ALTER TABLE scans ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
-                    else:
-                        cursor.execute(f"ALTER TABLE scans ADD COLUMN {column_name} {column_type}")
-                except Exception:
-                    pass
+                cursor.execute(f"ALTER TABLE scans ADD COLUMN {column_name} {column_type}")
                 logger.info(f"Columna '{column_name}' agregada a tabla scans")
             except sqlite3.OperationalError as e:
                 # La columna ya existe (puede ocurrir en casos edge)
@@ -811,17 +621,10 @@ def migrate_database(conn):
     logger.info("Migración de base de datos completada")
 
 def get_db_connection():
-    """Obtener conexión a la base de datos (SQLite o PostgreSQL)"""
-    if IS_POSTGRES:
-        # PostgreSQL (Neon/Cloud)
-        conn = psycopg2.connect(DATABASE_URL)
-        conn.cursor_factory = psycopg2.extras.RealDictCursor
-        return conn
-    else:
-        # SQLite (desarrollo local)
-        conn = sqlite3.connect(DATABASE_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
+    """Obtener conexión a la base de datos"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row  # Para acceder a columnas por nombre
+    return conn
 
 # ================================
 # FUNCIONES DE UTILIDAD
@@ -1848,7 +1651,7 @@ async def track_qr_scan(request: Request):
         # Buscar información de la campaña en la base de datos
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(adapt_query("SELECT destination, client FROM campaigns WHERE campaign_code = ?"), (campaign_code,))
+            cursor.execute("SELECT destination, client FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             result = cursor.fetchone()
             if result:
                 if not destination:
@@ -2177,7 +1980,7 @@ async def create_campaign(campaign: CampaignCreate):
             campaign_id = cursor.lastrowid
             
             # Obtener la campaña creada
-            cursor.execute(adapt_query("SELECT * FROM campaigns WHERE id = ?"), (campaign_id,))
+            cursor.execute("SELECT * FROM campaigns WHERE id = ?", (campaign_id,))
             new_campaign = dict(cursor.fetchone())
         
         logger.info(f"Campaña creada: {campaign.campaign_code}")
@@ -2186,9 +1989,9 @@ async def create_campaign(campaign: CampaignCreate):
             "message": "Campaña creada exitosamente",
             "campaign": new_campaign
         }
+    except sqlite3.IntegrityError:
+        return {"success": False, "error": "El código de campaña ya existe"}
     except Exception as e:
-        if "UNIQUE" in str(e).upper() or "duplicate" in str(e).lower() or "IntegrityError" in str(type(e)):
-            return {"success": False, "error": "El código de campaña ya existe"}
         logger.error(f"Error creando campaña: {e}")
         return {"success": False, "error": str(e)}
 
@@ -2200,7 +2003,7 @@ async def update_campaign(campaign_code: str, campaign_update: CampaignUpdate):
             cursor = conn.cursor()
             
             # Verificar que la campaña existe
-            cursor.execute(adapt_query("SELECT id FROM campaigns WHERE campaign_code = ?"), (campaign_code,))
+            cursor.execute("SELECT id FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             if not cursor.fetchone():
                 return {"success": False, "error": "Campaña no encontrada"}
             
@@ -2245,7 +2048,7 @@ async def pause_campaign(campaign_code: str):
             cursor = conn.cursor()
             
             # Obtener estado actual
-            cursor.execute(adapt_query("SELECT active, client FROM campaigns WHERE campaign_code = ?"), (campaign_code,))
+            cursor.execute("SELECT active, client FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             result = cursor.fetchone()
             
             if not result:
@@ -3658,7 +3461,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
+        port=8000,
         reload=True,
         log_level="info"
     )

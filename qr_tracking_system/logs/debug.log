@@ -1,0 +1,15 @@
+2026-02-25 00:13:09,357 - qr_tracking - INFO - [app.py:448] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-02-25 00:13:09,474 - qr_tracking - INFO - [app.py:3581] - ============================================================
+2026-02-25 00:13:09,474 - qr_tracking - INFO - [app.py:3582] - Iniciando QR Tracking System v2.7.2
+2026-02-25 00:13:09,475 - qr_tracking - INFO - [app.py:3583] - ============================================================
+2026-02-25 00:13:09,523 - qr_tracking - ERROR - [app.py:567] - Error inicializando base de datos: no such column: utm_source
+2026-02-25 00:13:09,526 - qr_tracking - INFO - [app.py:297] - Backup creado: qr_tracking_auto_2026-02-25_00-13-09.db (0.05 MB)
+2026-02-25 00:13:09,528 - qr_tracking - INFO - [app.py:3594] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-02-25 00:13:09,528 - qr_tracking - INFO - [app.py:3595] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-02-25 00:13:09,528 - qr_tracking - INFO - [app.py:3596] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-02-25 00:13:09,529 - qr_tracking - INFO - [app.py:3597] - Sistema iniciado correctamente
+2026-02-25 00:13:09,529 - qr_tracking - INFO - [app.py:3598] - ============================================================
+2026-02-25 00:14:34,150 - qr_tracking - INFO - [app.py:2367] - Obteniendo dispositivos...
+2026-02-25 00:14:34,152 - qr_tracking - INFO - [app.py:2376] - Dispositivos obtenidos: 0
+2026-02-25 00:20:32,490 - qr_tracking - INFO - [app.py:2367] - Obteniendo dispositivos...
+2026-02-25 00:20:32,492 - qr_tracking - INFO - [app.py:2376] - Dispositivos obtenidos: 0

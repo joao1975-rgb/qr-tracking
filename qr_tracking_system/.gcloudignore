@@ -1,0 +1,73 @@
+# ===========================================
+# QR Tracking System - Archivos a ignorar
+# ===========================================
+# Para despliegue en Google Cloud Run
+# ===========================================
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Archivos de entorno
+.env
+.env.local
+.env.*.local
+
+# Documentación
+*.md
+!README.md
+docs/
+
+# Tests
+tests/
+test_*.py
+*_test.py
+pytest.ini
+.pytest_cache/
+
+# Base de datos local
+*.db
+*.sqlite
+*.sqlite3
+qr_tracking.db
+
+# Backups locales
+backups/
+*.backup
+
+# Logs locales
+logs/
+*.log
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Node (si usas algún frontend build)
+node_modules/
+npm-debug.log

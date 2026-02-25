@@ -1,4 +1,47 @@
-fastapi==0.68.0
-uvicorn==0.15.0
-aiofiles==0.7.0
-device-detector==5.0.1
+# ===========================================
+# QR Tracking System - Dependencias
+# ===========================================
+# Versión: 2.7.3 Cloud-Ready
+# Para Cloud Run con PostgreSQL (Neon)
+# ===========================================
+
+# Framework Web
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Servidor ASGI
+gunicorn>=21.2.0
+
+# Base de datos
+# psycopg2-binary==2.9.9    # PostgreSQL (producción) - Eliminado para desarrollo local (SQLite)
+# sqlite3 viene incluido en Python
+
+# Validación de datos
+pydantic>=2.6.0
+pydantic-settings>=2.1.0
+
+# Generación de QR
+qrcode[pil]>=7.4.0
+Pillow>=10.2.0
+
+# Detección de User-Agent
+user-agents>=2.2.0
+device-detector>=5.0.0
+
+# Utilidades HTTP
+httpx>=0.26.0
+python-multipart>=0.0.9
+
+# Variables de entorno
+python-dotenv>=1.0.0
+
+# Utilidades
+uuid>=1.30
+
+# ===========================================
+# Dependencias opcionales para desarrollo
+# ===========================================
+# pytest==8.0.0
+# pytest-asyncio==0.23.4
+# black==24.1.1
+# flake8==7.0.0
