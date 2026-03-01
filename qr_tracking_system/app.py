@@ -989,6 +989,11 @@ async def index():
         </html>
         """)
 
+@app.get("/api/health")
+async def health_check():
+    """Endpoint vital para que EasyPanel/Docker sepa que la app está viva"""
+    return {"status": "ok", "version": "2.7.3", "timestamp": datetime.now().isoformat()}
+
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard():
     """Dashboard con analytics"""
