@@ -41,10 +41,6 @@ RUN mkdir -p /app/logs /app/static /app/templates /app/backups
 # Exponer puerto
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/api/health || exit 1
-
 # Comando de inicio
 # Usamos gunicorn con workers uvicorn para mejor rendimiento en producción
 CMD exec gunicorn app:app \
