@@ -521,6 +521,9 @@ class QRGenerateRequest(BaseModel):
     color_light: str = "#FFFFFF"
     include_logo: bool = False
     base_url: Optional[str] = None  # URL base del servidor (ej: http://192.168.1.100:8000)
+    logo_mode: str = "default"
+    brand_logo_base64: Optional[str] = None
+    brand_banner_base64: Optional[str] = None
 
 class QRCustomRequest(BaseModel):
     """Solicitud de generación de QR personalizado desde URL"""
@@ -531,6 +534,13 @@ class QRCustomRequest(BaseModel):
     color_dark: str = "#000000"
     color_light: str = "#FFFFFF"
     error_correction: str = "M"  # L, M, Q, H
+    logo_mode: str = "default"
+    brand_logo_base64: Optional[str] = None
+    brand_banner_base64: Optional[str] = None
+
+class LogoValidationRequest(BaseModel):
+    image_base64: str
+    filename: str
 
 class BackupRequest(BaseModel):
     """Solicitud de backup manual"""
@@ -2840,7 +2850,8 @@ async def log_qr_generation(qr_log: QRGenerationLog, request: Request):
 # ================================
 
 def generate_qr_image(data: str, size: int = 300, error_correction: str = "M", 
-                      color_dark: str = "#000000", color_light: str = "#FFFFFF") -> Optional[str]:
+                      color_dark: str = "#000000", color_light: str = "#FFFFFF",
+                      logo_base64: Optional[str] = None) -> Optional[str]:
     """
     Genera una imagen QR y la devuelve como base64
     
@@ -2850,6 +2861,7 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         error_correction: Nivel de corrección de errores (L, M, Q, H)
         color_dark: Color de los módulos oscuros (hex)
         color_light: Color del fondo (hex)
+        logo_base64: Imagen del logo en base64
     
     Returns:
         Imagen en formato base64 o None si hay error
@@ -2892,6 +2904,41 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         # Redimensionar si es necesario
         if img.size[0] != size:
             img = img.resize((size, size), Image.LANCZOS if PIL_AVAILABLE else Image.NEAREST)
+            
+        # PROCESAR LOGO SI ESTÁ DISPONIBLE
+        if logo_base64 and PIL_AVAILABLE:
+            try:
+                # Extraer datos raw
+                if ',' in logo_base64:
+                    logo_base64 = logo_base64.split(',')[1]
+                
+                logo_bytes = base64.b64decode(logo_base64)
+                logo_img = Image.open(io.BytesIO(logo_bytes))
+                
+                # Asegurar que el logo tiene un canal alfa para transparencia
+                if logo_img.mode != 'RGBA':
+                    logo_img = logo_img.convert('RGBA')
+                
+                # Calcular el tamaño del logo (máximo 30% del QR)
+                qr_width, qr_height = img.size
+                logo_max_size = int(min(qr_width, qr_height) * 0.3)
+                
+                # Preservar proporción
+                logo_width, logo_height = logo_img.size
+                ratio = min(logo_max_size / logo_width, logo_max_size / logo_height)
+                new_size = (int(logo_width * ratio), int(logo_height * ratio))
+                
+                logo_img = logo_img.resize(new_size, Image.LANCZOS)
+                
+                # Calcular posición (centro)
+                pos_x = (qr_width - new_size[0]) // 2
+                pos_y = (qr_height - new_size[1]) // 2
+                
+                # Pegar el logo encima del QR
+                img = img.convert('RGBA')
+                img.paste(logo_img, (pos_x, pos_y), logo_img)
+            except Exception as e:
+                logger.error(f"Error superponiendo logo en QR: {str(e)}")
         
         # Convertir a base64
         buffer = io.BytesIO()
@@ -2977,13 +3024,19 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
         
         tracking_url = f"{base_url}/track?{urlencode(params, quote_via=quote)}"
         
+        # Forzar alta corrección si hay logo
+        error_correction = "M"
+        if qr_request.brand_logo_base64:
+            error_correction = "H"
+            
         # Generar imagen QR
         qr_image = generate_qr_image(
             data=tracking_url,
             size=qr_request.size,
-            error_correction="M",
+            error_correction=error_correction,
             color_dark=qr_request.color_dark,
-            color_light=qr_request.color_light
+            color_light=qr_request.color_light,
+            logo_base64=qr_request.brand_logo_base64
         )
         
         if not qr_image:
@@ -3057,6 +3110,10 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
         error_correction = qr_request.error_correction.upper()
         if error_correction not in valid_error_levels:
             error_correction = "M"
+            
+        # Forzar alta corrección si hay logo
+        if qr_request.brand_logo_base64:
+            error_correction = "H"
         
         # Generar imagen QR
         qr_image = generate_qr_image(
@@ -3064,7 +3121,8 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
             size=qr_request.size,
             error_correction=error_correction,
             color_dark=qr_request.color_dark,
-            color_light=qr_request.color_light
+            color_light=qr_request.color_light,
+            logo_base64=qr_request.brand_logo_base64
         )
         
         if not qr_image:
@@ -3096,6 +3154,90 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
     except Exception as e:
         logger.error(f"Error generando QR personalizado: {e}")
         return {"success": False, "error": str(e)}
+
+@app.post("/api/qr/validate-logo")
+async def validate_logo(request: LogoValidationRequest):
+    """Valida una imagen subida como logo para QR"""
+    try:
+        # Extraer base64
+        base64_data = request.image_base64
+        if ',' in base64_data:
+            base64_data = base64_data.split(',')[1]
+            
+        image_bytes = base64.b64decode(base64_data)
+        
+        # Calcular tamaño
+        file_size_kb = len(image_bytes) / 1024
+        
+        # Leer imagen con Pillow
+        if not PIL_AVAILABLE:
+            return {"can_proceed": False, "score": 0.0, "errors": ["La biblioteca Pillow no está instalada"]}
+            
+        img = Image.open(io.BytesIO(image_bytes))
+        width, height = img.size
+        
+        result = {
+            "can_proceed": True,
+            "score": 1.0,
+            "checks": {},
+            "warnings": [],
+            "errors": []
+        }
+        
+        # Validar dimensiones
+        if width < 100 or height < 100:
+            result["checks"]["dimensions"] = {"passed": False, "optimal": False, "message": f"Dimensiones muy pequeñas ({width}x{height}px). Mínimo 100x100px."}
+            result["errors"].append("La imagen es demasiado pequeña para asegurar buena calidad al escanear.")
+            result["can_proceed"] = False
+            result["score"] -= 0.5
+        elif width > 1024 or height > 1024:
+            result["checks"]["dimensions"] = {"passed": True, "optimal": False, "message": f"Dimensiones grandes ({width}x{height}px). Será redimensionada."}
+            result["warnings"].append("La resolución es alta; la imagen será comprimida y redimensionada durante la generación.")
+            result["score"] -= 0.1
+        else:
+            result["checks"]["dimensions"] = {"passed": True, "optimal": True, "message": f"Dimensiones óptimas ({width}x{height}px)."}
+            
+        # Validar tamaño archivo (ejemplo: max 2MB)
+        if file_size_kb > 2048:
+            result["checks"]["file_size"] = {"passed": False, "optimal": False, "message": f"Archivo muy pesado ({file_size_kb:.1f} KB). Máximo 2MB."}
+            result["errors"].append("El tamaño del archivo supera el límite de 2MB.")
+            result["can_proceed"] = False
+            result["score"] -= 0.5
+        elif file_size_kb > 500:
+            result["checks"]["file_size"] = {"passed": True, "optimal": False, "message": f"Archivo algo pesado ({file_size_kb:.1f} KB)."}
+            result["warnings"].append("El archivo pesa más de 500KB.")
+            result["score"] -= 0.1
+        else:
+            result["checks"]["file_size"] = {"passed": True, "optimal": True, "message": f"Tamaño de archivo adecuado ({file_size_kb:.1f} KB)."}
+            
+        # Validar ratio (cuadrado ideal para QR)
+        ratio = max(width, height) / min(width, height)
+        if ratio > 2.0:
+            result["checks"]["aspect_ratio"] = {"passed": True, "optimal": False, "message": "Proporción alargada. Para mejores resultados use imágenes cuadradas o circulares."}
+            result["warnings"].append("La imagen es muy alargada y podría reducir la legibilidad del código QR.")
+            result["score"] -= 0.2
+        else:
+            result["checks"]["aspect_ratio"] = {"passed": True, "optimal": True, "message": "Proporción adecuada."}
+            
+        # Validar formato con transparencia
+        if img.mode not in ('RGBA', 'LA') and 'transparency' not in img.info:
+            result["checks"]["transparency"] = {"passed": True, "optimal": False, "message": "Sin fondo transparente. Ocultará más bloques del QR."}
+            result["warnings"].append("Se recomienda usar imágenes PNG con fondo transparente para no obstruir el QR.")
+            result["score"] -= 0.1
+        else:
+            result["checks"]["transparency"] = {"passed": True, "optimal": True, "message": "Fondo transparente detectado (o soportado)."}
+            
+        result["score"] = max(0.0, result["score"])
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error procesando logo para validación: {str(e)}")
+        return {
+            "can_proceed": False,
+            "score": 0.0,
+            "errors": [f"El archivo no es una imagen válida o está dañado: {str(e)}"]
+        }
 
 @app.get("/api/qr/status")
 async def get_qr_status():
