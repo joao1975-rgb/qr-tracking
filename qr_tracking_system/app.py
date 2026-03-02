@@ -1914,7 +1914,8 @@ async def track_qr_scan(request: Request, background_tasks: BackgroundTasks):
             "device_id": device_id,
             "device_name": device_name,
             "location": location,
-            "venue": venue
+            "venue": venue,
+            "session_id": session_id
         }
         tracking_url = f"/tracking?{urlencode({k: v for k, v in tracking_params.items() if v}, quote_via=quote)}"
         
@@ -3029,7 +3030,21 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
                 pos_x = (qr_width - new_size[0]) // 2
                 pos_y = (qr_height - new_size[1]) // 2
                 
+                # Crear un fondo blanco con un pequeño margen para el logo
+                padding = 10
+                bg_size = (new_size[0] + padding * 2, new_size[1] + padding * 2)
+                bg_pos_x = pos_x - padding
+                bg_pos_y = pos_y - padding
+                
                 img = img.convert('RGBA')
+                
+                # Dibujar rectángulo blanco
+                draw = ImageDraw.Draw(img)
+                draw.rectangle(
+                    [bg_pos_x, bg_pos_y, bg_pos_x + bg_size[0], bg_pos_y + bg_size[1]],
+                    fill=(255, 255, 255, 255)
+                )
+                
                 img.paste(logo_img, (pos_x, pos_y), logo_img)
             except Exception as e:
                 logger.error(f"Error superponiendo logo en QR: {str(e)}")
