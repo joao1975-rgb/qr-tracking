@@ -13,7 +13,7 @@ uvicorn[standard]>=0.27.0
 gunicorn>=21.2.0
 
 # Base de datos
-# psycopg2-binary==2.9.9    # PostgreSQL (producción) - Eliminado para desarrollo local (SQLite)
+psycopg2-binary==2.9.9    # PostgreSQL (producción)
 # sqlite3 viene incluido en Python
 
 # Validación de datos
