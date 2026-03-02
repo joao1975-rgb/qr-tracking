@@ -50,6 +50,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import sqlite3
+import base64
+import io
+
+try:
+    from logos_base64 import CENTAURO_LOGO_BASE64, CENTAURO_BANNER_BASE64
+except ImportError:
+    CENTAURO_LOGO_BASE64 = None
+    CENTAURO_BANNER_BASE64 = None
 
 # ================================
 # CONFIGURACIÓN PARA CLOUD (PostgreSQL/SQLite)
@@ -503,6 +511,8 @@ class DeviceDataUpdate(BaseModel):
     connection_type: Optional[str] = None
     cpu_cores: Optional[int] = None
     device_pixel_ratio: Optional[float] = None
+    ua_brand: Optional[str] = None
+    ua_model: Optional[str] = None
 
 class QRGenerationLog(BaseModel):
     campaign_id: Optional[int] = None
@@ -1895,8 +1905,20 @@ async def track_qr_scan(request: Request, background_tasks: BackgroundTasks):
             utm_source, utm_medium, utm_campaign, utm_term, utm_content
         )
         
-        # Redirigir inmediatamente con un status de redirección permanente (307/302)
-        return RedirectResponse(url=destination, status_code=307)
+        # Redirigir a la página de tracking intermedia para recolectar datos avanzados
+        from urllib.parse import urlencode, quote
+        tracking_params = {
+            "campaign": campaign_code,
+            "client": client,
+            "destination": destination,
+            "device_id": device_id,
+            "device_name": device_name,
+            "location": location,
+            "venue": venue
+        }
+        tracking_url = f"/tracking?{urlencode({k: v for k, v in tracking_params.items() if v}, quote_via=quote)}"
+        
+        return RedirectResponse(url=tracking_url, status_code=307)
         
     except HTTPException:
         raise
@@ -2569,7 +2591,7 @@ async def get_client_analytics(client_name: str):
                 ORDER BY scans DESC
                 LIMIT 10
             """, (client_name,))
-            top_devices = [dict(row) for row in cursor.fetchall()]
+            devices = [dict(row) for row in cursor.fetchall()]
             
             # Distribución de tipos de dispositivos de usuarios
             cursor.execute("""
@@ -2583,6 +2605,60 @@ async def get_client_analytics(client_name: str):
                 ORDER BY count DESC
             """, (client_name,))
             device_types = [dict(row) for row in cursor.fetchall()]
+
+            # Distribución de marcas
+            cursor.execute("""
+                SELECT 
+                    COALESCE(NULLIF(s.device_brand, ''), 'Desconocida') as brand,
+                    COUNT(*) as count
+                FROM scans s
+                JOIN campaigns c ON s.campaign_code = c.campaign_code
+                WHERE c.client = ?
+                GROUP BY COALESCE(NULLIF(s.device_brand, ''), 'Desconocida')
+                ORDER BY count DESC
+            """, (client_name,))
+            device_brands = [dict(row) for row in cursor.fetchall()]
+
+            # Distribución de navegadores
+            cursor.execute("""
+                SELECT 
+                    COALESCE(NULLIF(s.browser, ''), 'Desconocido') as browser,
+                    COUNT(*) as count
+                FROM scans s
+                JOIN campaigns c ON s.campaign_code = c.campaign_code
+                WHERE c.client = ?
+                GROUP BY COALESCE(NULLIF(s.browser, ''), 'Desconocido')
+                ORDER BY count DESC
+            """, (client_name,))
+            browsers = [dict(row) for row in cursor.fetchall()]
+
+            # Sedes / Venues
+            cursor.execute("""
+                SELECT 
+                    COALESCE(NULLIF(s.venue, ''), NULLIF(s.location, ''), 'Desconocida') as venue,
+                    COUNT(*) as scans,
+                    COUNT(DISTINCT s.ip_address) as unique_visitors
+                FROM scans s
+                JOIN campaigns c ON s.campaign_code = c.campaign_code
+                WHERE c.client = ?
+                GROUP BY COALESCE(NULLIF(s.venue, ''), NULLIF(s.location, ''), 'Desconocida')
+                ORDER BY scans DESC
+            """, (client_name,))
+            venues = [dict(row) for row in cursor.fetchall()]
+
+            # Últimos escaneos
+            cursor.execute("""
+                SELECT 
+                    s.scan_timestamp, s.campaign_code, s.device_id, s.device_name, 
+                    s.location, s.venue, s.user_device_type, s.browser, s.operating_system, 
+                    s.duration_seconds, s.redirect_completed, s.device_brand, s.device_model
+                FROM scans s
+                JOIN campaigns c ON s.campaign_code = c.campaign_code
+                WHERE c.client = ?
+                ORDER BY s.scan_timestamp DESC
+                LIMIT 500
+            """, (client_name,))
+            recent_scans = [dict(row) for row in cursor.fetchall()]
         
         return {
             "success": True,
@@ -2590,8 +2666,12 @@ async def get_client_analytics(client_name: str):
             "stats": stats,
             "campaigns": campaigns,
             "daily_activity": daily_activity,
-            "top_devices": top_devices,
-            "device_types": device_types
+            "devices": devices,
+            "device_types": device_types,
+            "device_brands": device_brands,
+            "browsers": browsers,
+            "venues": venues,
+            "recent_scans": recent_scans
         }
     except Exception as e:
         logger.error(f"Error obteniendo analytics de cliente: {e}")
@@ -2609,14 +2689,16 @@ async def track_device_data(device_data: DeviceDataUpdate):
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE scans SET
-                    screen_resolution = ?,
-                    viewport_size = ?,
-                    timezone = ?,
-                    language = ?,
-                    platform = ?,
-                    connection_type = ?,
-                    cpu_cores = ?,
-                    device_pixel_ratio = ?
+                    screen_resolution = COALESCE(?, screen_resolution),
+                    viewport_size = COALESCE(?, viewport_size),
+                    timezone = COALESCE(?, timezone),
+                    language = COALESCE(?, language),
+                    platform = COALESCE(?, platform),
+                    connection_type = COALESCE(?, connection_type),
+                    cpu_cores = COALESCE(?, cpu_cores),
+                    device_pixel_ratio = COALESCE(?, device_pixel_ratio),
+                    device_brand = COALESCE(?, device_brand),
+                    device_model = COALESCE(?, device_model)
                 WHERE session_id = ?
             """, (
                 device_data.screen_resolution,
@@ -2627,6 +2709,8 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.connection_type,
                 device_data.cpu_cores,
                 device_data.device_pixel_ratio,
+                device_data.ua_brand,
+                device_data.ua_model,
                 device_data.session_id
             ))
             conn.commit()
@@ -2856,7 +2940,8 @@ async def log_qr_generation(qr_log: QRGenerationLog, request: Request):
 
 def generate_qr_image(data: str, size: int = 300, error_correction: str = "M", 
                       color_dark: str = "#000000", color_light: str = "#FFFFFF",
-                      logo_base64: Optional[str] = None) -> Optional[str]:
+                      logo_mode: str = "default",
+                      brand_logo_base64: Optional[str] = None) -> Optional[str]:
     """
     Genera una imagen QR y la devuelve como base64
     
@@ -2866,7 +2951,8 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         error_correction: Nivel de corrección de errores (L, M, Q, H)
         color_dark: Color de los módulos oscuros (hex)
         color_light: Color del fondo (hex)
-        logo_base64: Imagen del logo en base64
+        logo_mode: Modo de logo
+        brand_logo_base64: Base64 subido por el usuario
     
     Returns:
         Imagen en formato base64 o None si hay error
@@ -2876,7 +2962,10 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         return None
     
     try:
-        # Mapear nivel de corrección de errores
+        # Forzar alta corrección si se usará logo central
+        if logo_mode in ["default", "brand_only", "brand_full"]:
+            error_correction = "H"
+            
         error_levels = {
             "L": ERROR_CORRECT_L,  # ~7% corrección
             "M": ERROR_CORRECT_M,  # ~15% corrección
@@ -2885,9 +2974,8 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         }
         error_level = error_levels.get(error_correction.upper(), ERROR_CORRECT_M)
         
-        # Crear código QR
         qr = qrcode.QRCode(
-            version=None,  # Auto-determinar versión
+            version=None,
             error_correction=error_level,
             box_size=10,
             border=4,
@@ -2895,7 +2983,6 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         qr.add_data(data)
         qr.make(fit=True)
         
-        # Convertir colores hex a RGB
         def hex_to_rgb(hex_color):
             hex_color = hex_color.lstrip('#')
             return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
@@ -2903,49 +2990,81 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         fill_color = hex_to_rgb(color_dark)
         back_color = hex_to_rgb(color_light)
         
-        # Crear imagen
         img = qr.make_image(fill_color=fill_color, back_color=back_color)
         
-        # Redimensionar si es necesario
         if img.size[0] != size:
             img = img.resize((size, size), Image.LANCZOS if PIL_AVAILABLE else Image.NEAREST)
             
-        # PROCESAR LOGO SI ESTÁ DISPONIBLE
-        if logo_base64 and PIL_AVAILABLE:
+        # Determinar qué base64 usar
+        center_logo_b64 = None
+        banner_b64 = None
+        if logo_mode == "default":
+            center_logo_b64 = CENTAURO_LOGO_BASE64
+        elif logo_mode == "brand_only":
+            center_logo_b64 = brand_logo_base64
+        elif logo_mode == "brand_full":
+            center_logo_b64 = brand_logo_base64
+            banner_b64 = CENTAURO_BANNER_BASE64
+            
+        if center_logo_b64 and PIL_AVAILABLE:
             try:
-                # Extraer datos raw
-                if ',' in logo_base64:
-                    logo_base64 = logo_base64.split(',')[1]
+                if ',' in center_logo_b64:
+                    center_logo_b64 = center_logo_b64.split(',')[1]
                 
-                logo_bytes = base64.b64decode(logo_base64)
+                logo_bytes = base64.b64decode(center_logo_b64)
                 logo_img = Image.open(io.BytesIO(logo_bytes))
                 
-                # Asegurar que el logo tiene un canal alfa para transparencia
                 if logo_img.mode != 'RGBA':
                     logo_img = logo_img.convert('RGBA')
                 
-                # Calcular el tamaño del logo (máximo 30% del QR)
                 qr_width, qr_height = img.size
                 logo_max_size = int(min(qr_width, qr_height) * 0.3)
                 
-                # Preservar proporción
                 logo_width, logo_height = logo_img.size
                 ratio = min(logo_max_size / logo_width, logo_max_size / logo_height)
                 new_size = (int(logo_width * ratio), int(logo_height * ratio))
                 
                 logo_img = logo_img.resize(new_size, Image.LANCZOS)
                 
-                # Calcular posición (centro)
                 pos_x = (qr_width - new_size[0]) // 2
                 pos_y = (qr_height - new_size[1]) // 2
                 
-                # Pegar el logo encima del QR
                 img = img.convert('RGBA')
                 img.paste(logo_img, (pos_x, pos_y), logo_img)
             except Exception as e:
                 logger.error(f"Error superponiendo logo en QR: {str(e)}")
+
+        if banner_b64 and PIL_AVAILABLE:
+            try:
+                if ',' in banner_b64:
+                    banner_b64 = banner_b64.split(',')[1]
+                
+                banner_bytes = base64.b64decode(banner_b64)
+                banner_img = Image.open(io.BytesIO(banner_bytes))
+                
+                if banner_img.mode != 'RGBA':
+                    banner_img = banner_img.convert('RGBA')
+                
+                qr_width, qr_height = img.size
+                
+                banner_width, banner_height = banner_img.size
+                ratio = qr_width / banner_width
+                new_banner_size = (int(banner_width * ratio), int(banner_height * ratio))
+                banner_img = banner_img.resize(new_banner_size, Image.LANCZOS)
+                
+                padding_y = 10
+                final_height = qr_height + new_banner_size[1] + padding_y
+                
+                final_img = Image.new('RGB', (qr_width, final_height), hex_to_rgb(color_light))
+                
+                img = img.convert('RGBA')
+                final_img.paste(img, (0, 0), img)
+                final_img.paste(banner_img, (0, qr_height + padding_y), banner_img)
+                
+                img = final_img
+            except Exception as e:
+                logger.error(f"Error superponiendo banner en QR: {str(e)}")
         
-        # Convertir a base64
         buffer = io.BytesIO()
         img.save(buffer, format='PNG')
         buffer.seek(0)
@@ -3041,7 +3160,8 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
             error_correction=error_correction,
             color_dark=qr_request.color_dark,
             color_light=qr_request.color_light,
-            logo_base64=qr_request.brand_logo_base64
+            logo_mode=qr_request.logo_mode,
+            brand_logo_base64=qr_request.brand_logo_base64
         )
         
         if not qr_image:
@@ -3077,7 +3197,9 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
             },
             "device": device_data,
             "size": qr_request.size,
-            "format": qr_request.format
+            "format": qr_request.format,
+            "logo_mode": qr_request.logo_mode,
+            "filename_suffix": "_" + qr_request.logo_mode[:2].upper()
         }
         
     except Exception as e:
@@ -3127,7 +3249,8 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
             error_correction=error_correction,
             color_dark=qr_request.color_dark,
             color_light=qr_request.color_light,
-            logo_base64=qr_request.brand_logo_base64
+            logo_mode=qr_request.logo_mode,
+            brand_logo_base64=qr_request.brand_logo_base64
         )
         
         if not qr_image:
@@ -3153,11 +3276,43 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
             "url": url,
             "size": qr_request.size,
             "error_correction": error_correction,
-            "format": qr_request.format
+            "format": qr_request.format,
+            "logo_mode": qr_request.logo_mode,
+            "filename_suffix": "_" + qr_request.logo_mode[:2].upper()
         }
         
     except Exception as e:
         logger.error(f"Error generando QR personalizado: {e}")
+        return {"success": False, "error": str(e)}
+
+class QRGenerateWithLogoRequest(BaseModel):
+    data: str
+    size: int = 300
+    color_dark: str = "#000000"
+    color_light: str = "#FFFFFF"
+    logo_mode: str = "default"
+    brand_logo_base64: Optional[str] = None
+    brand_banner_base64: Optional[str] = None
+    error_correction: str = "H"
+
+@app.post("/api/qr/generate-with-logo")
+async def generate_qr_with_logo(request: QRGenerateWithLogoRequest):
+    """Endpoint simplificado para generar un QR con el logo solicitado"""
+    try:
+        qr_image = generate_qr_image(
+            data=request.data,
+            size=request.size,
+            error_correction=request.error_correction,
+            color_dark=request.color_dark,
+            color_light=request.color_light,
+            logo_mode=request.logo_mode,
+            brand_logo_base64=request.brand_logo_base64
+        )
+        if not qr_image:
+            return {"success": False, "error": "Error generando imagen QR"}
+        return {"success": True, "qr_image": qr_image}
+    except Exception as e:
+        logger.error(f"Error al regenerar logo QR: {e}")
         return {"success": False, "error": str(e)}
 
 @app.post("/api/qr/validate-logo")
