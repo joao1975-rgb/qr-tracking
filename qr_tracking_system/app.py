@@ -2559,9 +2559,7 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     platform = COALESCE(%s, platform),
                     connection_type = COALESCE(%s, connection_type),
                     cpu_cores = COALESCE(%s, cpu_cores),
-                    device_pixel_ratio = COALESCE(%s, device_pixel_ratio),
-                    device_brand = COALESCE(NULLIF(%s, ''), device_brand),
-                    device_model = COALESCE(NULLIF(%s, ''), device_model)
+                    device_pixel_ratio = COALESCE(%s, device_pixel_ratio)
                 WHERE session_id = %s
             """, (
                 device_data.screen_resolution,
@@ -2572,8 +2570,6 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.connection_type,
                 device_data.cpu_cores,
                 device_data.device_pixel_ratio,
-                device_data.ua_brand,
-                device_data.ua_model,
                 device_data.session_id
             ))
             conn.commit()
@@ -2616,8 +2612,8 @@ async def complete_tracking(request: Request):
             """, (session_id,))
             result = cursor.fetchone()
             
-            duration = None
-            if result and completion_time:
+            duration = data.get("time_spent")
+            if duration is None and result and completion_time:
                 try:
                     start_time = datetime.fromisoformat(result["scan_timestamp"].replace("Z", "+00:00"))
                     end_time = datetime.fromisoformat(completion_time.replace("Z", "+00:00"))

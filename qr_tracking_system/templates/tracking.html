@@ -648,46 +648,8 @@
 
                 canvas_hash: generateCanvasFingerprint(),
                 webgl_vendor: webglInfo.vendor,
-                webgl_renderer: webglInfo.renderer,
-
-                ua_brand: null,
-                ua_model: null,
-                ua_platform: null,
-                ua_platform_version: null,
-                ua_mobile: null,
-                ua_full_version: null
+                webgl_renderer: webglInfo.renderer
             };
-
-            // ========================================
-            // USER-AGENT CLIENT HINTS
-            // Captura EXACTA del marco y modelo telefónico
-            // ========================================
-            if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
-                try {
-                    const uaData = await navigator.userAgentData.getHighEntropyValues([
-                        "model",
-                        "platform",
-                        "platformVersion",
-                        "fullVersionList"
-                    ]);
-
-                    console.log('📱 UA Client Hints Resolve:', uaData);
-
-                    deviceData.ua_model = uaData.model || null;  // MODELO REAL "SM-S918B"
-                    deviceData.ua_platform = uaData.platform || null;
-                    deviceData.ua_platform_version = uaData.platformVersion || null;
-                    deviceData.ua_mobile = navigator.userAgentData.mobile;
-
-                    if (navigator.userAgentData.brands) {
-                        deviceData.ua_brand = navigator.userAgentData.brands
-                            .map(b => b.brand)
-                            .filter(b => !b.includes('Not'))
-                            .join(', ');
-                    }
-                } catch (err) {
-                    console.log('UA Client Hints Promise Reject:', err);
-                }
-            }
 
             console.log('Enviando Device Data de Huella Final:', deviceData);
 
