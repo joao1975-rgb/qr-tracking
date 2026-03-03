@@ -858,11 +858,11 @@ async def dashboard():
 async def reports_page():
     """Página de reportes por cliente"""
     try:
-        reports_path = os.path.join(TEMPLATES_DIR, "client_reports.html")
+        reports_path = os.path.join(TEMPLATES_DIR, "reports.html")
         with open(reports_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
-        return HTMLResponse("<h1>Reportes</h1><p>Archivo client_reports.html no encontrado en /templates</p><a href='/'>← Volver</a>")
+        return HTMLResponse("<h1>Reportes</h1><p>Archivo reports.html no encontrado en /templates</p><a href='/'>← Volver</a>")
 
 @app.get("/tracking", response_class=HTMLResponse)
 async def tracking_page():
@@ -2587,7 +2587,7 @@ async def complete_tracking(request: Request):
             # Calcular duración si es posible
             cursor.execute("""
                 SELECT scan_timestamp FROM scans 
-                WHERE id = ? AND session_id = ?
+                WHERE id = %s AND session_id = %s
             """, (scan_id, session_id))
             result = cursor.fetchone()
             
@@ -2603,10 +2603,10 @@ async def complete_tracking(request: Request):
             # Actualizar el registro
             cursor.execute("""
                 UPDATE scans 
-                SET redirect_completed = 1, 
+                SET redirect_completed = TRUE, 
                     redirect_timestamp = CURRENT_TIMESTAMP,
-                    duration_seconds = ?
-                WHERE id = ? AND session_id = ?
+                    duration_seconds = %s
+                WHERE id = %s AND session_id = %s
             """, (duration, scan_id, session_id))
             conn.commit()
         
@@ -2684,6 +2684,73 @@ async def get_device_hierarchy():
             
     except Exception as e:
         logger.error(f"Error obteniendo jerarquía de dispositivos: {e}")
+        return {"success": False, "error": str(e)}
+@app.get("/api/analytics/device-hierarchy/client/{client_name}")
+async def get_client_device_hierarchy(client_name: str):
+    """Obtener jerarquía de dispositivos para un cliente específico"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT 
+                    COALESCE(user_device_type, 'Unknown') as device_type,
+                    COALESCE(device_brand, 'Unknown') as device_brand,
+                    COALESCE(device_model, 'Unknown') as device_model,
+                    COALESCE(browser, 'Unknown') as browser,
+                    COUNT(*) as count
+                FROM scans
+                WHERE client = %s
+                GROUP BY user_device_type, device_brand, device_model, browser
+                ORDER BY count DESC
+            """, (client_name,))
+            
+            rows = cursor.fetchall()
+            
+            hierarchy = {}
+            for row in rows:
+                dtype = row["device_type"]
+                brand = row["device_brand"]
+                model = row["device_model"]
+                browser = row["browser"]
+                count = row["count"]
+                
+                if dtype not in hierarchy:
+                    hierarchy[dtype] = {"name": dtype, "count": 0, "brands": {}}
+                hierarchy[dtype]["count"] += count
+                
+                if brand not in hierarchy[dtype]["brands"]:
+                    hierarchy[dtype]["brands"][brand] = {"name": brand, "count": 0, "models": {}}
+                hierarchy[dtype]["brands"][brand]["count"] += count
+                
+                if model not in hierarchy[dtype]["brands"][brand]["models"]:
+                    hierarchy[dtype]["brands"][brand]["models"][model] = {"name": model, "count": 0, "browsers": {}}
+                hierarchy[dtype]["brands"][brand]["models"][model]["count"] += count
+                
+                if browser not in hierarchy[dtype]["brands"][brand]["models"][model]["browsers"]:
+                    hierarchy[dtype]["brands"][brand]["models"][model]["browsers"][browser] = {"name": browser, "count": 0}
+                hierarchy[dtype]["brands"][brand]["models"][model]["browsers"][browser]["count"] += count
+            
+            def dict_to_sorted_list(d, children_key=None):
+                result = list(d.values())
+                result.sort(key=lambda x: x["count"], reverse=True)
+                if children_key:
+                    for item in result:
+                        if children_key in item:
+                            next_key = "models" if children_key == "brands" else ("browsers" if children_key == "models" else None)
+                            item[children_key] = dict_to_sorted_list(item[children_key], next_key)
+                return result
+                
+            sorted_hierarchy = dict_to_sorted_list(hierarchy, "brands")
+            
+            return {
+                "success": True,
+                "client": client_name,
+                "hierarchy": sorted_hierarchy
+            }
+            
+    except Exception as e:
+        logger.error(f"Error obteniendo jerarquía de dispositivos por cliente: {e}")
         return {"success": False, "error": str(e)}
 
 @app.get("/api/analytics/dashboard")
@@ -3023,7 +3090,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
             cursor.execute("""
                 SELECT id, campaign_code, client, destination, active 
                 FROM campaigns 
-                WHERE campaign_code = ?
+                WHERE campaign_code = %s
             """, (qr_request.campaign_code,))
             campaign = cursor.fetchone()
             
@@ -3041,7 +3108,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
                 cursor.execute("""
                     SELECT id, device_id, device_name, location, venue 
                     FROM physical_devices 
-                    WHERE device_id = ?
+                    WHERE device_id = %s
                 """, (qr_request.device_id,))
                 device = cursor.fetchone()
                 if device:
@@ -3358,11 +3425,11 @@ async def get_scans(
             params = []
             
             if campaign_code:
-                query += " AND campaign_code = ?"
+                query += " AND campaign_code = %s"
                 params.append(campaign_code)
             
             if device_id:
-                query += " AND device_id = ?"
+                query += " AND device_id = %s"
                 params.append(device_id)
             
             if client:
@@ -3644,7 +3711,7 @@ async def export_client_data(client_name: str, format: str = "json"):
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
                 LEFT JOIN physical_devices pd ON s.device_id = pd.device_id
-                WHERE c.client = ?
+                WHERE c.client = %s
                 ORDER BY s.scan_timestamp DESC
             """, (client_name,))
             scans = [dict(row) for row in cursor.fetchall()]
