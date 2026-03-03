@@ -2531,7 +2531,7 @@ async def get_client_analytics(client_name: str):
                     s.location, s.venue, s.user_device_type, s.browser, s.operating_system, 
                     s.duration_seconds, s.redirect_completed, s.device_brand, s.device_model,
                     s.connection_type, s.isp_carrier, s.ip_address,
-                    s.scan_id, c.description as campaign_name
+                    s.id as scan_id, c.description as campaign_name
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
                 WHERE c.client = %s
