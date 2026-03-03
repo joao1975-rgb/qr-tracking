@@ -524,9 +524,27 @@
         // =============================================
         // Se elimina la función startCountdown() porque ya no habrá retrasos
 
-        function goToDestination() {
-            // Marcar como completado
-            markRedirectComplete();
+        async function goToDestination() {
+            // Detener el reloj y forzar el envío del request 200 OK
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 800);
+
+                const timeSpent = Math.round((Date.now() - startTime) / 1000);
+                await fetch(`${API_BASE}/api/track/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: trackingData.sessionId,
+                        time_spent: timeSpent,
+                        completion_time: new Date().toISOString()
+                    }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+            } catch (err) {
+                console.log('Timeout de ping backend, forzando redirección.');
+            }
 
             // Mostrar éxito brevemente
             showSuccess();
@@ -683,27 +701,6 @@
             }).catch(err => console.log('Error enviando datos del dispositivo:', err));
         }
 
-        function markRedirectComplete() {
-            const timeSpent = Math.round((Date.now() - startTime) / 1000);
-
-            const completionData = {
-                session_id: trackingData.sessionId,
-                time_spent: timeSpent,
-                completion_time: new Date().toISOString()
-            };
-
-            // Usar fetch nativo con keepalive garantizando headers de Application/JSON
-            fetch(`${API_BASE}/api/track/complete`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(completionData),
-                keepalive: true
-            }).catch(console.error);
-
-            console.log('✅ Redirección completada:', completionData);
-        }
 
         // =============================================
         // EVENTOS

@@ -695,32 +695,35 @@ def get_db_connection():
 # ================================
 
 def detect_device_info(user_agent_string: str) -> Dict[str, str]:
-    """Detectar información del dispositivo desde User-Agent usando device-detector"""
+    """Detectar información del dispositivo desde User-Agent usando user-agents"""
     try:
-        device = DeviceDetector(user_agent_string).parse()
+        from user_agents import parse
+        user_agent = parse(user_agent_string)
         
         # Determinar tipo de dispositivo
-        device_type = device.device_type() if device.device_type() else "Unknown"
-        device_brand = device.device_brand() if device.device_brand() else "Unknown"
-        device_model = device.device_model() if device.device_model() else "Unknown"
-        
-        os_info = device.os_name()
-        if device.os_version():
-            os_info = f"{os_info} {device.os_version()}"
+        device_type = "Unknown"
+        if user_agent.is_mobile:
+            device_type = "smartphone"
+        elif user_agent.is_tablet:
+            device_type = "tablet"
+        elif user_agent.is_pc:
+            device_type = "desktop"
             
-        client_info = device.client_name()
-        if device.client_version():
-            client_info = f"{client_info} {device.client_version()}"
+        device_brand = user_agent.device.brand if user_agent.device.brand else "Unknown"
+        device_model = user_agent.device.model if user_agent.device.model else "Unknown"
+        
+        os_info = f"{user_agent.os.family} {user_agent.os.version_string}".strip()
+        browser_info = f"{user_agent.browser.family} {user_agent.browser.version_string}".strip()
             
         return {
             "device_type": device_type,
             "device_brand": device_brand,
             "device_model": device_model,
-            "browser": client_info if client_info else "Unknown",
+            "browser": browser_info if browser_info else "Unknown",
             "operating_system": os_info if os_info else "Unknown",
-            "is_mobile": device_type in ["smartphone", "feature phone", "phablet"],
-            "is_tablet": device_type == "tablet",
-            "is_pc": device_type == "desktop"
+            "is_mobile": user_agent.is_mobile,
+            "is_tablet": user_agent.is_tablet,
+            "is_pc": user_agent.is_pc
         }
     except Exception as e:
         logger.warning(f"Error detectando dispositivo: {e}")
