@@ -530,7 +530,7 @@
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 800);
 
-                const timeSpent = Math.round((Date.now() - startTime) / 1000);
+                const timeSpent = parseFloat(((Date.now() - startTime) / 1000).toFixed(3));
                 await fetch(`${API_BASE}/api/track/complete`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -648,8 +648,22 @@
 
                 canvas_hash: generateCanvasFingerprint(),
                 webgl_vendor: webglInfo.vendor,
-                webgl_renderer: webglInfo.renderer
+                webgl_renderer: webglInfo.renderer,
+                ua_model: null
             };
+
+            // ========================================
+            // USER-AGENT CLIENT HINTS
+            // Extraer el hash matemático del dispositivo (Ej. 2412DPC0AG)
+            // Diseñado para evadir la Política de Privacidad Web de Chrome/Android
+            // ========================================
+            if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+                try {
+                    const uaData = await navigator.userAgentData.getHighEntropyValues(["model"]);
+                    console.log('📱 Hash ClientHints Extraído:', uaData.model);
+                    deviceData.ua_model = uaData.model || null;
+                } catch (err) { }
+            }
 
             console.log('Enviando Device Data de Huella Final:', deviceData);
 
@@ -670,7 +684,7 @@
 
         // Registrar tiempo de permanencia antes de salir
         window.addEventListener('beforeunload', function () {
-            const timeSpent = Math.round((Date.now() - startTime) / 1000);
+            const timeSpent = parseFloat(((Date.now() - startTime) / 1000).toFixed(3));
 
             navigator.sendBeacon(`${API_BASE}/api/track/complete`, JSON.stringify({
                 session_id: trackingData.sessionId,

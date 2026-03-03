@@ -694,26 +694,32 @@ def get_db_connection():
 # FUNCIONES DE UTILIDAD
 # ================================
 
-def detect_device_info(user_agent_string: str) -> Dict[str, str]:
-    """Detectar información del dispositivo desde User-Agent usando user-agents"""
+def detect_device_info(user_agent_string: str, client_hint_model: str = None) -> Dict[str, str]:
+    """Detectar información del dispositivo usando device-detector con soporte ClientHints"""
     try:
-        from user_agents import parse
-        user_agent = parse(user_agent_string)
+        import re
+        from device_detector import DeviceDetector
+        
+        # Inyección de Client Hints si existe y es Android
+        if client_hint_model and "Android" in user_agent_string:
+            user_agent_string = re.sub(r'(Android [^;]+;)\s*[^)]+', rf'\1 {client_hint_model}', user_agent_string)
+            scans_logger.info(f"ClientHints Inyectado -> {client_hint_model}")
+            
+        device = DeviceDetector(user_agent_string).parse()
         
         # Determinar tipo de dispositivo
-        device_type = "Unknown"
-        if user_agent.is_mobile:
-            device_type = "smartphone"
-        elif user_agent.is_tablet:
-            device_type = "tablet"
-        elif user_agent.is_pc:
-            device_type = "desktop"
-            
-        device_brand = user_agent.device.brand if user_agent.device.brand else "Unknown"
-        device_model = user_agent.device.model if user_agent.device.model else "Unknown"
+        dtype = device.device_type()
+        is_mobile = dtype in ['smartphone', 'feature phone', 'phablet']
+        is_tablet = dtype == 'tablet'
+        is_pc = dtype == 'desktop'
         
-        os_info = f"{user_agent.os.family} {user_agent.os.version_string}".strip()
-        browser_info = f"{user_agent.browser.family} {user_agent.browser.version_string}".strip()
+        device_type = "smartphone" if is_mobile else "tablet" if is_tablet else "desktop" if is_pc else "Unknown"
+            
+        device_brand = device.device_brand() if device.device_brand() else "Unknown"
+        device_model = device.device_model() if device.device_model() else "Unknown"
+        
+        os_info = f"{device.os_name()} {device.os_version()}".strip()
+        browser_info = f"{device.client_name()} {device.client_version()}".strip()
             
         return {
             "device_type": device_type,
@@ -721,9 +727,9 @@ def detect_device_info(user_agent_string: str) -> Dict[str, str]:
             "device_model": device_model,
             "browser": browser_info if browser_info else "Unknown",
             "operating_system": os_info if os_info else "Unknown",
-            "is_mobile": user_agent.is_mobile,
-            "is_tablet": user_agent.is_tablet,
-            "is_pc": user_agent.is_pc
+            "is_mobile": is_mobile,
+            "is_tablet": is_tablet,
+            "is_pc": is_pc
         }
     except Exception as e:
         logger.warning(f"Error detectando dispositivo: {e}")
@@ -2572,6 +2578,21 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.device_pixel_ratio,
                 device_data.session_id
             ))
+            
+            # Refinar modelo si hay hash provisto por Client Hints JS (evadiendo filtro de Chrome Mobile)
+            if device_data.ua_model:
+                cursor.execute("SELECT user_agent, device_brand, device_model FROM scans WHERE session_id = %s", (device_data.session_id,))
+                result = cursor.fetchone()
+                if result and result["user_agent"]:
+                    refined_device = detect_device_info(result["user_agent"], client_hint_model=device_data.ua_model)
+                    new_brand = refined_device["device_brand"]
+                    new_model = refined_device["device_model"]
+                    
+                    if new_brand != "Unknown" or new_model != "Unknown":
+                        cursor.execute("""
+                            UPDATE scans SET device_brand = %s, device_model = %s WHERE session_id = %s
+                        """, (new_brand, new_model, device_data.session_id))
+                        scans_logger.info(f"Dispositivo Refinado con IA: {new_brand} {new_model} (Hash: {device_data.ua_model})")
             conn.commit()
             
             if cursor.rowcount == 0:
