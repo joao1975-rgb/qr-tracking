@@ -1786,6 +1786,13 @@
             tbody.innerHTML = scans.map((scan, index) => {
                 const date = new Date(scan.scan_timestamp);
 
+                const formattedDate = date.toLocaleDateString('es-ES', {
+                    day: '2-digit', month: '2-digit', year: '2-digit'
+                });
+                const formattedTime = date.toLocaleTimeString('es-ES', {
+                    hour: '2-digit', minute: '2-digit'
+                });
+
                 let durationText = '-';
                 if (scan.duration_seconds !== null && scan.duration_seconds !== undefined) {
                     const duration = parseFloat(scan.duration_seconds);
