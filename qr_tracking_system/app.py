@@ -161,6 +161,17 @@ def adapt_query(query: str) -> str:
     
     return adapted
 
+# Clase de cursor personalizada para PostgreSQL 
+# Esto intercepta todos los llamados a la BD para traducir la sintaxis de SQLite a Postgres autómaticamente
+if POSTGRES_AVAILABLE:
+    class AdaptedCursor(psycopg2.extras.RealDictCursor):
+        """Cursor que adapta consultas SQLite a PostgreSQL al vuelo"""
+        def execute(self, query, vars=None):
+            return super().execute(adapt_query(query), vars)
+
+        def executemany(self, query, vars_list):
+            return super().executemany(adapt_query(query), vars_list)
+
 # ================================
 # CONFIGURACIÓN DE DIRECTORIOS
 # ================================
@@ -841,7 +852,10 @@ def get_db_connection():
     if IS_POSTGRES:
         # PostgreSQL (Neon/Cloud)
         conn = psycopg2.connect(DATABASE_URL)
-        conn.cursor_factory = psycopg2.extras.RealDictCursor
+        if POSTGRES_AVAILABLE:
+            conn.cursor_factory = AdaptedCursor
+        else:
+            conn.cursor_factory = psycopg2.extras.RealDictCursor
         return conn
     else:
         # SQLite (desarrollo local)
@@ -2096,10 +2110,14 @@ async def create_campaign(campaign: CampaignCreate):
                 campaign.description, campaign.active
             ))
             conn.commit()
-            campaign_id = cursor.lastrowid
+            if IS_POSTGRES:
+                cursor.execute("SELECT lastval()")
+                campaign_id = cursor.fetchone()['lastval']
+            else:
+                campaign_id = cursor.lastrowid
             
             # Obtener la campaña creada
-            cursor.execute(adapt_query("SELECT * FROM campaigns WHERE id = ?"), (campaign_id,))
+            cursor.execute("SELECT * FROM campaigns WHERE id = ?", (campaign_id,))
             new_campaign = dict(cursor.fetchone())
         
         logger.info(f"Campaña creada: {campaign.campaign_code}")
@@ -2350,7 +2368,11 @@ async def create_device(device: DeviceCreate):
                 device.location, device.venue, device.description, device.active
             ))
             conn.commit()
-            device_pk_id = cursor.lastrowid
+            if IS_POSTGRES:
+                cursor.execute("SELECT lastval()")
+                device_pk_id = cursor.fetchone()['lastval']
+            else:
+                device_pk_id = cursor.lastrowid
             
             # Obtener el dispositivo creado
             cursor.execute("SELECT * FROM physical_devices WHERE id = ?", (device_pk_id,))
@@ -2362,10 +2384,12 @@ async def create_device(device: DeviceCreate):
             "message": "Dispositivo creado exitosamente",
             "device": new_device
         }
-    except sqlite3.IntegrityError as e:
-        logger.error(f"Error de integridad: {e}")
-        return {"success": False, "error": "El ID del dispositivo ya existe"}
     except Exception as e:
+        # Check if it's an integrity error from psycopg2 or sqlite3
+        if "IntegrityError" in type(e).__name__:
+            logger.error(f"Error de integridad: {e}")
+            return {"success": False, "error": "El ID del dispositivo ya existe"}
+            
         logger.error(f"Error creando dispositivo: {e}")
         return {"success": False, "error": str(e)}
 
