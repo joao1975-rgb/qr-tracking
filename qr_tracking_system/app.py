@@ -2620,6 +2620,72 @@ async def complete_tracking(request: Request):
 # APIs DE ANALYTICS
 # ================================
 
+@app.get("/api/analytics/device-hierarchy")
+async def get_device_hierarchy():
+    """Obtener jerarquía de dispositivos (Tipo -> Marca -> Modelo -> Navegador)"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT 
+                    COALESCE(user_device_type, 'Unknown') as device_type,
+                    COALESCE(device_brand, 'Unknown') as device_brand,
+                    COALESCE(device_model, 'Unknown') as device_model,
+                    COALESCE(browser, 'Unknown') as browser,
+                    COUNT(*) as count
+                FROM scans
+                GROUP BY user_device_type, device_brand, device_model, browser
+                ORDER BY count DESC
+            """)
+            
+            rows = cursor.fetchall()
+            
+            hierarchy = {}
+            for row in rows:
+                dtype = row["device_type"]
+                brand = row["device_brand"]
+                model = row["device_model"]
+                browser = row["browser"]
+                count = row["count"]
+                
+                if dtype not in hierarchy:
+                    hierarchy[dtype] = {"name": dtype, "count": 0, "brands": {}}
+                hierarchy[dtype]["count"] += count
+                
+                if brand not in hierarchy[dtype]["brands"]:
+                    hierarchy[dtype]["brands"][brand] = {"name": brand, "count": 0, "models": {}}
+                hierarchy[dtype]["brands"][brand]["count"] += count
+                
+                if model not in hierarchy[dtype]["brands"][brand]["models"]:
+                    hierarchy[dtype]["brands"][brand]["models"][model] = {"name": model, "count": 0, "browsers": {}}
+                hierarchy[dtype]["brands"][brand]["models"][model]["count"] += count
+                
+                if browser not in hierarchy[dtype]["brands"][brand]["models"][model]["browsers"]:
+                    hierarchy[dtype]["brands"][brand]["models"][model]["browsers"][browser] = {"name": browser, "count": 0}
+                hierarchy[dtype]["brands"][brand]["models"][model]["browsers"][browser]["count"] += count
+            
+            def dict_to_sorted_list(d, children_key=None):
+                result = list(d.values())
+                result.sort(key=lambda x: x["count"], reverse=True)
+                if children_key:
+                    for item in result:
+                        if children_key in item:
+                            next_key = "models" if children_key == "brands" else ("browsers" if children_key == "models" else None)
+                            item[children_key] = dict_to_sorted_list(item[children_key], next_key)
+                return result
+                
+            sorted_hierarchy = dict_to_sorted_list(hierarchy, "brands")
+            
+            return {
+                "success": True,
+                "hierarchy": sorted_hierarchy
+            }
+            
+    except Exception as e:
+        logger.error(f"Error obteniendo jerarquía de dispositivos: {e}")
+        return {"success": False, "error": str(e)}
+
 @app.get("/api/analytics/dashboard")
 async def get_dashboard_analytics():
     """Obtener datos completos para el dashboard"""
@@ -3320,7 +3386,8 @@ async def get_scans(
             # Contar total de registros
             count_query = query.replace("SELECT *", "SELECT COUNT(*)").split("ORDER BY")[0]
             cursor.execute(count_query, params[:-2])  # Sin limit y offset
-            total = cursor.fetchone()[0]
+            row = cursor.fetchone()
+            total = list(row.values())[0] if row else 0
         
         return {
             "success": True,
