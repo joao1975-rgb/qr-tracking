@@ -49,7 +49,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-import sqlite3
 import base64
 import io
 
@@ -73,20 +72,16 @@ except ImportError:
     pass
 
 # Configuración de base de datos
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///qr_tracking.db")
-IS_POSTGRES = DATABASE_URL.startswith("postgresql")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://qr_admin:pass@localhost:5432/qr_database")
 
-# Importar psycopg2 si usamos PostgreSQL
-if IS_POSTGRES:
-    try:
-        import psycopg2
-        import psycopg2.extras
-        POSTGRES_AVAILABLE = True
-    except ImportError:
-        POSTGRES_AVAILABLE = False
-        print("⚠️  ADVERTENCIA: psycopg2 no instalado. Ejecute: pip install psycopg2-binary")
-else:
-    POSTGRES_AVAILABLE = False
+# Importar dependencias de PostgreSQL obligatorias
+try:
+    import psycopg2
+    import psycopg2.extras
+except ImportError:
+    print("⚠️  ADVERTENCIA: psycopg2 no instalado. Ejecute: pip install psycopg2-binary")
+    import sys
+    sys.exit(1)
 
 import json
 import os
@@ -128,70 +123,6 @@ except ImportError:
 
 
 # ================================
-# ADAPTADOR DE QUERIES SQL
-# ================================
-
-def adapt_query(query: str) -> str:
-    """
-    Adapta una consulta SQL de SQLite a PostgreSQL si es necesario.
-    """
-    if not IS_POSTGRES:
-        return query
-    
-    adapted = query
-    
-    # Reemplazar ? por %s (placeholders)
-    adapted = adapted.replace("?", "%s")
-    
-    # datetime('now', '-X hours/days') → NOW() - INTERVAL 'X hours/days'
-    adapted = regex_module.sub(
-        r"datetime\s*\(\s*'now'\s*,\s*'(-?\d+)\s*(hours?|days?|minutes?|seconds?)'\s*\)",
-        r"NOW() - INTERVAL '\1 \2'",
-        adapted,
-        flags=regex_module.IGNORECASE
-    )
-    
-    # 3. datetime('now') → NOW()
-    adapted = regex_module.sub(
-        r"datetime\s*\(\s*'now'\s*\)",
-        "NOW()",
-        adapted,
-        flags=regex_module.IGNORECASE
-    )
-    
-    # 4. DATE(col) -> CAST(col AS DATE)
-    adapted = regex_module.sub(
-        r"DATE\s*\(\s*([a-zA-Z0-9_\.]+)\s*\)",
-        r"CAST(\1 AS DATE)",
-        adapted,
-        flags=regex_module.IGNORECASE
-    )
-    
-    # 5. strftime('%H', col) -> EXTRACT(HOUR FROM col)
-    # Reemplazar la variante condicional entera (con CAST explícito previo si lo hubiera) y la variante suelta
-    adapted = adapted.replace("CAST(strftime('%H', scan_timestamp) AS INTEGER)", "EXTRACT(HOUR FROM scan_timestamp)::INTEGER")
-    adapted = adapted.replace("strftime('%H', scan_timestamp)", "EXTRACT(HOUR FROM scan_timestamp)")
-    
-    # 6. Boolean translation (SQLite 1/0 -> Postgres true/false)
-    adapted = adapted.replace("active = 1", "active = true")
-    adapted = adapted.replace("active = 0", "active = false")
-    adapted = adapted.replace("redirect_completed = 1", "redirect_completed = true")
-    adapted = adapted.replace("redirect_completed = 0", "redirect_completed = false")
-    
-    return adapted
-
-# Clase de cursor personalizada para PostgreSQL 
-# Esto intercepta todos los llamados a la BD para traducir la sintaxis de SQLite a Postgres autómaticamente
-if POSTGRES_AVAILABLE:
-    class AdaptedCursor(psycopg2.extras.RealDictCursor):
-        """Cursor que adapta consultas SQLite a PostgreSQL al vuelo"""
-        def execute(self, query, vars=None):
-            return super().execute(adapt_query(query), vars)
-
-        def executemany(self, query, vars_list):
-            return super().executemany(adapt_query(query), vars_list)
-
-# ================================
 # CONFIGURACIÓN DE DIRECTORIOS
 # ================================
 
@@ -206,9 +137,8 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 for directory in [LOGS_DIR, BACKUPS_DIR, STATIC_DIR, TEMPLATES_DIR]:
     os.makedirs(directory, exist_ok=True)
 
-# Base de datos
-# Ruta de base de datos (solo para SQLite)
-DATABASE_PATH = os.path.join(BASE_DIR, "qr_tracking.db") if not IS_POSTGRES else DATABASE_URL
+# Ruta de base de datos
+DATABASE_PATH = DATABASE_URL
 
 # ================================
 # CONFIGURACIÓN DE LOGGING AVANZADO
@@ -311,10 +241,9 @@ def create_backup(backup_type: str = "auto") -> Optional[str]:
         
     NOTA: En PostgreSQL (Cloud/Neon), los backups se manejan automáticamente.
     """
-    # En PostgreSQL, los backups los maneja Neon automáticamente
-    if IS_POSTGRES:
-        logger.info("Backups automáticos manejados por Neon en modo PostgreSQL")
-        return None
+    # En PostgreSQL, los backups se manejan desde la infraestructura
+    logger.info("Backups manejados por el servidor en modo PostgreSQL")
+    return None
         
     try:
         if not os.path.exists(DATABASE_PATH):
@@ -603,160 +532,49 @@ def init_database():
             create_basic_schema(conn)
             # Verificar que las tablas existan
             cursor = conn.cursor()
-            if IS_POSTGRES:
-                cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-                tables = cursor.fetchall()
-                table_names = [t['table_name'] if isinstance(t, dict) else t[0] for t in tables]
-            else:
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-                tables = cursor.fetchall()
-                table_names = [table[0] if isinstance(table, tuple) else table['name'] for table in tables]
+            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+            tables = cursor.fetchall()
+            table_names = [t['table_name'] if isinstance(t, dict) else t[0] for t in tables]
             logger.info(f"Tablas en base de datos: {table_names}")
         logger.info("Base de datos inicializada correctamente")
     except Exception as e:
         logger.error(f"Error inicializando base de datos: {e}")
 
 def create_basic_schema(conn):
-    """Crear esquema básico si no existe el archivo SQL"""
+    """Crear esquema PostgreSQL"""
     cursor = conn.cursor()
     
-    if IS_POSTGRES:
-        # PostgreSQL Schema
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS campaigns (
-                id SERIAL PRIMARY KEY,
-                campaign_code TEXT NOT NULL UNIQUE,
-                client TEXT NOT NULL,
-                destination TEXT NOT NULL,
-                description TEXT,
-                active BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS physical_devices (
-                id SERIAL PRIMARY KEY,
-                device_id TEXT NOT NULL UNIQUE,
-                device_name TEXT,
-                device_type TEXT,
-                location TEXT,
-                venue TEXT,
-                description TEXT,
-                active BOOLEAN DEFAULT TRUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS scans (
-                id SERIAL PRIMARY KEY,
-                campaign_code TEXT NOT NULL,
-                client TEXT,
-                destination TEXT,
-                device_id TEXT,
-                device_name TEXT,
-                location TEXT,
-                venue TEXT,
-                user_device_type TEXT,
-                browser TEXT,
-                operating_system TEXT,
-                screen_resolution TEXT,
-                viewport_size TEXT,
-                timezone TEXT,
-                language TEXT,
-                platform TEXT,
-                connection_type TEXT,
-                user_agent TEXT,
-                ip_address TEXT,
-                country TEXT,
-                city TEXT,
-                session_id TEXT,
-                scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                redirect_completed BOOLEAN DEFAULT FALSE,
-                redirect_timestamp TIMESTAMP,
-                duration_seconds REAL,
-                campaign_id INTEGER,
-                physical_device_id INTEGER,
-                utm_source TEXT,
-                utm_medium TEXT,
-                utm_campaign TEXT,
-                utm_term TEXT,
-                utm_content TEXT,
-                cpu_cores INTEGER,
-                device_pixel_ratio REAL,
-                device_brand TEXT,
-                device_model TEXT
-            )
-        """)
-        
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS qr_generations (
-                id SERIAL PRIMARY KEY,
-                campaign_id INTEGER,
-                physical_device_id INTEGER,
-                qr_size INTEGER,
-                generated_by TEXT,
-                generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        
-        # Crear índices para PostgreSQL (ignorar si ya existen)
-        indices = [
-            "CREATE INDEX IF NOT EXISTS idx_scans_campaign ON scans(campaign_code)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_device ON scans(device_id)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(scan_timestamp)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_session ON scans(session_id)",
-            "CREATE INDEX IF NOT EXISTS idx_campaigns_client ON campaigns(client)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_ip ON scans(ip_address)",
-            "CREATE INDEX IF NOT EXISTS idx_scans_utm_source ON scans(utm_source)"
-        ]
-        for idx in indices:
-            try:
-                cursor.execute(idx)
-            except:
-                pass
-        
-        conn.commit()
-        return
-    
-    # SQLite Schema (original)
-    # Crear tabla campaigns
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS campaigns (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             campaign_code TEXT NOT NULL UNIQUE,
             client TEXT NOT NULL,
             destination TEXT NOT NULL,
             description TEXT,
-            active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+            active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
     """)
     
-    # Crear tabla physical_devices
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS physical_devices (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             device_id TEXT NOT NULL UNIQUE,
             device_name TEXT,
             device_type TEXT,
             location TEXT,
             venue TEXT,
             description TEXT,
-            active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+            active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
     """)
     
-    # Crear tabla scans (con campos adicionales para datos del dispositivo)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS scans (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             campaign_code TEXT NOT NULL,
             client TEXT,
             destination TEXT,
@@ -778,9 +596,9 @@ def create_basic_schema(conn):
             country TEXT,
             city TEXT,
             session_id TEXT,
-            scan_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            redirect_completed BOOLEAN DEFAULT 0,
-            redirect_timestamp DATETIME,
+            scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            redirect_completed BOOLEAN DEFAULT FALSE,
+            redirect_timestamp TIMESTAMP,
             duration_seconds REAL,
             campaign_id INTEGER,
             physical_device_id INTEGER,
@@ -793,29 +611,35 @@ def create_basic_schema(conn):
             device_pixel_ratio REAL,
             device_brand TEXT,
             device_model TEXT
-        );
+        )
     """)
     
-    # Crear tabla qr_generations
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS qr_generations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             campaign_id INTEGER,
             physical_device_id INTEGER,
             qr_size INTEGER,
             generated_by TEXT,
-            generated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
+            generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
     """)
     
-    # Crear índices para mejor rendimiento
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_campaign ON scans(campaign_code);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_device ON scans(device_id);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(scan_timestamp);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_session ON scans(session_id);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_client ON campaigns(client);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_ip ON scans(ip_address);")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_utm_source ON scans(utm_source);")
+    # Crear índices
+    indices = [
+        "CREATE INDEX IF NOT EXISTS idx_scans_campaign ON scans(campaign_code)",
+        "CREATE INDEX IF NOT EXISTS idx_scans_device ON scans(device_id)",
+        "CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(scan_timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_scans_session ON scans(session_id)",
+        "CREATE INDEX IF NOT EXISTS idx_campaigns_client ON campaigns(client)",
+        "CREATE INDEX IF NOT EXISTS idx_scans_ip ON scans(ip_address)",
+        "CREATE INDEX IF NOT EXISTS idx_scans_utm_source ON scans(utm_source)"
+    ]
+    for idx in indices:
+        try:
+            cursor.execute(idx)
+        except:
+            pass
     
     conn.commit()
     
@@ -827,12 +651,8 @@ def migrate_database(conn):
     cursor = conn.cursor()
     
     # Obtener columnas existentes en la tabla scans
-    if IS_POSTGRES:
-        cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scans'")
-        existing_columns = [col['column_name'] if isinstance(col, dict) else col[0] for col in cursor.fetchall()]
-    else:
-        cursor.execute("PRAGMA table_info(scans)")
-        existing_columns = [col[1] for col in cursor.fetchall()]
+    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scans'")
+    existing_columns = [col['column_name'] if isinstance(col, dict) else col[0] for col in cursor.fetchall()]
     
     # Columnas nuevas a agregar (v2.7.3)
     new_columns = {
@@ -852,14 +672,11 @@ def migrate_database(conn):
         if column_name not in existing_columns:
             try:
                 try:
-                    if IS_POSTGRES:
-                        cursor.execute(f"ALTER TABLE scans ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
-                    else:
-                        cursor.execute(f"ALTER TABLE scans ADD COLUMN {column_name} {column_type}")
+                    cursor.execute(f"ALTER TABLE scans ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
                 except Exception:
                     pass
                 logger.info(f"Columna '{column_name}' agregada a tabla scans")
-            except sqlite3.OperationalError as e:
+            except Exception as e:
                 # La columna ya existe (puede ocurrir en casos edge)
                 logger.debug(f"Columna '{column_name}' ya existe o error: {e}")
     
@@ -867,20 +684,10 @@ def migrate_database(conn):
     logger.info("Migración de base de datos completada")
 
 def get_db_connection():
-    """Obtener conexión a la base de datos (SQLite o PostgreSQL)"""
-    if IS_POSTGRES:
-        # PostgreSQL (Neon/Cloud)
-        conn = psycopg2.connect(DATABASE_URL)
-        if POSTGRES_AVAILABLE:
-            conn.cursor_factory = AdaptedCursor
-        else:
-            conn.cursor_factory = psycopg2.extras.RealDictCursor
-        return conn
-    else:
-        # SQLite (desarrollo local)
-        conn = sqlite3.connect(DATABASE_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
+    """Obtener conexión a la base de datos PostgreSQL"""
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.cursor_factory = psycopg2.extras.RealDictCursor
+    return conn
 
 # ================================
 # FUNCIONES DE UTILIDAD
@@ -1918,7 +1725,7 @@ async def track_qr_scan(request: Request, background_tasks: BackgroundTasks):
         # Buscar información de la campaña en la base de datos
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(adapt_query("SELECT destination, client FROM campaigns WHERE campaign_code = ?"), (campaign_code,))
+            cursor.execute("SELECT destination, client FROM campaigns WHERE campaign_code = %s", (campaign_code,))
             result = cursor.fetchone()
             if result:
                 if not destination:
@@ -1982,7 +1789,7 @@ def process_scan_background(campaign_code: str, client: str, destination: str,
                     user_agent, ip_address, session_id, scan_timestamp,
                     utm_source, utm_medium, utm_campaign, utm_term, utm_content,
                     device_brand, device_model
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
@@ -2123,20 +1930,17 @@ async def create_campaign(campaign: CampaignCreate):
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO campaigns (campaign_code, client, destination, description, active)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s)
             """, (
                 campaign.campaign_code, campaign.client, campaign.destination,
                 campaign.description, campaign.active
             ))
             conn.commit()
-            if IS_POSTGRES:
-                cursor.execute("SELECT lastval()")
-                campaign_id = cursor.fetchone()['lastval']
-            else:
-                campaign_id = cursor.lastrowid
+            cursor.execute("SELECT lastval()")
+            campaign_id = cursor.fetchone()['lastval']
             
             # Obtener la campaña creada
-            cursor.execute("SELECT * FROM campaigns WHERE id = ?", (campaign_id,))
+            cursor.execute("SELECT * FROM campaigns WHERE id = %s", (campaign_id,))
             new_campaign = dict(cursor.fetchone())
         
         logger.info(f"Campaña creada: {campaign.campaign_code}")
@@ -2159,7 +1963,7 @@ async def update_campaign(campaign_code: str, campaign_update: CampaignUpdate):
             cursor = conn.cursor()
             
             # Verificar que la campaña existe
-            cursor.execute(adapt_query("SELECT id FROM campaigns WHERE campaign_code = ?"), (campaign_code,))
+            cursor.execute("SELECT id FROM campaigns WHERE campaign_code = %s", (campaign_code,))
             if not cursor.fetchone():
                 return {"success": False, "error": "Campaña no encontrada"}
             
@@ -2168,16 +1972,16 @@ async def update_campaign(campaign_code: str, campaign_update: CampaignUpdate):
             values = []
             
             if campaign_update.client is not None:
-                update_fields.append("client = ?")
+                update_fields.append("client = %s")
                 values.append(campaign_update.client)
             if campaign_update.destination is not None:
-                update_fields.append("destination = ?")
+                update_fields.append("destination = %s")
                 values.append(campaign_update.destination)
             if campaign_update.description is not None:
-                update_fields.append("description = ?")
+                update_fields.append("description = %s")
                 values.append(campaign_update.description)
             if campaign_update.active is not None:
-                update_fields.append("active = ?")
+                update_fields.append("active = %s")
                 values.append(campaign_update.active)
             
             if not update_fields:
@@ -2186,7 +1990,7 @@ async def update_campaign(campaign_code: str, campaign_update: CampaignUpdate):
             update_fields.append("updated_at = CURRENT_TIMESTAMP")
             values.append(campaign_code)
             
-            query = f"UPDATE campaigns SET {', '.join(update_fields)} WHERE campaign_code = ?"
+            query = f"UPDATE campaigns SET {', '.join(update_fields)} WHERE campaign_code = %s"
             cursor.execute(query, values)
             conn.commit()
         
@@ -2204,7 +2008,7 @@ async def pause_campaign(campaign_code: str):
             cursor = conn.cursor()
             
             # Obtener estado actual
-            cursor.execute(adapt_query("SELECT active, client FROM campaigns WHERE campaign_code = ?"), (campaign_code,))
+            cursor.execute("SELECT active, client FROM campaigns WHERE campaign_code = %s", (campaign_code,))
             result = cursor.fetchone()
             
             if not result:
@@ -2217,8 +2021,8 @@ async def pause_campaign(campaign_code: str):
             # Cambiar estado
             cursor.execute("""
                 UPDATE campaigns 
-                SET active = ?, updated_at = CURRENT_TIMESTAMP 
-                WHERE campaign_code = ?
+                SET active = %s, updated_at = CURRENT_TIMESTAMP 
+                WHERE campaign_code = %s
             """, (new_active, campaign_code))
             conn.commit()
         
@@ -2242,7 +2046,7 @@ async def get_campaign_tracking_url(campaign_code: str, request: Request):
             cursor.execute("""
                 SELECT campaign_code, client, destination, description 
                 FROM campaigns 
-                WHERE campaign_code = ?
+                WHERE campaign_code = %s
             """, (campaign_code,))
             campaign = cursor.fetchone()
             
@@ -2290,7 +2094,7 @@ async def delete_campaign(campaign_code: str):
             cursor = conn.cursor()
             
             # Verificar que la campaña existe y obtener información
-            cursor.execute("SELECT client, description FROM campaigns WHERE campaign_code = ?", (campaign_code,))
+            cursor.execute("SELECT client, description FROM campaigns WHERE campaign_code = %s", (campaign_code,))
             campaign_row = cursor.fetchone()
             
             if not campaign_row:
@@ -2299,7 +2103,7 @@ async def delete_campaign(campaign_code: str):
             client = campaign_row["client"]
             
             # Eliminar la campaña completamente
-            cursor.execute("DELETE FROM campaigns WHERE campaign_code = ?", (campaign_code,))
+            cursor.execute("DELETE FROM campaigns WHERE campaign_code = %s", (campaign_code,))
             
             if cursor.rowcount == 0:
                 return {"success": False, "error": "No se pudo eliminar la campaña"}
@@ -2348,7 +2152,7 @@ async def get_device(device_id: str):
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM physical_devices WHERE device_id = ?", (device_id,))
+            cursor.execute("SELECT * FROM physical_devices WHERE device_id = %s", (device_id,))
             device_row = cursor.fetchone()
             
             if not device_row:
@@ -2374,27 +2178,24 @@ async def create_device(device: DeviceCreate):
             cursor = conn.cursor()
             
             # Verificar que el device_id no exista ya
-            cursor.execute("SELECT id FROM physical_devices WHERE device_id = ?", (device.device_id,))
+            cursor.execute("SELECT id FROM physical_devices WHERE device_id = %s", (device.device_id,))
             if cursor.fetchone():
                 logger.warning(f"Dispositivo ya existe: {device.device_id}")
                 return {"success": False, "error": "El ID del dispositivo ya existe"}
             
             cursor.execute("""
                 INSERT INTO physical_devices (device_id, device_name, device_type, location, venue, description, active)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (
                 device.device_id, device.device_name, device.device_type,
                 device.location, device.venue, device.description, device.active
             ))
             conn.commit()
-            if IS_POSTGRES:
-                cursor.execute("SELECT lastval()")
-                device_pk_id = cursor.fetchone()['lastval']
-            else:
-                device_pk_id = cursor.lastrowid
+            cursor.execute("SELECT lastval()")
+            device_pk_id = cursor.fetchone()['lastval']
             
             # Obtener el dispositivo creado
-            cursor.execute("SELECT * FROM physical_devices WHERE id = ?", (device_pk_id,))
+            cursor.execute("SELECT * FROM physical_devices WHERE id = %s", (device_pk_id,))
             new_device = dict(cursor.fetchone())
         
         logger.info(f"Dispositivo creado exitosamente: {device.device_id}")
@@ -2422,7 +2223,7 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
             cursor = conn.cursor()
             
             # Verificar que el dispositivo existe
-            cursor.execute("SELECT id FROM physical_devices WHERE device_id = ?", (device_id,))
+            cursor.execute("SELECT id FROM physical_devices WHERE device_id = %s", (device_id,))
             if not cursor.fetchone():
                 return {"success": False, "error": "Dispositivo no encontrado"}
             
@@ -2431,22 +2232,22 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
             values = []
             
             if device_update.device_name is not None:
-                update_fields.append("device_name = ?")
+                update_fields.append("device_name = %s")
                 values.append(device_update.device_name)
             if device_update.device_type is not None:
-                update_fields.append("device_type = ?")
+                update_fields.append("device_type = %s")
                 values.append(device_update.device_type)
             if device_update.location is not None:
-                update_fields.append("location = ?")
+                update_fields.append("location = %s")
                 values.append(device_update.location)
             if device_update.venue is not None:
-                update_fields.append("venue = ?")
+                update_fields.append("venue = %s")
                 values.append(device_update.venue)
             if device_update.description is not None:
-                update_fields.append("description = ?")
+                update_fields.append("description = %s")
                 values.append(device_update.description)
             if device_update.active is not None:
-                update_fields.append("active = ?")
+                update_fields.append("active = %s")
                 values.append(device_update.active)
             
             if not update_fields:
@@ -2455,7 +2256,7 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
             update_fields.append("updated_at = CURRENT_TIMESTAMP")
             values.append(device_id)
             
-            query = f"UPDATE physical_devices SET {', '.join(update_fields)} WHERE device_id = ?"
+            query = f"UPDATE physical_devices SET {', '.join(update_fields)} WHERE device_id = %s"
             cursor.execute(query, values)
             conn.commit()
             
@@ -2463,7 +2264,7 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
                 return {"success": False, "error": "No se pudo actualizar el dispositivo"}
             
             # Obtener el dispositivo actualizado
-            cursor.execute("SELECT * FROM physical_devices WHERE device_id = ?", (device_id,))
+            cursor.execute("SELECT * FROM physical_devices WHERE device_id = %s", (device_id,))
             updated_device = dict(cursor.fetchone())
         
         logger.info(f"Dispositivo actualizado: {device_id}")
@@ -2486,7 +2287,7 @@ async def delete_device(device_id: str):
             cursor = conn.cursor()
             
             # Verificar que el dispositivo existe y obtener información
-            cursor.execute("SELECT device_name FROM physical_devices WHERE device_id = ?", (device_id,))
+            cursor.execute("SELECT device_name FROM physical_devices WHERE device_id = %s", (device_id,))
             device_row = cursor.fetchone()
             if not device_row:
                 return {"success": False, "error": "Dispositivo no encontrado"}
@@ -2494,7 +2295,7 @@ async def delete_device(device_id: str):
             device_name = device_row["device_name"]
             
             # Eliminar el dispositivo completamente
-            cursor.execute("DELETE FROM physical_devices WHERE device_id = ?", (device_id,))
+            cursor.execute("DELETE FROM physical_devices WHERE device_id = %s", (device_id,))
             
             if cursor.rowcount == 0:
                 return {"success": False, "error": "No se pudo eliminar el dispositivo"}
@@ -2558,7 +2359,7 @@ async def get_client_analytics(client_name: str):
             cursor = conn.cursor()
             
             # Verificar que el cliente existe
-            cursor.execute("SELECT COUNT(*) FROM campaigns WHERE client = ?", (client_name,))
+            cursor.execute("SELECT COUNT(*) FROM campaigns WHERE client = %s", (client_name,))
             if cursor.fetchone()[0] == 0:
                 return {"success": False, "error": "Cliente no encontrado"}
             
@@ -2566,17 +2367,17 @@ async def get_client_analytics(client_name: str):
             cursor.execute("""
                 SELECT 
                     COUNT(DISTINCT c.id) as total_campaigns,
-                    COUNT(DISTINCT CASE WHEN c.active = 1 THEN c.id END) as active_campaigns,
+                    COUNT(DISTINCT CASE WHEN c.active = TRUE THEN c.id END) as active_campaigns,
                     COALESCE(COUNT(s.id), 0) as total_scans,
-                    COALESCE(COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END), 0) as completed_redirects,
-                    ROUND(COALESCE(AVG(s.duration_seconds), 0), 2) as avg_duration,
+                    COALESCE(COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END), 0) as completed_redirects,
+                    ROUND(COALESCE(AVG(s.duration_seconds), 0)::numeric, 2) as avg_duration,
                     COUNT(DISTINCT s.ip_address) as unique_visitors,
                     COUNT(DISTINCT s.device_id) as unique_devices,
                     MIN(s.scan_timestamp) as first_scan,
                     MAX(s.scan_timestamp) as last_scan
                 FROM campaigns c
                 LEFT JOIN scans s ON c.campaign_code = s.campaign_code
-                WHERE c.client = ?
+                WHERE c.client = %s
             """, (client_name,))
             stats = dict(cursor.fetchone())
             
@@ -2595,11 +2396,11 @@ async def get_client_analytics(client_name: str):
                     c.active,
                     c.created_at,
                     COUNT(s.id) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds), 2) as avg_duration
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
+                    ROUND(AVG(s.duration_seconds)::numeric, 2) as avg_duration
                 FROM campaigns c
                 LEFT JOIN scans s ON c.campaign_code = s.campaign_code
-                WHERE c.client = ?
+                WHERE c.client = %s
                 GROUP BY c.id
                 ORDER BY scans DESC
             """, (client_name,))
@@ -2608,13 +2409,13 @@ async def get_client_analytics(client_name: str):
             # Actividad por día (últimos 30 días)
             cursor.execute("""
                 SELECT 
-                    DATE(s.scan_timestamp) as date,
+                    CAST(s.scan_timestamp AS DATE) as date,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = ? AND s.scan_timestamp >= datetime('now', '-30 days')
-                GROUP BY DATE(s.scan_timestamp)
+                WHERE c.client = %s AND s.scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '30 days'
+                GROUP BY CAST(s.scan_timestamp AS DATE)
                 ORDER BY date
             """, (client_name,))
             daily_activity = [dict(row) for row in cursor.fetchall()]
@@ -2627,11 +2428,11 @@ async def get_client_analytics(client_name: str):
                     s.location,
                     s.venue,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = ? AND s.device_id IS NOT NULL AND s.device_id != ''
-                GROUP BY s.device_id
+                WHERE c.client = %s AND s.device_id IS NOT NULL AND s.device_id != ''
+                GROUP BY s.device_id, s.device_name, s.location, s.venue
                 ORDER BY scans DESC
                 LIMIT 10
             """, (client_name,))
@@ -2644,7 +2445,7 @@ async def get_client_analytics(client_name: str):
                     COUNT(*) as count
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = ?
+                WHERE c.client = %s
                 GROUP BY s.user_device_type
                 ORDER BY count DESC
             """, (client_name,))
@@ -2657,7 +2458,7 @@ async def get_client_analytics(client_name: str):
                     COUNT(*) as count
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = ?
+                WHERE c.client = %s
                 GROUP BY COALESCE(NULLIF(s.device_brand, ''), 'Desconocida')
                 ORDER BY count DESC
             """, (client_name,))
@@ -2670,7 +2471,7 @@ async def get_client_analytics(client_name: str):
                     COUNT(*) as count
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = ?
+                WHERE c.client = %s
                 GROUP BY COALESCE(NULLIF(s.browser, ''), 'Desconocido')
                 ORDER BY count DESC
             """, (client_name,))
@@ -2684,7 +2485,7 @@ async def get_client_analytics(client_name: str):
                     COUNT(DISTINCT s.ip_address) as unique_visitors
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = ?
+                WHERE c.client = %s
                 GROUP BY COALESCE(NULLIF(s.venue, ''), NULLIF(s.location, ''), 'Desconocida')
                 ORDER BY scans DESC
             """, (client_name,))
@@ -2698,7 +2499,7 @@ async def get_client_analytics(client_name: str):
                     s.duration_seconds, s.redirect_completed, s.device_brand, s.device_model
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = ?
+                WHERE c.client = %s
                 ORDER BY s.scan_timestamp DESC
                 LIMIT 500
             """, (client_name,))
@@ -2733,17 +2534,17 @@ async def track_device_data(device_data: DeviceDataUpdate):
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE scans SET
-                    screen_resolution = COALESCE(?, screen_resolution),
-                    viewport_size = COALESCE(?, viewport_size),
-                    timezone = COALESCE(?, timezone),
-                    language = COALESCE(?, language),
-                    platform = COALESCE(?, platform),
-                    connection_type = COALESCE(?, connection_type),
-                    cpu_cores = COALESCE(?, cpu_cores),
-                    device_pixel_ratio = COALESCE(?, device_pixel_ratio),
-                    device_brand = COALESCE(?, device_brand),
-                    device_model = COALESCE(?, device_model)
-                WHERE session_id = ?
+                    screen_resolution = COALESCE(%s, screen_resolution),
+                    viewport_size = COALESCE(%s, viewport_size),
+                    timezone = COALESCE(%s, timezone),
+                    language = COALESCE(%s, language),
+                    platform = COALESCE(%s, platform),
+                    connection_type = COALESCE(%s, connection_type),
+                    cpu_cores = COALESCE(%s, cpu_cores),
+                    device_pixel_ratio = COALESCE(%s, device_pixel_ratio),
+                    device_brand = COALESCE(%s, device_brand),
+                    device_model = COALESCE(%s, device_model)
+                WHERE session_id = %s
             """, (
                 device_data.screen_resolution,
                 device_data.viewport_size,
@@ -2829,13 +2630,13 @@ async def get_dashboard_analytics():
             # Estadísticas generales mejoradas
             cursor.execute("""
                 SELECT 
-                    (SELECT COUNT(*) FROM campaigns WHERE active = 1) as active_campaigns,
-                    (SELECT COUNT(*) FROM physical_devices WHERE active = 1) as active_devices,
+                    (SELECT COUNT(*) FROM campaigns WHERE active = TRUE) as active_campaigns,
+                    (SELECT COUNT(*) FROM physical_devices WHERE active = TRUE) as active_devices,
                     (SELECT COUNT(*) FROM scans) as total_scans,
-                    (SELECT COUNT(*) FROM scans WHERE redirect_completed = 1) as completed_redirects,
+                    (SELECT COUNT(*) FROM scans WHERE redirect_completed = TRUE) as completed_redirects,
                     (SELECT COUNT(DISTINCT client) FROM campaigns WHERE client != '') as total_clients,
-                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= datetime('now', '-24 hours')) as scans_24h,
-                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= datetime('now', '-7 days')) as scans_7d,
+                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '24 hours') as scans_24h,
+                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '7 days') as scans_7d,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans) as unique_visitors
             """)
             stats = dict(cursor.fetchone())
@@ -2846,8 +2647,8 @@ async def get_dashboard_analytics():
                     s.campaign_code as campaign,
                     s.client,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds), 2) as avg_duration,
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
+                    ROUND(AVG(s.duration_seconds)::numeric, 2) as avg_duration,
                     MAX(s.scan_timestamp) as last_scan
                 FROM scans s
                 GROUP BY s.campaign_code, s.client
@@ -2881,11 +2682,11 @@ async def get_dashboard_analytics():
                     pd.venue,
                     pd.device_type,
                     COUNT(s.id) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds), 2) as avg_duration
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
+                    ROUND(AVG(s.duration_seconds)::numeric, 2) as avg_duration
                 FROM physical_devices pd
                 LEFT JOIN scans s ON pd.device_id = s.device_id
-                WHERE pd.active = 1
+                WHERE pd.active = TRUE
                 GROUP BY pd.id
                 ORDER BY scans DESC
                 LIMIT 10
@@ -2895,11 +2696,11 @@ async def get_dashboard_analytics():
             # Actividad por horas (últimas 24 horas)
             cursor.execute("""
                 SELECT 
-                    CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour,
+                    EXTRACT(HOUR FROM scan_timestamp)::INTEGER as hour,
                     COUNT(*) as scans
                 FROM scans
-                WHERE scan_timestamp >= datetime('now', '-24 hours')
-                GROUP BY strftime('%H', scan_timestamp)
+                WHERE scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '24 hours'
+                GROUP BY EXTRACT(HOUR FROM scan_timestamp)
                 ORDER BY hour
             """)
             hourly = [dict(row) for row in cursor.fetchall()]
@@ -2909,7 +2710,7 @@ async def get_dashboard_analytics():
                 SELECT 
                     venue,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completions,
+                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completions,
                     COUNT(DISTINCT device_id) as devices_count
                 FROM scans 
                 WHERE venue IS NOT NULL AND venue != ''
@@ -2966,7 +2767,7 @@ async def log_qr_generation(qr_log: QRGenerationLog, request: Request):
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO qr_generations (campaign_id, physical_device_id, qr_size, generated_by)
-                VALUES (?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s)
             """, (
                 qr_log.campaign_id, qr_log.physical_device_id, 
                 qr_log.qr_size, generated_by
@@ -3499,18 +3300,18 @@ async def get_scans(
                 params.append(device_id)
             
             if client:
-                query += " AND client = ?"
+                query += " AND client = %s"
                 params.append(client)
             
             if start_date:
-                query += " AND scan_timestamp >= ?"
+                query += " AND scan_timestamp >= %s"
                 params.append(start_date)
             
             if end_date:
-                query += " AND scan_timestamp <= ?"
+                query += " AND scan_timestamp <= %s"
                 params.append(end_date)
             
-            query += " ORDER BY scan_timestamp DESC LIMIT ? OFFSET ?"
+            query += " ORDER BY scan_timestamp DESC LIMIT %s OFFSET %s"
             params.extend([limit, offset])
             
             cursor.execute(query, params)
@@ -3540,7 +3341,7 @@ async def get_campaign_stats(campaign_code: str):
             cursor = conn.cursor()
             
             # Verificar que la campaña existe
-            cursor.execute("SELECT * FROM campaigns WHERE campaign_code = ?", (campaign_code,))
+            cursor.execute("SELECT * FROM campaigns WHERE campaign_code = %s", (campaign_code,))
             campaign = cursor.fetchone()
             if not campaign:
                 return {"success": False, "error": "Campaña no encontrada"}
@@ -3549,14 +3350,14 @@ async def get_campaign_stats(campaign_code: str):
             cursor.execute("""
                 SELECT 
                     COUNT(*) as total_scans,
-                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completed_redirects,
-                    ROUND(AVG(duration_seconds), 2) as avg_duration,
+                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completed_redirects,
+                    ROUND(AVG(duration_seconds)::numeric, 2) as avg_duration,
                     MIN(scan_timestamp) as first_scan,
                     MAX(scan_timestamp) as last_scan,
                     COUNT(DISTINCT ip_address) as unique_visitors,
                     COUNT(DISTINCT device_id) as unique_devices
                 FROM scans 
-                WHERE campaign_code = ?
+                WHERE campaign_code = %s
             """, (campaign_code,))
             stats = dict(cursor.fetchone())
             
@@ -3564,8 +3365,8 @@ async def get_campaign_stats(campaign_code: str):
             cursor.execute("""
                 SELECT device_id, device_name, location, venue, COUNT(*) as scans
                 FROM scans 
-                WHERE campaign_code = ? AND device_id IS NOT NULL
-                GROUP BY device_id
+                WHERE campaign_code = %s AND device_id IS NOT NULL
+                GROUP BY device_id, device_name, location, venue
                 ORDER BY scans DESC
                 LIMIT 5
             """, (campaign_code,))
@@ -3575,7 +3376,7 @@ async def get_campaign_stats(campaign_code: str):
             cursor.execute("""
                 SELECT user_device_type, COUNT(*) as count
                 FROM scans 
-                WHERE campaign_code = ?
+                WHERE campaign_code = %s
                 GROUP BY user_device_type
                 ORDER BY count DESC
             """, (campaign_code,))
@@ -3584,11 +3385,11 @@ async def get_campaign_stats(campaign_code: str):
             # Actividad por día (últimos 30 días)
             cursor.execute("""
                 SELECT 
-                    DATE(scan_timestamp) as date,
+                    CAST(scan_timestamp AS DATE) as date,
                     COUNT(*) as scans
                 FROM scans
-                WHERE campaign_code = ? AND scan_timestamp >= datetime('now', '-30 days')
-                GROUP BY DATE(scan_timestamp)
+                WHERE campaign_code = %s AND scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '30 days'
+                GROUP BY CAST(scan_timestamp AS DATE)
                 ORDER BY date
             """, (campaign_code,))
             daily_activity = [dict(row) for row in cursor.fetchall()]
@@ -3613,7 +3414,7 @@ async def get_device_stats(device_id: str):
             cursor = conn.cursor()
             
             # Verificar que el dispositivo existe
-            cursor.execute("SELECT * FROM physical_devices WHERE device_id = ?", (device_id,))
+            cursor.execute("SELECT * FROM physical_devices WHERE device_id = %s", (device_id,))
             device = cursor.fetchone()
             if not device:
                 return {"success": False, "error": "Dispositivo no encontrado"}
@@ -3622,14 +3423,14 @@ async def get_device_stats(device_id: str):
             cursor.execute("""
                 SELECT 
                     COUNT(*) as total_scans,
-                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completed_redirects,
-                    ROUND(AVG(duration_seconds), 2) as avg_duration,
+                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completed_redirects,
+                    ROUND(AVG(duration_seconds)::numeric, 2) as avg_duration,
                     MIN(scan_timestamp) as first_scan,
                     MAX(scan_timestamp) as last_scan,
                     COUNT(DISTINCT ip_address) as unique_visitors,
                     COUNT(DISTINCT campaign_code) as unique_campaigns
                 FROM scans 
-                WHERE device_id = ?
+                WHERE device_id = %s
             """, (device_id,))
             stats = dict(cursor.fetchone())
             
@@ -3637,8 +3438,8 @@ async def get_device_stats(device_id: str):
             cursor.execute("""
                 SELECT campaign_code, client, COUNT(*) as scans
                 FROM scans 
-                WHERE device_id = ?
-                GROUP BY campaign_code
+                WHERE device_id = %s
+                GROUP BY campaign_code, client
                 ORDER BY scans DESC
                 LIMIT 5
             """, (device_id,))
@@ -3647,11 +3448,11 @@ async def get_device_stats(device_id: str):
             # Actividad por hora del día
             cursor.execute("""
                 SELECT 
-                    CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour,
+                    EXTRACT(HOUR FROM scan_timestamp)::INTEGER as hour,
                     COUNT(*) as scans
                 FROM scans
-                WHERE device_id = ?
-                GROUP BY strftime('%H', scan_timestamp)
+                WHERE device_id = %s
+                GROUP BY EXTRACT(HOUR FROM scan_timestamp)
                 ORDER BY hour
             """, (device_id,))
             hourly_activity = [dict(row) for row in cursor.fetchall()]
@@ -3702,23 +3503,23 @@ async def export_scans(
             params = []
             
             if campaign_code:
-                query += " AND s.campaign_code = ?"
+                query += " AND s.campaign_code = %s"
                 params.append(campaign_code)
             
             if device_id:
-                query += " AND s.device_id = ?"
+                query += " AND s.device_id = %s"
                 params.append(device_id)
             
             if client:
-                query += " AND (s.client = ? OR c.client = ?)"
+                query += " AND (s.client = %s OR c.client = %s)"
                 params.extend([client, client])
             
             if start_date:
-                query += " AND s.scan_timestamp >= ?"
+                query += " AND s.scan_timestamp >= %s"
                 params.append(start_date)
             
             if end_date:
-                query += " AND s.scan_timestamp <= ?"
+                query += " AND s.scan_timestamp <= %s"
                 params.append(end_date)
             
             query += " ORDER BY s.scan_timestamp DESC"
