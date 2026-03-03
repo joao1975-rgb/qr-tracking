@@ -439,13 +439,9 @@
             // Mostrar UI minimizada (se verá fracciones de segundo)
             showTrackingUI();
 
-            // Registrar el escaneo e intentar capturar los datos High Entropy (modelo exacto)
+            // Registrar el escaneo e intentar capturar los datos (con timebox interno)
             try {
-                // Esperamos máximo 400ms por los client hints para no afectar al usuario
-                await Promise.race([
-                    captureDeviceData(),
-                    new Promise(resolve => setTimeout(resolve, 400))
-                ]);
+                await captureDeviceData();
             } catch (e) {
                 console.warn('Error capturando variables del dispositivo:', e);
             }
@@ -524,26 +520,19 @@
         // =============================================
         // Se elimina la función startCountdown() porque ya no habrá retrasos
 
-        async function goToDestination() {
-            // Detener el reloj y forzar el envío del request 200 OK
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 800);
+        function goToDestination() {
+            const timeSpent = parseFloat(((Date.now() - startTime) / 1000).toFixed(3));
 
-                const timeSpent = parseFloat(((Date.now() - startTime) / 1000).toFixed(3));
-                await fetch(`${API_BASE}/api/track/complete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        session_id: trackingData.sessionId,
-                        time_spent: timeSpent,
-                        completion_time: new Date().toISOString()
-                    }),
-                    signal: controller.signal
+            try {
+                // Enviar confirmación nativa de término en segundo plano sin ralentizar interfaz
+                const completeData = JSON.stringify({
+                    session_id: trackingData.sessionId,
+                    time_spent: timeSpent,
+                    completion_time: new Date().toISOString()
                 });
-                clearTimeout(timeoutId);
+                navigator.sendBeacon(`${API_BASE}/api/track/complete`, completeData);
             } catch (err) {
-                console.log('Timeout de ping backend, forzando redirección.');
+                console.log('Error enviando beacon de finalización:', err);
             }
 
             // Mostrar éxito brevemente
@@ -639,7 +628,7 @@
                 language: navigator.language,
                 platform: navigator.platform,
                 user_agent: navigator.userAgent,
-                connection_type: connection ? connection.effectiveType : 'unknown',
+                connection_type: connection ? (connection.type || connection.effectiveType) : 'unknown',
                 referrer: document.referrer || 'direct',
 
                 // Hardware
@@ -654,12 +643,14 @@
 
             // ========================================
             // USER-AGENT CLIENT HINTS
-            // Extraer el hash matemático del dispositivo (Ej. 2412DPC0AG)
-            // Diseñado para evadir la Política de Privacidad Web de Chrome/Android
             // ========================================
             if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
                 try {
-                    const uaData = await navigator.userAgentData.getHighEntropyValues(["model"]);
+                    // Esperar los Client Hints con un timebox estricto de 350ms para no afectar latencia
+                    const uaData = await Promise.race([
+                        navigator.userAgentData.getHighEntropyValues(["model"]),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 350))
+                    ]);
                     console.log('📱 Hash ClientHints Extraído:', uaData.model);
                     deviceData.ua_model = uaData.model || null;
                 } catch (err) { }
@@ -667,13 +658,14 @@
 
             console.log('Enviando Device Data de Huella Final:', deviceData);
 
-            // Enviar API Payload Sync esperando resolución
-            return fetch(`${API_BASE}/api/track/device-data`, {
+            // Enviar API Payload Sync preservándolo aunque la página muera
+            fetch(`${API_BASE}/api/track/device-data`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(deviceData)
+                body: JSON.stringify(deviceData),
+                keepalive: true
             }).catch(err => console.log('Error enviando datos del dispositivo:', err));
         }
 
