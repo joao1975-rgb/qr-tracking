@@ -172,6 +172,12 @@ def adapt_query(query: str) -> str:
     adapted = adapted.replace("CAST(strftime('%H', scan_timestamp) AS INTEGER)", "EXTRACT(HOUR FROM scan_timestamp)::INTEGER")
     adapted = adapted.replace("strftime('%H', scan_timestamp)", "EXTRACT(HOUR FROM scan_timestamp)")
     
+    # 6. Boolean translation (SQLite 1/0 -> Postgres true/false)
+    adapted = adapted.replace("active = 1", "active = true")
+    adapted = adapted.replace("active = 0", "active = false")
+    adapted = adapted.replace("redirect_completed = 1", "redirect_completed = true")
+    adapted = adapted.replace("redirect_completed = 0", "redirect_completed = false")
+    
     return adapted
 
 # Clase de cursor personalizada para PostgreSQL 
