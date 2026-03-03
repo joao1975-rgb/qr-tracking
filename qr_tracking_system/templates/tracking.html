@@ -30,38 +30,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            background: #ffffff;
+            /* Fondo blanco para redirección invisible */
             padding: 20px;
         }
 
         /* Animated background */
         .bg-pattern {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
+            display: none !important;
+            /* Desactivado para ser invisible */
         }
 
         .tracking-card {
-            position: relative;
-            z-index: 1;
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 48px 40px;
-            text-align: center;
-            box-shadow:
-                0 25px 50px -12px rgba(0, 0, 0, 0.25),
-                0 0 0 1px rgba(255, 255, 255, 0.1);
-            max-width: 480px;
-            width: 100%;
-            backdrop-filter: blur(20px);
-            animation: slideUp 0.6s ease-out;
+            display: none !important;
+            /* Ocultar interfaz visualmente */
         }
 
         @keyframes slideUp {

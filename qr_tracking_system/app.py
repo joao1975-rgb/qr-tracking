@@ -151,13 +151,26 @@ def adapt_query(query: str) -> str:
         flags=regex_module.IGNORECASE
     )
     
-    # datetime('now') → NOW()
+    # 3. datetime('now') → NOW()
     adapted = regex_module.sub(
         r"datetime\s*\(\s*'now'\s*\)",
         "NOW()",
         adapted,
         flags=regex_module.IGNORECASE
     )
+    
+    # 4. DATE(col) -> CAST(col AS DATE)
+    adapted = regex_module.sub(
+        r"DATE\s*\(\s*([a-zA-Z0-9_\.]+)\s*\)",
+        r"CAST(\1 AS DATE)",
+        adapted,
+        flags=regex_module.IGNORECASE
+    )
+    
+    # 5. strftime('%H', col) -> EXTRACT(HOUR FROM col)
+    # Reemplazar la variante condicional entera (con CAST explícito previo si lo hubiera) y la variante suelta
+    adapted = adapted.replace("CAST(strftime('%H', scan_timestamp) AS INTEGER)", "EXTRACT(HOUR FROM scan_timestamp)::INTEGER")
+    adapted = adapted.replace("strftime('%H', scan_timestamp)", "EXTRACT(HOUR FROM scan_timestamp)")
     
     return adapted
 
