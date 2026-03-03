@@ -93,6 +93,15 @@ import csv
 import io
 import base64
 from datetime import datetime, timedelta
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
+def get_caracas_time():
+    """Genera la hora actual fijada dinámicamente en la zona horaria de Caracas/Venezuela"""
+    return datetime.now(ZoneInfo("America/Caracas"))
+
 import uuid
 from device_detector import DeviceDetector
 import ipaddress
@@ -250,7 +259,7 @@ def create_backup(backup_type: str = "auto") -> Optional[str]:
             logger.warning("No existe base de datos para respaldar")
             return None
         
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        timestamp = get_caracas_time().strftime("%Y-%m-%d_%H-%M-%S")
         backup_filename = f"qr_tracking_{backup_type}_{timestamp}.db"
         backup_path = os.path.join(BACKUPS_DIR, backup_filename)
         
@@ -852,7 +861,7 @@ async def index():
 @app.get("/api/health")
 async def health_check():
     """Endpoint vital para que EasyPanel/Docker sepa que la app está viva"""
-    return {"status": "ok", "version": "2.7.3", "timestamp": datetime.now().isoformat()}
+    return {"status": "ok", "version": "2.7.3", "timestamp": get_caracas_time().isoformat()}
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard():
@@ -1681,7 +1690,7 @@ async def health_check():
                 "total": logs_info["total_logs"],
                 "size_mb": logs_info["total_size_mb"]
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": get_caracas_time().isoformat()
         }
     except Exception as e:
         logger.error(f"Error en health check: {e}")
@@ -1690,7 +1699,7 @@ async def health_check():
             content={
                 "status": "error",
                 "error": str(e),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": get_caracas_time().isoformat()
             }
         )
 
@@ -1817,7 +1826,7 @@ def process_scan_background(campaign_code: str, client: str, destination: str,
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
-                datetime.now().isoformat(),
+                get_caracas_time().isoformat(),
                 utm_source, utm_medium, utm_campaign, utm_term, utm_content,
                 device_info.get("device_brand", "Unknown"), device_info.get("device_model", "Unknown"),
                 isp_carrier
@@ -2520,7 +2529,9 @@ async def get_client_analytics(client_name: str):
                 SELECT 
                     s.scan_timestamp, s.campaign_code, s.device_id, s.device_name, 
                     s.location, s.venue, s.user_device_type, s.browser, s.operating_system, 
-                    s.duration_seconds, s.redirect_completed, s.device_brand, s.device_model
+                    s.duration_seconds, s.redirect_completed, s.device_brand, s.device_model,
+                    s.connection_type, s.isp_carrier, s.ip_address,
+                    s.scan_id, c.description as campaign_name
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
                 WHERE c.client = %s
@@ -3731,7 +3742,7 @@ async def export_scans(
             "success": True,
             "data": scans,
             "total": len(scans),
-            "export_timestamp": datetime.now().isoformat()
+            "export_timestamp": get_caracas_time().isoformat()
         }
         
     except Exception as e:
@@ -3789,7 +3800,7 @@ async def export_client_data(client_name: str, format: str = "json"):
             "client": client_name,
             "data": scans,
             "total": len(scans),
-            "export_timestamp": datetime.now().isoformat()
+            "export_timestamp": get_caracas_time().isoformat()
         }
         
     except Exception as e:

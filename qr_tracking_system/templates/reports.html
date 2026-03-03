@@ -1845,8 +1845,8 @@
                                         <p><strong>Tipo de Dispositivo:</strong> ${scan.user_device_type || 'N/A'}</p>
                                         <p><strong>Marca:</strong> ${scan.device_brand || scan.ua_brand || 'N/A'}</p>
                                         <p><strong>Modelo:</strong> ${scan.device_model || 'N/A'}</p>
-                                        <p><strong>Sistema Operativo:</strong> ${scan.os_name} ${scan.os_version || ''}</p>
-                                        <p><strong>Navegador:</strong> ${scan.browser_name} ${scan.browser_version || ''}</p>
+                                        <p><strong>Sistema Operativo:</strong> ${scan.operating_system || 'N/A'}</p>
+                                        <p><strong>Navegador:</strong> ${scan.browser || 'N/A'}</p>
                                         <p><strong>IP:</strong> ${scan.ip_address || 'N/A'}</p>
                                         <p><strong>Conexión:</strong> ${scan.connection_type || 'N/A'}</p>
                                         <p><strong>ISP/Operador:</strong> ${scan.isp_carrier || 'N/A'}</p>
