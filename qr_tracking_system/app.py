@@ -664,7 +664,8 @@ def migrate_database(conn):
         'cpu_cores': 'INTEGER',
         'device_pixel_ratio': 'REAL',
         'device_brand': 'TEXT',
-        'device_model': 'TEXT'
+        'device_model': 'TEXT',
+        'isp_carrier': 'TEXT'
     }
     
     # Agregar columnas que no existan
@@ -1779,6 +1780,19 @@ def process_scan_background(campaign_code: str, client: str, destination: str,
         # Detectar información del dispositivo
         device_info = detect_device_info(user_agent)
         
+        # Detectar operadora/ISP a través de ip-api
+        isp_carrier = "Unknown"
+        if client_ip and client_ip not in ("127.0.0.1", "::1", "localhost", ""):
+            try:
+                import httpx
+                with httpx.Client(timeout=2.0) as http_client:
+                    resp = http_client.get(f"http://ip-api.com/json/{client_ip}?fields=isp,org")
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        isp_carrier = data.get("isp") or data.get("org") or "Unknown"
+            except Exception as e:
+                logger.warning(f"Error detectando ISP: {e}")
+        
         # Registrar el escaneo en la base de datos
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -1788,15 +1802,16 @@ def process_scan_background(campaign_code: str, client: str, destination: str,
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
                     utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                    device_brand, device_model
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    device_brand, device_model, isp_carrier
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
                 datetime.now().isoformat(),
                 utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                device_info.get("device_brand", "Unknown"), device_info.get("device_model", "Unknown")
+                device_info.get("device_brand", "Unknown"), device_info.get("device_model", "Unknown"),
+                isp_carrier
             ))
             conn.commit()
             
@@ -2542,8 +2557,8 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     connection_type = COALESCE(%s, connection_type),
                     cpu_cores = COALESCE(%s, cpu_cores),
                     device_pixel_ratio = COALESCE(%s, device_pixel_ratio),
-                    device_brand = COALESCE(%s, device_brand),
-                    device_model = COALESCE(%s, device_model)
+                    device_brand = COALESCE(NULLIF(%s, ''), device_brand),
+                    device_model = COALESCE(NULLIF(%s, ''), device_model)
                 WHERE session_id = %s
             """, (
                 device_data.screen_resolution,
@@ -2573,22 +2588,29 @@ async def track_device_data(device_data: DeviceDataUpdate):
 async def complete_tracking(request: Request):
     """Marcar tracking como completado"""
     try:
-        data = await request.json()
+        try:
+            data = await request.json()
+        except:
+            # Fallback for navigator.sendBeacon returning plain text stringified JSON
+            import json
+            raw_body = await request.body()
+            data = json.loads(raw_body.decode('utf-8'))
+            
         session_id = data.get("session_id")
-        scan_id = data.get("scan_id")
         completion_time = data.get("completion_time")
         
-        if not session_id or not scan_id:
-            return {"success": False, "error": "session_id y scan_id requeridos"}
+        if not session_id:
+            return {"success": False, "error": "session_id requerido"}
         
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
             # Calcular duración si es posible
             cursor.execute("""
-                SELECT scan_timestamp FROM scans 
-                WHERE id = %s AND session_id = %s
-            """, (scan_id, session_id))
+                SELECT id, scan_timestamp FROM scans 
+                WHERE session_id = %s
+                ORDER BY scan_timestamp DESC LIMIT 1
+            """, (session_id,))
             result = cursor.fetchone()
             
             duration = None
@@ -2601,16 +2623,20 @@ async def complete_tracking(request: Request):
                     pass
             
             # Actualizar el registro
-            cursor.execute("""
-                UPDATE scans 
-                SET redirect_completed = TRUE, 
-                    redirect_timestamp = CURRENT_TIMESTAMP,
-                    duration_seconds = %s
-                WHERE id = %s AND session_id = %s
-            """, (duration, scan_id, session_id))
-            conn.commit()
+            if result:
+                scan_id = result["id"]
+                cursor.execute("""
+                    UPDATE scans 
+                    SET redirect_completed = TRUE, 
+                        redirect_timestamp = CURRENT_TIMESTAMP,
+                        duration_seconds = %s
+                    WHERE id = %s AND session_id = %s
+                """, (duration, scan_id, session_id))
+                conn.commit()
+                scans_logger.info(f"Tracking completado: session={session_id}, duration={duration}s")
+            else:
+                return {"success": False, "error": "Session no encontrada"}
         
-        scans_logger.info(f"Tracking completado: scan_id={scan_id}, duration={duration}s")
         return {"success": True, "message": "Tracking completado"}
     except Exception as e:
         logger.error(f"Error completando tracking: {e}")

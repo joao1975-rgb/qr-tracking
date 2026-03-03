@@ -692,22 +692,15 @@
                 completion_time: new Date().toISOString()
             };
 
-            // Usar sendBeacon para garantizar el envío
-            if (navigator.sendBeacon) {
-                navigator.sendBeacon(
-                    `${API_BASE}/api/track/complete`,
-                    JSON.stringify(completionData)
-                );
-            } else {
-                fetch(`${API_BASE}/api/track/complete`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(completionData),
-                    keepalive: true
-                }).catch(console.error);
-            }
+            // Usar fetch nativo con keepalive garantizando headers de Application/JSON
+            fetch(`${API_BASE}/api/track/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(completionData),
+                keepalive: true
+            }).catch(console.error);
 
             console.log('✅ Redirección completada:', completionData);
         }
