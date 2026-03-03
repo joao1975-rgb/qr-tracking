@@ -686,7 +686,7 @@ def migrate_database(conn):
 def get_db_connection():
     """Obtener conexión a la base de datos PostgreSQL"""
     conn = psycopg2.connect(DATABASE_URL)
-    conn.cursor_factory = psycopg2.extras.RealDictCursor
+    conn.cursor_factory = psycopg2.extras.DictCursor
     return conn
 
 # ================================
@@ -3032,7 +3032,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO qr_generations (campaign_id, physical_device_id, qr_size, generated_by)
-                    VALUES (?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s)
                 """, (
                     campaign_data["id"],
                     device_data["id"] if device_data else None,
@@ -3121,7 +3121,7 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO qr_generations (campaign_id, physical_device_id, qr_size, generated_by)
-                    VALUES (?, ?, ?, ?)
+                    VALUES (%s, %s, %s, %s)
                 """, (None, None, qr_request.size, get_client_ip(request)))
                 conn.commit()
         except Exception as log_error:
@@ -3675,7 +3675,7 @@ if __name__ == "__main__":
                 for campaign_code, client, destination, description in example_campaigns:
                     cursor.execute("""
                         INSERT INTO campaigns (campaign_code, client, destination, description)
-                        VALUES (?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s)
                     """, (campaign_code, client, destination, description))
                 
                 # Dispositivos de ejemplo
@@ -3691,7 +3691,7 @@ if __name__ == "__main__":
                 for device_id, device_name, device_type, location, venue in example_devices:
                     cursor.execute("""
                         INSERT INTO physical_devices (device_id, device_name, device_type, location, venue)
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s)
                     """, (device_id, device_name, device_type, location, venue))
                 
                 conn.commit()
