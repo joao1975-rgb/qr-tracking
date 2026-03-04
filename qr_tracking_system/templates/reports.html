@@ -1418,7 +1418,7 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error de conexión');
+                alert('Error UI o de Servidor: ' + error.message);
             }
         }
 
@@ -1515,10 +1515,12 @@
             const dailyActivity = reportData.daily_activity || [];
 
             if (dailyActivity.length === 0) {
-                clientChart.data.labels = [];
-                clientChart.data.datasets[0].data = [];
-                clientChart.data.datasets[1].data = [];
-                clientChart.update();
+                if (clientChart) {
+                    clientChart.data.labels = [];
+                    clientChart.data.datasets[0].data = [];
+                    clientChart.data.datasets[1].data = [];
+                    clientChart.update();
+                }
                 return;
             }
 
@@ -1531,12 +1533,13 @@
             const averageLine = Array(data.length).fill(average.toFixed(1));
 
             // Actualizar datos
-            clientChart.data.labels = labels;
-            clientChart.data.datasets[0].data = data;
-            clientChart.data.datasets[1].data = averageLine;
-            clientChart.data.datasets[1].label = `Promedio (${average.toFixed(1)})`;
-
-            clientChart.update();
+            if (clientChart) {
+                clientChart.data.labels = labels;
+                clientChart.data.datasets[0].data = data;
+                clientChart.data.datasets[1].data = averageLine;
+                clientChart.data.datasets[1].label = `Promedio (${average.toFixed(1)})`;
+                clientChart.update();
+            }
         }
 
         function updateCampaignsList() {
