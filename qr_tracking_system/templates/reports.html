@@ -438,8 +438,94 @@
             color: var(--text-secondary);
         }
 
-        .data-table tr:hover td {
-            background: var(--bg-primary);
+        .data-table tr.scan-row {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .data-table tr.scan-row:hover td {
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .data-table tr.scan-row td:first-child::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            transition: transform 0.2s ease;
+        }
+
+        .data-table tr.scan-row.expanded td:first-child::before {
+            transform: rotate(90deg);
+        }
+
+        /* Fila de detalle expandible */
+        .data-table tr.scan-detail {
+            display: none;
+        }
+
+        .data-table tr.scan-detail.show {
+            display: table-row;
+        }
+
+        .data-table tr.scan-detail td {
+            padding: 0;
+            background: var(--bg-secondary);
+        }
+
+        .scan-detail-content {
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-item {
+            background: var(--bg-card);
+            padding: 10px 14px;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .detail-item.success {
+            border-left-color: var(--success);
+        }
+
+        .detail-item.warning {
+            border-left-color: var(--warning);
+        }
+
+        .detail-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .detail-value.mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
         }
 
         .data-table .highlight {
@@ -1797,6 +1883,7 @@
                 });
 
                 let durationText = '-';
+                let durationClass = '';
                 if (scan.duration_seconds !== null && scan.duration_seconds !== undefined) {
                     const duration = parseFloat(scan.duration_seconds);
                     if (duration < 60) {
@@ -1804,10 +1891,23 @@
                     } else {
                         durationText = (duration / 60).toFixed(1) + 'm';
                     }
+                    durationClass = duration < 10 ? 'success' : (duration < 60 ? 'warning' : '');
                 }
                 const connected = scan.redirect_completed ?
                     '<span class="badge badge-success">SÍ</span>' :
                     '<span class="badge badge-pending">NO</span>';
+
+                const fullDate = date.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                });
+                const fullTime = date.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
 
                 const deviceBrand = scan.device_brand || scan.ua_brand || '-';
                 const brandStyle = getBrandColor(deviceBrand);
@@ -1838,95 +1938,73 @@
                             <td>${connectionIcon} ${scan.connection_type || '-'} <br><small>${ispDisplay}</small></td>
                         </tr>
                         <tr class="scan-detail" id="scan-detail-${index}">
-                            <td colspan="10" style="padding: 0; background: #fafbfc; border-bottom: 2px solid var(--accent-primary);">
-                                <div class="scan-detail-content" style="padding: 24px;">
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
-                                        
-                                        <!-- Detalles Principales -->
-                                        <div class="detail-section" style="margin: 0;">
-                                            <div class="detail-section-title" style="margin-bottom: 12px; color: var(--accent-primary);">📌 Información Principal</div>
-                                            <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
-                                                <div class="detail-item">
-                                                    <div class="detail-label">ID Escaneo</div>
-                                                    <div class="detail-value mono" style="font-size: 0.8rem;">${scan.scan_id}</div>
-                                                </div>
-                                                <div class="detail-item full-width">
-                                                    <div class="detail-label">Campaña</div>
-                                                    <div class="detail-value">${scan.campaign_name || scan.campaign_code || 'N/A'}</div>
-                                                </div>
-                                                <div class="detail-item full-width">
-                                                    <div class="detail-label">Dispositivo DOOH</div>
-                                                    <div class="detail-value">${scan.device_name || scan.device_id || 'N/A'}</div>
-                                                </div>
-                                                <div class="detail-item full-width">
-                                                    <div class="detail-label">Ubicación Fija</div>
-                                                    <div class="detail-value">${scan.venue || scan.location || 'N/A'}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Detalles del Dispositivo Móvil -->
-                                        <div class="detail-section" style="margin: 0;">
-                                            <div class="detail-section-title" style="margin-bottom: 12px; color: var(--accent-primary);">📱 Dispositivo Capturado</div>
-                                            <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
-                                                <div class="detail-item">
-                                                    <div class="detail-label">Tipo</div>
-                                                    <div class="detail-value"><span class="badge badge-info">${scan.user_device_type || 'N/A'}</span></div>
-                                                </div>
-                                                <div class="detail-item">
-                                                    <div class="detail-label">Marca</div>
-                                                    <div class="detail-value" style="font-weight: 600; ${brandStyle}">${scan.device_brand || scan.ua_brand || 'N/A'}</div>
-                                                </div>
-                                                <div class="detail-item">
-                                                    <div class="detail-label">Modelo</div>
-                                                    <div class="detail-value mono">${scan.device_model || 'N/A'}</div>
-                                                </div>
-                                                <div class="detail-item">
-                                                    <div class="detail-label">Navegador</div>
-                                                    <div class="detail-value">${scan.browser || 'N/A'}</div>
-                                                </div>
-                                                <div class="detail-item full-width">
-                                                    <div class="detail-label">Sistema Operativo</div>
-                                                    <div class="detail-value">${scan.operating_system || 'N/A'}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Conexión y Red -->
-                                        <div class="detail-section" style="margin: 0;">
-                                            <div class="detail-section-title" style="margin-bottom: 12px; color: var(--accent-primary);">🌐 Red y Geografía</div>
-                                            <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
-                                                <div class="detail-item">
-                                                    <div class="detail-label">Dirección IP</div>
-                                                    <div class="detail-value mono">${scan.ip_address || 'N/A'}</div>
-                                                </div>
-                                                <div class="detail-item">
-                                                    <div class="detail-label">Red</div>
-                                                    <div class="detail-value">${connectionIcon} ${scan.connection_type || 'N/A'}</div>
-                                                </div>
-                                                <div class="detail-item full-width">
-                                                    <div class="detail-label">ISP / Operadora</div>
-                                                    <div class="detail-value">${ispDisplay}</div>
-                                                </div>
-                                                <div class="detail-item">
-                                                    <div class="detail-label">Ubicación Info</div>
-                                                    <div class="detail-value">${scan.city || 'N/A'}, ${scan.country || 'N/A'}</div>
-                                                </div>
-                                                <div class="detail-item" style="grid-column: 1 / -1; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color);">
-                                                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                        <div><span class="detail-label">Duración:</span> <strong style="font-size: 1.1rem; color: var(--accent-secondary);">${durationText}</strong></div>
-                                                        <div><span class="detail-label">Redirigido:</span> ${connected}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
+                            <td colspan="10">
+                                <div class="scan-detail-content">
+                                    <div class="detail-item">
+                                        <div class="detail-label">🕐 Fecha y Hora</div>
+                                        <div class="detail-value">${formattedDate}<br>${formattedTime}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">📍 Ubicación DOOH</div>
+                                        <div class="detail-value">${scan.location || '-'}<br>${scan.venue || '-'}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">🏭 Marca / Modelo</div>
+                                        <div class="detail-value">${scan.device_brand || scan.ua_brand || '-'}<br>${scan.ua_model || scan.device_model || '-'}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">💻 Sistema Operativo</div>
+                                        <div class="detail-value">${scan.operating_system || '-'}</div>
+                                    </div>
+                                    <div class="detail-item ${durationClass}">
+                                        <div class="detail-label">⏱️ Duración</div>
+                                        <div class="detail-value">${durationText}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">${connectionIcon} Tipo Conexión</div>
+                                        <div class="detail-value">${connectionType}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">📡 Operadora / ISP</div>
+                                        <div class="detail-value">${ispDisplay}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">🌐 Dirección IP</div>
+                                        <div class="detail-value mono">${scan.ip_address || '-'}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">🔑 ID Escaneo</div>
+                                        <div class="detail-value mono">#${scan.scan_id || '-'}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">🗺️ Geografía</div>
+                                        <div class="detail-value">${scan.city || '-'}, ${scan.country || '-'}</div>
                                     </div>
                                 </div>
                             </td>
                         </tr>
                     `;
             }).join('');
+        }
+
+        // Función para expandir/contraer detalle de escaneo (Porteada del Dashboard)
+        function toggleScanDetail(index) {
+            const row = document.querySelector(`tr.scan-row:nth-child(${index * 2 + 1})`);
+            const detailRow = document.getElementById(`scan-detail-${index}`);
+
+            if (detailRow) {
+                const isExpanded = detailRow.classList.contains('show');
+
+                // Cerrar todos los demás detalles abiertos
+                document.querySelectorAll('tr.scan-detail.show').forEach(tr => tr.classList.remove('show'));
+                document.querySelectorAll('tr.scan-row.expanded').forEach(tr => tr.classList.remove('expanded'));
+
+                // Toggle del detalle actual
+                if (!isExpanded) {
+                    detailRow.classList.add('show');
+                    row.classList.add('expanded');
+                }
+            }
         }
 
         function updateScansTable() {
