@@ -2448,8 +2448,19 @@
         // EXPORTAR
         // =============================================
         function exportToPDF() {
-            alert('Funcionalidad de exportación a PDF en desarrollo.\n\nPuedes usar Ctrl+P para imprimir esta página como PDF.');
+            // Expandir todas las filas ocultas temporalmente para que salgan en el PDF
+            const style = document.createElement('style');
+            style.id = 'print-style-pdf';
+            style.innerHTML = '@media print { tr.scan-detail { display: table-row !important; } tr.scan-row td:first-child::before { transform: rotate(90deg) !important; } }';
+            document.head.appendChild(style);
+
             window.print();
+
+            // Limpiar el estilo introducido después de un tiempo razonable
+            setTimeout(() => {
+                const addedStyle = document.getElementById('print-style-pdf');
+                if (addedStyle) addedStyle.remove();
+            }, 2000);
         }
 
         function exportToExcel() {
@@ -2459,38 +2470,51 @@
                 return;
             }
 
-            // Crear CSV con más campos
-            const headers = ['Fecha', 'Hora', 'Campaña', 'Dispositivo DOOH', 'Ubicación', 'Venue', 'Tipo Usuario', 'Navegador', 'SO', 'Duración (s)', 'Completado', 'UTM Source', 'IP', 'Operadora/ISP'];
+            // Crear encabezados de cliente e información del reporte
+            const clientName = currentClient || 'Todos los Clientes';
+            const period = (currentFilters.startDate ? currentFilters.startDate : 'Inicio') + ' al ' + (currentFilters.endDate ? currentFilters.endDate : 'Hoy');
+
+            const clientHeader = ['Reporte de Escaneos por Cliente'];
+            const nameHeader = ['Cliente:', clientName];
+            const periodHeader = ['Periodo:', period];
+            const blankRow = [];
+
+            // Crear CSV con absolutamente todos los campos, incluyendo los que estaban ocultos en el row detail
+            const headers = ['ID Escaneo', 'Fecha', 'Hora', 'Campaña', 'Dispositivo DOOH', 'Ubicación', 'Venue', 'Tipo Usuario', 'Marca', 'Modelo', 'Navegador', 'SO', 'Duración (s)', 'Completado', 'UTM Source', 'Red/Conexión', 'IP', 'Operadora/ISP'];
             const rows = scans.map(scan => {
                 const date = new Date(scan.scan_timestamp);
                 return [
+                    scan.scan_id || scan.id || '',
                     date.toLocaleDateString('es-VE', { timeZone: 'America/Caracas' }),
                     date.toLocaleTimeString('es-VE', { timeZone: 'America/Caracas', hour: '2-digit', minute: '2-digit' }),
-                    scan.campaign_code || '',
+                    scan.campaign_code || scan.campaign_name || '',
                     scan.device_name || scan.device_id || '',
                     scan.location || '',
                     scan.venue || '',
                     scan.user_device_type || '',
+                    scan.device_brand || scan.ua_brand || '',
+                    scan.device_model || scan.ua_model || '',
                     scan.browser || '',
                     scan.operating_system || '',
                     scan.duration_seconds || '',
                     scan.redirect_completed ? 'SÍ' : 'NO',
                     scan.utm_source || '',
+                    scan.connection_type || '',
                     scan.ip_address || '',
                     scan.isp_carrier || ''
                 ];
             });
 
-            const csvContent = [headers, ...rows]
+            const csvContent = [clientHeader, nameHeader, periodHeader, blankRow, headers, ...rows]
                 .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
                 .join('\n');
 
-            // Descargar
+            // Preparar y descargar CSV
             const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `reporte_${currentClient}_${new Date().toISOString().split('T')[0]}.csv`;
+            link.download = `Reporte_${clientName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
             URL.revokeObjectURL(url);
         }
