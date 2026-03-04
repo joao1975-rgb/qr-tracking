@@ -1838,35 +1838,89 @@
                             <td>${connectionIcon} ${scan.connection_type || '-'} <br><small>${ispDisplay}</small></td>
                         </tr>
                         <tr class="scan-detail" id="scan-detail-${index}">
-                            <td colspan="10">
-                                <div class="scan-detail-content">
-                                    <div class="detail-section">
-                                        <h4>Detalles del Escaneo</h4>
-                                        <p><strong>ID de Escaneo:</strong> ${scan.scan_id}</p>
-                                        <p><strong>Campaña:</strong> ${scan.campaign_name || scan.campaign_code || 'N/A'}</p>
-                                        <p><strong>Dispositivo DOOH:</strong> ${scan.device_name || scan.device_id || 'N/A'}</p>
-                                        <p><strong>Venue:</strong> ${scan.venue || scan.location || 'N/A'}</p>
-                                        <p><strong>Fecha/Hora:</strong> ${formatDateTime(new Date(scan.scan_timestamp))}</p>
-                                        <p><strong>Duración:</strong> ${durationText}</p>
-                                        <p><strong>Completado:</strong> ${scan.redirect_completed ? 'Sí' : 'No'}</p>
-                                    </div>
-                                    <div class="detail-section">
-                                        <h4>Detalles del Usuario</h4>
-                                        <p><strong>Tipo de Dispositivo:</strong> ${scan.user_device_type || 'N/A'}</p>
-                                        <p><strong>Marca:</strong> ${scan.device_brand || scan.ua_brand || 'N/A'}</p>
-                                        <p><strong>Modelo:</strong> ${scan.device_model || 'N/A'}</p>
-                                        <p><strong>Sistema Operativo:</strong> ${scan.operating_system || 'N/A'}</p>
-                                        <p><strong>Navegador:</strong> ${scan.browser || 'N/A'}</p>
-                                        <p><strong>IP:</strong> ${scan.ip_address || 'N/A'}</p>
-                                        <p><strong>Conexión:</strong> ${scan.connection_type || 'N/A'}</p>
-                                        <p><strong>ISP/Operador:</strong> ${scan.isp_carrier || 'N/A'}</p>
-                                    </div>
-                                    <div class="detail-section">
-                                        <h4>Ubicación Geográfica</h4>
-                                        <p><strong>País:</strong> ${scan.country || 'N/A'}</p>
-                                        <p><strong>Ciudad:</strong> ${scan.city || 'N/A'}</p>
-                                        <p><strong>Región:</strong> ${scan.region || 'N/A'}</p>
-                                        <p><strong>Coordenadas:</strong> ${scan.latitude && scan.longitude ? `${scan.latitude}, ${scan.longitude}` : 'N/A'}</p>
+                            <td colspan="10" style="padding: 0; background: #fafbfc; border-bottom: 2px solid var(--accent-primary);">
+                                <div class="scan-detail-content" style="padding: 24px;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                                        
+                                        <!-- Detalles Principales -->
+                                        <div class="detail-section" style="margin: 0;">
+                                            <div class="detail-section-title" style="margin-bottom: 12px; color: var(--accent-primary);">📌 Información Principal</div>
+                                            <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+                                                <div class="detail-item">
+                                                    <div class="detail-label">ID Escaneo</div>
+                                                    <div class="detail-value mono" style="font-size: 0.8rem;">${scan.scan_id}</div>
+                                                </div>
+                                                <div class="detail-item full-width">
+                                                    <div class="detail-label">Campaña</div>
+                                                    <div class="detail-value">${scan.campaign_name || scan.campaign_code || 'N/A'}</div>
+                                                </div>
+                                                <div class="detail-item full-width">
+                                                    <div class="detail-label">Dispositivo DOOH</div>
+                                                    <div class="detail-value">${scan.device_name || scan.device_id || 'N/A'}</div>
+                                                </div>
+                                                <div class="detail-item full-width">
+                                                    <div class="detail-label">Ubicación Fija</div>
+                                                    <div class="detail-value">${scan.venue || scan.location || 'N/A'}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Detalles del Dispositivo Móvil -->
+                                        <div class="detail-section" style="margin: 0;">
+                                            <div class="detail-section-title" style="margin-bottom: 12px; color: var(--accent-primary);">📱 Dispositivo Capturado</div>
+                                            <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+                                                <div class="detail-item">
+                                                    <div class="detail-label">Tipo</div>
+                                                    <div class="detail-value"><span class="badge badge-info">${scan.user_device_type || 'N/A'}</span></div>
+                                                </div>
+                                                <div class="detail-item">
+                                                    <div class="detail-label">Marca</div>
+                                                    <div class="detail-value" style="font-weight: 600; ${brandStyle}">${scan.device_brand || scan.ua_brand || 'N/A'}</div>
+                                                </div>
+                                                <div class="detail-item">
+                                                    <div class="detail-label">Modelo</div>
+                                                    <div class="detail-value mono">${scan.device_model || 'N/A'}</div>
+                                                </div>
+                                                <div class="detail-item">
+                                                    <div class="detail-label">Navegador</div>
+                                                    <div class="detail-value">${scan.browser || 'N/A'}</div>
+                                                </div>
+                                                <div class="detail-item full-width">
+                                                    <div class="detail-label">Sistema Operativo</div>
+                                                    <div class="detail-value">${scan.operating_system || 'N/A'}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Conexión y Red -->
+                                        <div class="detail-section" style="margin: 0;">
+                                            <div class="detail-section-title" style="margin-bottom: 12px; color: var(--accent-primary);">🌐 Red y Geografía</div>
+                                            <div class="detail-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+                                                <div class="detail-item">
+                                                    <div class="detail-label">Dirección IP</div>
+                                                    <div class="detail-value mono">${scan.ip_address || 'N/A'}</div>
+                                                </div>
+                                                <div class="detail-item">
+                                                    <div class="detail-label">Red</div>
+                                                    <div class="detail-value">${connectionIcon} ${scan.connection_type || 'N/A'}</div>
+                                                </div>
+                                                <div class="detail-item full-width">
+                                                    <div class="detail-label">ISP / Operadora</div>
+                                                    <div class="detail-value">${ispDisplay}</div>
+                                                </div>
+                                                <div class="detail-item">
+                                                    <div class="detail-label">Ubicación Info</div>
+                                                    <div class="detail-value">${scan.city || 'N/A'}, ${scan.country || 'N/A'}</div>
+                                                </div>
+                                                <div class="detail-item" style="grid-column: 1 / -1; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color);">
+                                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                        <div><span class="detail-label">Duración:</span> <strong style="font-size: 1.1rem; color: var(--accent-secondary);">${durationText}</strong></div>
+                                                        <div><span class="detail-label">Redirigido:</span> ${connected}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                             </td>
