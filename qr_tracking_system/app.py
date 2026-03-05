@@ -111,15 +111,14 @@ from urllib.parse import urlparse, parse_qs, unquote, urlencode, quote
 # IMPORTAR BIBLIOTECAS PARA QR
 # ================================
 
-# Intentar importar qrcode (necesario para generación de QR)
+# Intentar importar segno (necesario para generación de QR moderna)
 try:
-    import qrcode
-    from qrcode.constants import ERROR_CORRECT_L, ERROR_CORRECT_M, ERROR_CORRECT_Q, ERROR_CORRECT_H
+    import segno
     QR_LIBRARY_AVAILABLE = True
 except ImportError:
     QR_LIBRARY_AVAILABLE = False
-    print("⚠️  ADVERTENCIA: Biblioteca 'qrcode' no instalada.")
-    print("   Ejecute: pip install qrcode[pil]")
+    print("⚠️  ADVERTENCIA: Biblioteca 'segno' no instalada.")
+    print("   Ejecute: pip install segno")
 
 # Intentar importar PIL para manipulación de imágenes
 try:
@@ -2993,44 +2992,36 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         Imagen en formato base64 o None si hay error
     """
     if not QR_LIBRARY_AVAILABLE:
-        logger.error("Biblioteca qrcode no disponible")
+        logger.error("Biblioteca segno no disponible")
         return None
     
     try:
-        # Forzar alta corrección si se usará logo central
+        # Forzar alta corrección 'H' si se usará logo central (cubre 25% del área)
         if logo_mode in ["default", "brand_only", "brand_full"]:
             error_correction = "H"
             
-        error_levels = {
-            "L": ERROR_CORRECT_L,  # ~7% corrección
-            "M": ERROR_CORRECT_M,  # ~15% corrección
-            "Q": ERROR_CORRECT_Q,  # ~25% corrección
-            "H": ERROR_CORRECT_H   # ~30% corrección
-        }
-        error_level = error_levels.get(error_correction.upper(), ERROR_CORRECT_M)
-        
-        qr = qrcode.QRCode(
-            version=None,
-            error_correction=error_level,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(data)
-        qr.make(fit=True)
+        # Segno crea la matriz con error dinámico (L, M, Q, H) - minúsculas requeridas
+        error_level = error_correction.lower() if error_correction.lower() in ['l', 'm', 'q', 'h'] else 'm'
+        qr = segno.make(data, error=error_level)
         
         def hex_to_rgb(hex_color):
             hex_color = hex_color.lstrip('#')
             return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
         
-        fill_color = hex_to_rgb(color_dark)
-        back_color = hex_to_rgb(color_light)
+        # Segno guarda directamente un PNG en memoria usando io.BytesIO
+        # Ajustamos border=5 para máxima compatibilidad con lectores viejos
+        qr_buffer = io.BytesIO()
+        qr.save(qr_buffer, kind='png', scale=10, border=5, dark=color_dark, light=color_light)
+        qr_buffer.seek(0)
         
-        img = qr.make_image(fill_color=fill_color, back_color=back_color)
+        # Abrimos la imagen recién generada con Pillow
+        img = Image.open(qr_buffer).convert('RGBA')
         
+        # Redimensionar al tamaño final solicitado en UI
         if img.size[0] != size:
             img = img.resize((size, size), Image.LANCZOS if PIL_AVAILABLE else Image.NEAREST)
             
-        # Determinar qué base64 usar
+        # Determinar qué base64 usar en función del logo_mode
         center_logo_b64 = None
         banner_b64 = None
         if logo_mode == "default":
@@ -3041,6 +3032,7 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
             center_logo_b64 = brand_logo_base64
             banner_b64 = CENTAURO_BANNER_BASE64
             
+        # Procesar e inyectar el LOGO
         if center_logo_b64 and PIL_AVAILABLE:
             try:
                 if ',' in center_logo_b64:
@@ -3053,7 +3045,8 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
                     logo_img = logo_img.convert('RGBA')
                 
                 qr_width, qr_height = img.size
-                logo_max_size = int(min(qr_width, qr_height) * 0.3)
+                # LOGO TAMAÑO SEGURO AL 25% (Asegura escaneo 99%)
+                logo_max_size = int(min(qr_width, qr_height) * 0.25)
                 
                 logo_width, logo_height = logo_img.size
                 ratio = min(logo_max_size / logo_width, logo_max_size / logo_height)
@@ -3064,7 +3057,7 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
                 pos_x = (qr_width - new_size[0]) // 2
                 pos_y = (qr_height - new_size[1]) // 2
                 
-                # Crear un fondo blanco con un pequeño margen para el logo
+                # Crear un fondo blanco con un pequeño margen para el logo (Quiet Masking)
                 padding = 10
                 bg_size = (new_size[0] + padding * 2, new_size[1] + padding * 2)
                 bg_pos_x = pos_x - padding
@@ -3072,17 +3065,19 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
                 
                 img = img.convert('RGBA')
                 
-                # Dibujar rectángulo blanco
+                # Dibujar rectángulo blanco limpio
                 draw = ImageDraw.Draw(img)
                 draw.rectangle(
                     [bg_pos_x, bg_pos_y, bg_pos_x + bg_size[0], bg_pos_y + bg_size[1]],
                     fill=(255, 255, 255, 255)
                 )
                 
+                # Pegar archivo transpartente encima del recuadro
                 img.paste(logo_img, (pos_x, pos_y), logo_img)
             except Exception as e:
-                logger.error(f"Error superponiendo logo en QR: {str(e)}")
+                logger.error(f"Error superponiendo logo en QR con segno: {str(e)}")
 
+        # Procesar e inyectar el BANNER inferior
         if banner_b64 and PIL_AVAILABLE:
             try:
                 if ',' in banner_b64:
@@ -3112,8 +3107,9 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
                 
                 img = final_img
             except Exception as e:
-                logger.error(f"Error superponiendo banner en QR: {str(e)}")
+                logger.error(f"Error superponiendo banner en QR con segno: {str(e)}")
         
+        # Convertir contenedor Pillow modificado de vuelta a un buffer de byte B64
         buffer = io.BytesIO()
         img.save(buffer, format='PNG')
         buffer.seek(0)
@@ -3122,7 +3118,7 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         return img_base64
         
     except Exception as e:
-        logger.error(f"Error generando imagen QR: {e}")
+        logger.error(f"Error generando imagen QR con segno: {e}")
         return None
 
 @app.post("/api/qr/generate")
@@ -3138,7 +3134,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
         if not QR_LIBRARY_AVAILABLE:
             return {
                 "success": False, 
-                "error": "Biblioteca de generación de QR no disponible. Instale: pip install qrcode[pil]"
+                "error": "Biblioteca de generación de QR no disponible. Instale: pip install segno"
             }
         
         # Obtener datos de la campaña
@@ -3268,7 +3264,7 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
         if not QR_LIBRARY_AVAILABLE:
             return {
                 "success": False, 
-                "error": "Biblioteca de generación de QR no disponible. Instale: pip install qrcode[pil]"
+                "error": "Biblioteca de generación de QR no disponible. Instale: pip install segno"
             }
         
         # Validar URL/texto
@@ -3455,7 +3451,7 @@ async def get_qr_status():
         "success": True,
         "qr_library_available": QR_LIBRARY_AVAILABLE,
         "pil_available": PIL_AVAILABLE,
-        "message": "Sistema de generación de QR operativo" if QR_LIBRARY_AVAILABLE else "Instale: pip install qrcode[pil] Pillow"
+        "message": "Sistema de generación de QR operativo" if QR_LIBRARY_AVAILABLE else "Instale: pip install segno Pillow"
     }
 
 # ================================

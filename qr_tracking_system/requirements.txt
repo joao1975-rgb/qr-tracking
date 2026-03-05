@@ -21,7 +21,7 @@ pydantic>=2.6.0
 pydantic-settings>=2.1.0
 
 # Generación de QR
-qrcode[pil]>=7.4.0
+segno>=1.6.1
 Pillow>=10.2.0
 
 # Detección de User-Agent
