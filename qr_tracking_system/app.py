@@ -480,6 +480,9 @@ class DeviceDataUpdate(BaseModel):
     device_pixel_ratio: Optional[float] = None
     ua_brand: Optional[str] = None
     ua_model: Optional[str] = None
+    canvas_hash: Optional[str] = None
+    webgl_vendor: Optional[str] = None
+    webgl_renderer: Optional[str] = None
 
 class QRGenerationLog(BaseModel):
     campaign_id: Optional[int] = None
@@ -2563,6 +2566,40 @@ async def get_client_analytics(client_name: str):
 @app.post("/api/track/device-data")
 async def track_device_data(device_data: DeviceDataUpdate):
     """Registrar datos adicionales del dispositivo del usuario"""
+    
+    def resolve_ios_model(screen_res: str, dpr: float, webgl: str) -> Optional[str]:
+        if not webgl or not screen_res or dpr is None:
+            return None
+        webgl_lower = webgl.lower()
+        model_map = {
+            ("430x932", 3.0, "a16"): "iPhone 14 Pro Max",
+            ("393x852", 3.0, "a16"): "iPhone 14 Pro", 
+            ("428x926", 3.0, "a15"): "iPhone 13 Pro Max / 14 Plus",
+            ("390x844", 3.0, "a15"): "iPhone 13 Pro / 14",
+            ("375x812", 3.0, "a15"): "iPhone 13 mini",
+            ("428x926", 3.0, "a14"): "iPhone 12 Pro Max",
+            ("390x844", 3.0, "a14"): "iPhone 12 / 12 Pro",
+            ("375x812", 3.0, "a14"): "iPhone 12 mini",
+            ("414x896", 3.0, "a13"): "iPhone 11 Pro Max",
+            ("414x896", 2.0, "a13"): "iPhone 11",
+            ("375x812", 3.0, "a13"): "iPhone 11 Pro",
+            ("375x667", 2.0, "a13"): "iPhone SE (2nd Gen)",
+            ("414x896", 3.0, "a12"): "iPhone XS Max",
+            ("414x896", 2.0, "a12"): "iPhone XR",
+            ("375x812", 3.0, "a12"): "iPhone XS",
+            ("414x736", 3.0, "a11"): "iPhone 8 Plus",
+            ("375x812", 3.0, "a11"): "iPhone X",
+            ("375x667", 2.0, "a11"): "iPhone 8"
+        }
+        chip_key = None
+        for chip in ["a16", "a15", "a14", "a13", "a12", "a11"]:
+            if chip in webgl_lower:
+                chip_key = chip
+                break
+        if chip_key:
+            return model_map.get((screen_res, float(dpr), chip_key))
+        return None
+
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -2589,20 +2626,38 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.session_id
             ))
             
-            # Refinar modelo si hay hash provisto por Client Hints JS (evadiendo filtro de Chrome Mobile)
-            if device_data.ua_model:
-                cursor.execute("SELECT user_agent, device_brand, device_model FROM scans WHERE session_id = %s", (device_data.session_id,))
-                result = cursor.fetchone()
-                if result and result["user_agent"]:
-                    refined_device = detect_device_info(result["user_agent"], client_hint_model=device_data.ua_model)
-                    new_brand = refined_device["device_brand"]
-                    new_model = refined_device["device_model"]
-                    
-                    if new_brand != "Unknown" or new_model != "Unknown":
-                        cursor.execute("""
-                            UPDATE scans SET device_brand = %s, device_model = %s WHERE session_id = %s
-                        """, (new_brand, new_model, device_data.session_id))
-                        scans_logger.info(f"Dispositivo Refinado con IA: {new_brand} {new_model} (Hash: {device_data.ua_model})")
+            # Recolectar marca original para ver si es Apple
+            cursor.execute("SELECT user_agent, device_brand, device_model FROM scans WHERE session_id = %s", (device_data.session_id,))
+            result = cursor.fetchone()
+            
+            new_brand = None
+            new_model = None
+            
+            # 1. Intento de Client Hints (Android / Windows / Mac Chrome)
+            if device_data.ua_model and result and result["user_agent"]:
+                refined_device = detect_device_info(result["user_agent"], client_hint_model=device_data.ua_model)
+                new_brand = refined_device["device_brand"]
+                new_model = refined_device["device_model"]
+                scans_logger.info(f"Dispositivo Refinado con IA (Client Hints): {new_brand} {new_model} (Hash: {device_data.ua_model})")
+                
+            # 2. Heurística Avanzada iOS (WebGL + Resolución)
+            if result and (result["device_brand"] == "Apple" or "iPhone" in (result["user_agent"] or "")):
+                ios_model = resolve_ios_model(
+                    device_data.screen_resolution, 
+                    device_data.device_pixel_ratio, 
+                    device_data.webgl_renderer
+                )
+                if ios_model:
+                    new_brand = "Apple"
+                    new_model = ios_model
+                    scans_logger.info(f"iPhone Inferido Probabilísticamente: {ios_model} (Resolución: {device_data.screen_resolution}, GPU: {device_data.webgl_renderer})")
+            
+            # Ejecutar superposición si descubrimos algo nuevo
+            if new_brand and new_model and (new_brand != "Unknown" or new_model != "Unknown"):
+                cursor.execute("""
+                    UPDATE scans SET device_brand = %s, device_model = %s WHERE session_id = %s
+                """, (new_brand, new_model, device_data.session_id))
+                
             conn.commit()
             
             if cursor.rowcount == 0:
