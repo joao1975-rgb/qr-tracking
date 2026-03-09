@@ -2572,18 +2572,35 @@ async def track_device_data(device_data: DeviceDataUpdate):
             return None
         webgl_lower = webgl.lower()
         model_map = {
-            ("430x932", 3.0, "a16"): "iPhone 14 Pro Max",
-            ("393x852", 3.0, "a16"): "iPhone 14 Pro", 
+            # iPhone 16 Series
+            ("440x956", 3.0, "a18"): "iPhone 16 Pro Max",
+            ("402x874", 3.0, "a18"): "iPhone 16 Pro",
+            ("430x932", 3.0, "a18"): "iPhone 16 Plus",
+            ("393x852", 3.0, "a18"): "iPhone 16",
+            
+            # iPhone 15 Series
+            ("430x932", 3.0, "a17"): "iPhone 15 Pro Max",
+            ("393x852", 3.0, "a17"): "iPhone 15 Pro",
+            ("430x932", 3.0, "a16"): "iPhone 14 Pro Max / 15 Plus",
+            ("393x852", 3.0, "a16"): "iPhone 14 Pro / 15", 
+            
+            # iPhone 14 / 13 Series
             ("428x926", 3.0, "a15"): "iPhone 13 Pro Max / 14 Plus",
             ("390x844", 3.0, "a15"): "iPhone 13 Pro / 14",
             ("375x812", 3.0, "a15"): "iPhone 13 mini",
+            
+            # iPhone 12 Series
             ("428x926", 3.0, "a14"): "iPhone 12 Pro Max",
             ("390x844", 3.0, "a14"): "iPhone 12 / 12 Pro",
             ("375x812", 3.0, "a14"): "iPhone 12 mini",
+            
+            # iPhone 11 Series
             ("414x896", 3.0, "a13"): "iPhone 11 Pro Max",
             ("414x896", 2.0, "a13"): "iPhone 11",
             ("375x812", 3.0, "a13"): "iPhone 11 Pro",
             ("375x667", 2.0, "a13"): "iPhone SE (2nd Gen)",
+            
+            # iPhone X / 8 Series
             ("414x896", 3.0, "a12"): "iPhone XS Max",
             ("414x896", 2.0, "a12"): "iPhone XR",
             ("375x812", 3.0, "a12"): "iPhone XS",
@@ -2592,7 +2609,7 @@ async def track_device_data(device_data: DeviceDataUpdate):
             ("375x667", 2.0, "a11"): "iPhone 8"
         }
         chip_key = None
-        for chip in ["a16", "a15", "a14", "a13", "a12", "a11"]:
+        for chip in ["a18", "a17", "a16", "a15", "a14", "a13", "a12", "a11"]:
             if chip in webgl_lower:
                 chip_key = chip
                 break
