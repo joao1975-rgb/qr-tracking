@@ -2568,10 +2568,13 @@ async def track_device_data(device_data: DeviceDataUpdate):
     """Registrar datos adicionales del dispositivo del usuario"""
     
     def resolve_ios_model(screen_res: str, dpr: float, webgl: str) -> Optional[str]:
-        if not webgl or not screen_res or dpr is None:
+        if not screen_res or dpr is None:
             return None
-        webgl_lower = webgl.lower()
-        model_map = {
+            
+        webgl_lower = (webgl or "").lower()
+        
+        # 1. Exact match with WebGL Chip (If Not Masked)
+        model_map_exact = {
             # iPhone 16 Series
             ("440x956", 3.0, "a18"): "iPhone 16 Pro Max",
             ("402x874", 3.0, "a18"): "iPhone 16 Pro",
@@ -2608,14 +2611,34 @@ async def track_device_data(device_data: DeviceDataUpdate):
             ("375x812", 3.0, "a11"): "iPhone X",
             ("375x667", 2.0, "a11"): "iPhone 8"
         }
+        
         chip_key = None
         for chip in ["a18", "a17", "a16", "a15", "a14", "a13", "a12", "a11"]:
             if chip in webgl_lower:
                 chip_key = chip
                 break
+                
         if chip_key:
-            return model_map.get((screen_res, float(dpr), chip_key))
-        return None
+            return model_map_exact.get((screen_res, float(dpr), chip_key))
+            
+        # 2. Fallback Probability Match (If WebGL is masked to "Apple GPU")
+        model_map_fallback = {
+            ("440x956", 3.0): "iPhone 16 Pro Max",
+            ("402x874", 3.0): "iPhone 16 Pro",
+            ("430x932", 3.0): "iPhone 14 Pro Max / 15/16 Plus",
+            ("393x852", 3.0): "iPhone 14 Pro / 15/16",
+            ("428x926", 3.0): "iPhone 12/13/14 Pro Max / 14 Plus",
+            ("390x844", 3.0): "iPhone 12/13/14",
+            ("414x896", 3.0): "iPhone XS Max / 11 Pro Max",
+            ("414x896", 2.0): "iPhone XR / 11",
+            ("375x812", 3.0): "iPhone X/XS/11 Pro / 12/13 mini",
+            ("414x736", 3.0): "iPhone 6/7/8 Plus",
+            ("375x812", 2.0): "iPhone (In-App Browser Mode)", # Fallback genérico UIWebView
+            ("375x667", 2.0): "iPhone 6/7/8 / SE"
+        }
+        
+        # If the WebGL was generic or missing, just rely on screen resolution geometry
+        return model_map_fallback.get((screen_res, float(dpr)))
 
     try:
         with get_db_connection() as conn:
