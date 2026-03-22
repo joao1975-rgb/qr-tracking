@@ -640,6 +640,42 @@ def compute_planned_duration(start: Optional[date], end: Optional[date]) -> Opti
 
 
 
+
+class CampaignUpdate(BaseModel):
+    client: Optional[str] = None
+    destination: Optional[HttpUrl] = None
+    description: Optional[str] = None
+    active: Optional[bool] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+    planned_duration_days: Optional[int] = None
+    industry: Optional[str] = None
+    industry_sub: Optional[str] = None
+    iab_tier1: Optional[str] = None
+    campaign_type: Optional[str] = None
+    campaign_objective: Optional[str] = None
+    budget_tier: Optional[str] = None
+    budget_currency: Optional[str] = None
+    dooh_format: Optional[str] = None
+    creative_type: Optional[str] = None
+    product_name: Optional[str] = None
+    venue_category: Optional[str] = None
+    geo_region: Optional[str] = None
+    geo_country: Optional[str] = None
+    social_amplification: Optional[bool] = None
+    social_platforms: Optional[str] = None
+    influencer_support: Optional[bool] = None
+    hashtag: Optional[str] = None
+    target_scans: Optional[int] = None
+    target_unique_visitors: Optional[int] = None
+    target_ctr_pct: Optional[float] = None
+    target_audience: Optional[str] = None
+    campaign_status: Optional[str] = None
+    campaign_phase: Optional[str] = None
+    tags: Optional[str] = None
+    internal_notes: Optional[str] = None
+    account_manager: Optional[str] = None
+
 class ScanCreate(BaseModel):
     campaign_code: str
     client: Optional[str] = None
