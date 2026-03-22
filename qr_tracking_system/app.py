@@ -643,7 +643,7 @@ def compute_planned_duration(start: Optional[date], end: Optional[date]) -> Opti
 
 class CampaignUpdate(BaseModel):
     client: Optional[str] = None
-    destination: Optional[HttpUrl] = None
+    destination: Optional[str] = None
     description: Optional[str] = None
     active: Optional[bool] = None
     start_date: Optional[date] = None
