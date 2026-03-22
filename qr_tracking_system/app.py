@@ -932,6 +932,10 @@ async def tracking_page():
     except FileNotFoundError:
         return HTMLResponse("<h1>Tracking</h1><p>Archivo tracking.html no encontrado en /templates</p><a href='/'>← Volver</a>")
 
+@app.get("/admin")
+async def admin_redirect():
+    return RedirectResponse(url="/admin/campaigns")
+
 @app.get("/admin/campaigns", response_class=HTMLResponse)
 async def admin_campaigns():
     """Panel de administración de campañas"""
