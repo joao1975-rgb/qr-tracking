@@ -2195,7 +2195,7 @@ async def pause_campaign(campaign_code: str):
             
             current_active = result["active"]
             client = result["client"]
-            new_active = 0 if current_active else 1
+            new_active = FALSE if current_active else 1
             
             # Cambiar estado
             cursor.execute("""
@@ -2543,9 +2543,9 @@ async def get_client_analytics(client_name: str):
             cursor.execute("""
                 SELECT 
                     COUNT(DISTINCT c.id) as total_campaigns,
-                    COUNT(DISTINCT CASE WHEN c.active = 1 THEN c.id END) as active_campaigns,
+                    COUNT(DISTINCT CASE WHEN c.active = TRUE THEN c.id END) as active_campaigns,
                     COALESCE(COUNT(s.id), 0) as total_scans,
-                    COALESCE(COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END), 0) as completed_redirects,
+                    COALESCE(COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END), 0) as completed_redirects,
                     ROUND(COALESCE(AVG(s.duration_seconds), 0), 2) as avg_duration,
                     COUNT(DISTINCT s.ip_address) as unique_visitors,
                     COUNT(DISTINCT s.device_id) as unique_devices,
@@ -2572,7 +2572,7 @@ async def get_client_analytics(client_name: str):
                     c.active,
                     c.created_at,
                     COUNT(s.id) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
                     ROUND(AVG(s.duration_seconds), 2) as avg_duration
                 FROM campaigns c
                 LEFT JOIN scans s ON c.campaign_code = s.campaign_code
@@ -2587,7 +2587,7 @@ async def get_client_analytics(client_name: str):
                 SELECT 
                     DATE(s.scan_timestamp) as date,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
                 WHERE c.client = ? AND s.scan_timestamp >= datetime('now', '-30 days')
@@ -2604,7 +2604,7 @@ async def get_client_analytics(client_name: str):
                     s.location,
                     s.venue,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
                 WHERE c.client = ? AND s.device_id IS NOT NULL AND s.device_id != ''
@@ -2717,7 +2717,7 @@ async def complete_tracking(request: Request):
             # Actualizar el registro
             cursor.execute("""
                 UPDATE scans 
-                SET redirect_completed = 1, 
+                SET redirect_completed = TRUE, 
                     redirect_timestamp = CURRENT_TIMESTAMP,
                     duration_seconds = ?
                 WHERE id = ? AND session_id = ?
@@ -2744,10 +2744,10 @@ async def get_dashboard_analytics():
             # Estadísticas generales mejoradas
             cursor.execute("""
                 SELECT 
-                    (SELECT COUNT(*) FROM campaigns WHERE active = 1) as active_campaigns,
-                    (SELECT COUNT(*) FROM physical_devices WHERE active = 1) as active_devices,
+                    (SELECT COUNT(*) FROM campaigns WHERE active = TRUE) as active_campaigns,
+                    (SELECT COUNT(*) FROM physical_devices WHERE active = TRUE) as active_devices,
                     (SELECT COUNT(*) FROM scans) as total_scans,
-                    (SELECT COUNT(*) FROM scans WHERE redirect_completed = 1) as completed_redirects,
+                    (SELECT COUNT(*) FROM scans WHERE redirect_completed = TRUE) as completed_redirects,
                     (SELECT COUNT(DISTINCT client) FROM campaigns WHERE client != '') as total_clients,
                     (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= datetime('now', '-24 hours')) as scans_24h,
                     (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= datetime('now', '-7 days')) as scans_7d,
@@ -2761,7 +2761,7 @@ async def get_dashboard_analytics():
                     s.campaign_code as campaign,
                     s.client,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
                     ROUND(AVG(s.duration_seconds), 2) as avg_duration,
                     MAX(s.scan_timestamp) as last_scan
                 FROM scans s
@@ -2796,11 +2796,11 @@ async def get_dashboard_analytics():
                     pd.venue,
                     pd.device_type,
                     COUNT(s.id) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
+                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
                     ROUND(AVG(s.duration_seconds), 2) as avg_duration
                 FROM physical_devices pd
                 LEFT JOIN scans s ON pd.device_id = s.device_id
-                WHERE pd.active = 1
+                WHERE pd.active = TRUE
                 GROUP BY pd.id
                 ORDER BY scans DESC
                 LIMIT 10
@@ -2824,7 +2824,7 @@ async def get_dashboard_analytics():
                 SELECT 
                     venue,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completions,
+                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completions,
                     COUNT(DISTINCT device_id) as devices_count
                 FROM scans 
                 WHERE venue IS NOT NULL AND venue != ''
@@ -3247,7 +3247,7 @@ async def get_campaign_stats(campaign_code: str):
             cursor.execute("""
                 SELECT 
                     COUNT(*) as total_scans,
-                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completed_redirects,
+                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completed_redirects,
                     ROUND(AVG(duration_seconds), 2) as avg_duration,
                     MIN(scan_timestamp) as first_scan,
                     MAX(scan_timestamp) as last_scan,
@@ -3320,7 +3320,7 @@ async def get_device_stats(device_id: str):
             cursor.execute("""
                 SELECT 
                     COUNT(*) as total_scans,
-                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completed_redirects,
+                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completed_redirects,
                     ROUND(AVG(duration_seconds), 2) as avg_duration,
                     MIN(scan_timestamp) as first_scan,
                     MAX(scan_timestamp) as last_scan,
