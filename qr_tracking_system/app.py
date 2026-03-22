@@ -1,3 +1,7 @@
+
+
+
+
 """
 QR Tracking System - Backend Completo
 Versión: 2.7.3 - Analytics Avanzados + Dispositivos Únicos + UTM
@@ -43,46 +47,13 @@ Correcciones v2.7.3:
 - MEJORADO: Analytics con datos de marketing (UTM) para efectividad de campañas
 """
 
-from fastapi import FastAPI, Request, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse, StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, root_validator, validator
 from typing import Optional, List, Dict, Any
-import base64
-import io
-
-try:
-    from logos_base64 import CENTAURO_LOGO_BASE64, CENTAURO_BANNER_BASE64
-except ImportError:
-    CENTAURO_LOGO_BASE64 = None
-    CENTAURO_BANNER_BASE64 = None
-
-# ================================
-# CONFIGURACIÓN PARA CLOUD (PostgreSQL/SQLite)
-# ================================
-import os
-import re as regex_module
-
-# Cargar variables de entorno desde .env si existe
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
-# Configuración de base de datos
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://qr_admin:pass@localhost:5432/qr_database")
-
-# Importar dependencias de PostgreSQL obligatorias
-try:
-    import psycopg2
-    import psycopg2.extras
-except ImportError:
-    print("⚠️  ADVERTENCIA: psycopg2 no instalado. Ejecute: pip install psycopg2-binary")
-    import sys
-    sys.exit(1)
-
+import sqlite3
 import json
 import os
 import shutil
@@ -91,19 +62,129 @@ import logging
 from logging.handlers import RotatingFileHandler
 import csv
 import io
+from datetime import date
 import base64
+
+
+
+INDUSTRY_TAXONOMY = {
+    "alimentacion_bebidas":      {"label": "Alimentación y Bebidas",      "iab": "IAB8",  "emoji": "🍔"},
+    "automotriz":                {"label": "Automotriz",                   "iab": "IAB2",  "emoji": "🚗"},
+    "banca_finanzas":            {"label": "Banca y Finanzas",             "iab": "IAB13", "emoji": "🏦"},
+    "belleza_cuidado":           {"label": "Belleza y Cuidado Personal",   "iab": "IAB18", "emoji": "💄"},
+    "bienes_raices":             {"label": "Bienes Raíces",                "iab": "IAB21", "emoji": "🏠"},
+    "construccion_hogar":        {"label": "Construcción y Hogar",         "iab": "IAB10", "emoji": "🔨"},
+    "educacion":                 {"label": "Educación",                    "iab": "IAB5",  "emoji": "📚"},
+    "electronica_tecnologia":    {"label": "Electrónica y Tecnología",     "iab": "IAB19", "emoji": "📱"},
+    "energia_servicios":         {"label": "Energía y Servicios Públicos", "iab": "IAB17", "emoji": "⚡"},
+    "entretenimiento_medios":    {"label": "Entretenimiento y Medios",     "iab": "IAB1",  "emoji": "🎬"},
+    "farmacia_salud":            {"label": "Farmacia y Salud",             "iab": "IAB7",  "emoji": "💊"},
+    "gobierno_institucional":    {"label": "Gobierno e Institucional",     "iab": "IAB11", "emoji": "🏛️"},
+    "moda_retail":               {"label": "Moda y Retail",                "iab": "IAB18", "emoji": "👗"},
+    "ong_social":                {"label": "ONG y Causa Social",           "iab": "IAB22", "emoji": "❤️"},
+    "restaurantes_gastronomia":  {"label": "Restaurantes y Gastronomía",   "iab": "IAB8",  "emoji": "🍽️"},
+    "seguros":                   {"label": "Seguros",                      "iab": "IAB13", "emoji": "🛡️"},
+    "telecomunicaciones":        {"label": "Telecomunicaciones",           "iab": "IAB19", "emoji": "📡"},
+    "transporte_turismo":        {"label": "Transporte y Turismo",         "iab": "IAB20", "emoji": "✈️"},
+    "servicios_profesionales":   {"label": "Servicios Profesionales",      "iab": "IAB3",  "emoji": "💼"},
+    "deportes_fitness":          {"label": "Deportes y Fitness",           "iab": "IAB17", "emoji": "🏋️"},
+    "otro":                      {"label": "Otro / No clasificado",        "iab": "IAB26", "emoji": "📋"},
+}
+
+CAMPAIGN_TYPES = {
+    "branding":          {"label": "Branding / Imagen de Marca",     "objective": "awareness",    "bench_weight": 1.0},
+    "lanzamiento":       {"label": "Lanzamiento de Producto",         "objective": "awareness",    "bench_weight": 1.2},
+    "promocion":         {"label": "Promoción / Oferta Táctica",      "objective": "conversion",   "bench_weight": 1.5},
+    "generacion_leads":  {"label": "Generación de Leads",             "objective": "intencion",    "bench_weight": 1.3},
+    "performance":       {"label": "Performance / Conversión Directa","objective": "conversion",   "bench_weight": 1.4},
+    "retencion":         {"label": "Retención y Lealtad",             "objective": "lealtad",      "bench_weight": 0.9},
+    "reposicionamiento": {"label": "Reposicionamiento de Marca",      "objective": "consideracion","bench_weight": 0.8},
+    "evento":            {"label": "Evento / Activación",             "objective": "awareness",    "bench_weight": 1.6},
+    "causa_rse":         {"label": "Causa Social / RSE",              "objective": "awareness",    "bench_weight": 0.7},
+    "estacional":        {"label": "Temporada / Estacional",          "objective": "conversion",   "bench_weight": 1.3},
+    "lanzamiento_tienda":{"label": "Apertura de Tienda / Sucursal",   "objective": "awareness",    "bench_weight": 1.1},
+}
+
+CAMPAIGN_OBJECTIVES = {
+    "awareness":      "Notoriedad / Top of Mind",
+    "consideracion":  "Consideración / Evaluación",
+    "intencion":      "Intención de Compra",
+    "conversion":     "Conversión / Compra",
+    "lealtad":        "Retención / Lealtad",
+    "advocacy":       "Advocacy / Embajadores",
+}
+
+DOOH_FORMATS = {
+    "cartelera_digital":    "Cartelera Digital (exterior grande)",
+    "pantalla_mall":        "Pantalla de Centro Comercial",
+    "pantalla_aeropuerto":  "Pantalla de Aeropuerto",
+    "pantalla_transito":    "Pantalla de Transporte Público",
+    "pantalla_calle":       "Pantalla de Calle (small format)",
+    "pantalla_interior":    "Pantalla Interior (oficina/lobby)",
+    "pantalla_interactiva": "Pantalla Interactiva / Touchscreen",
+    "multipantalla":        "Múltiples Formatos Simultáneos",
+}
+
+CREATIVE_TYPES = {
+    "imagen_estatica": "Imagen Estática",
+    "video":           "Video",
+    "animacion":       "Animación / GIF / HTML5",
+    "interactivo_qr":  "Interactivo con QR Destacado",
+    "ar":              "Realidad Aumentada (AR)",
+    "dinamico":        "Contenido Dinámico (clima/hora/datos)",
+}
+
+VENUE_CATEGORIES = {
+    "centro_comercial":  "Centro Comercial (Mall)",
+    "aeropuerto":        "Aeropuerto",
+    "transporte":        "Transporte Público (metro/bus/tren)",
+    "via_publica":       "Vía Pública / Outdoor",
+    "oficinas":          "Oficinas / Coworking / Edificios",
+    "restaurantes_fb":   "Restaurantes / F&B Venues",
+    "gimnasios":         "Gimnasios / Centros Fitness",
+    "hoteles":           "Hoteles / Hospitalidad",
+    "estadios":          "Estadios / Arenas / Eventos",
+    "universidades":     "Universidades / Campuses",
+    "mixto":             "Mixto (múltiples venues)",
+}
+
+BUDGET_TIERS = {
+    "micro":      {"label": "Micro (hasta $1K)",         "min": 0,      "max": 1000},
+    "pequeno":    {"label": "Pequeño ($1K – $10K)",      "min": 1000,   "max": 10000},
+    "mediano":    {"label": "Mediano ($10K – $50K)",     "min": 10000,  "max": 50000},
+    "grande":     {"label": "Grande ($50K – $200K)",     "min": 50000,  "max": 200000},
+    "enterprise": {"label": "Enterprise (>$200K)",       "min": 200000, "max": None},
+}
+
+# Benchmarks de industria basados en datos públicos IAB/OAAA 2024-2025
+# Fuente: Uniqode State of QR Report, OAAA/Harris Poll, Bitly QR Stats
+INDUSTRY_BENCHMARKS = {
+    "alimentacion_bebidas":   {"avg_ctr": 2.8, "avg_duration": 45, "scan_rate": 1.8},
+    "automotriz":             {"avg_ctr": 1.9, "avg_duration": 72, "scan_rate": 1.2},
+    "banca_finanzas":         {"avg_ctr": 1.5, "avg_duration": 85, "scan_rate": 0.9},
+    "belleza_cuidado":        {"avg_ctr": 3.2, "avg_duration": 55, "scan_rate": 2.1},
+    "bienes_raices":          {"avg_ctr": 1.8, "avg_duration": 95, "scan_rate": 1.0},
+    "construccion_hogar":     {"avg_ctr": 1.4, "avg_duration": 68, "scan_rate": 0.8},
+    "educacion":              {"avg_ctr": 2.1, "avg_duration": 78, "scan_rate": 1.4},
+    "electronica_tecnologia": {"avg_ctr": 2.6, "avg_duration": 62, "scan_rate": 1.7},
+    "energia_servicios":      {"avg_ctr": 1.2, "avg_duration": 58, "scan_rate": 0.7},
+    "entretenimiento_medios": {"avg_ctr": 3.8, "avg_duration": 48, "scan_rate": 2.5},
+    "farmacia_salud":         {"avg_ctr": 2.0, "avg_duration": 88, "scan_rate": 1.3},
+    "gobierno_institucional": {"avg_ctr": 1.1, "avg_duration": 62, "scan_rate": 0.6},
+    "moda_retail":            {"avg_ctr": 3.5, "avg_duration": 50, "scan_rate": 2.3},
+    "ong_social":             {"avg_ctr": 1.8, "avg_duration": 72, "scan_rate": 1.2},
+    "restaurantes_gastronomia":{"avg_ctr": 4.2, "avg_duration": 38, "scan_rate": 2.8},
+    "seguros":                {"avg_ctr": 1.3, "avg_duration": 90, "scan_rate": 0.8},
+    "telecomunicaciones":     {"avg_ctr": 2.4, "avg_duration": 55, "scan_rate": 1.6},
+    "transporte_turismo":     {"avg_ctr": 2.9, "avg_duration": 65, "scan_rate": 1.9},
+    "servicios_profesionales":{"avg_ctr": 1.6, "avg_duration": 82, "scan_rate": 1.0},
+    "deportes_fitness":       {"avg_ctr": 3.1, "avg_duration": 52, "scan_rate": 2.0},
+    "otro":                   {"avg_ctr": 2.0, "avg_duration": 60, "scan_rate": 1.3},
+}
+
 from datetime import datetime, timedelta
-try:
-    from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo
-
-def get_caracas_time():
-    """Genera la hora actual fijada dinámicamente en la zona horaria de Caracas/Venezuela"""
-    return datetime.now(ZoneInfo("America/Caracas"))
-
 import uuid
-from device_detector import DeviceDetector
+import user_agents
 import ipaddress
 from urllib.parse import urlparse, parse_qs, unquote, urlencode, quote
 
@@ -111,14 +192,15 @@ from urllib.parse import urlparse, parse_qs, unquote, urlencode, quote
 # IMPORTAR BIBLIOTECAS PARA QR
 # ================================
 
-# Intentar importar segno (necesario para generación de QR moderna)
+# Intentar importar qrcode (necesario para generación de QR)
 try:
-    import segno
+    import qrcode
+    from qrcode.constants import ERROR_CORRECT_L, ERROR_CORRECT_M, ERROR_CORRECT_Q, ERROR_CORRECT_H
     QR_LIBRARY_AVAILABLE = True
 except ImportError:
     QR_LIBRARY_AVAILABLE = False
-    print("⚠️  ADVERTENCIA: Biblioteca 'segno' no instalada.")
-    print("   Ejecute: pip install segno")
+    print("⚠️  ADVERTENCIA: Biblioteca 'qrcode' no instalada.")
+    print("   Ejecute: pip install qrcode[pil]")
 
 # Intentar importar PIL para manipulación de imágenes
 try:
@@ -128,7 +210,6 @@ except ImportError:
     PIL_AVAILABLE = False
     print("⚠️  ADVERTENCIA: Biblioteca 'Pillow' no instalada.")
     print("   Ejecute: pip install Pillow")
-
 
 # ================================
 # CONFIGURACIÓN DE DIRECTORIOS
@@ -145,8 +226,11 @@ TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 for directory in [LOGS_DIR, BACKUPS_DIR, STATIC_DIR, TEMPLATES_DIR]:
     os.makedirs(directory, exist_ok=True)
 
-# Ruta de base de datos
-DATABASE_PATH = DATABASE_URL
+# Base de datos
+DATABASE_PATH = os.path.join(BASE_DIR, "qr_tracking.db")
+
+
+
 
 # ================================
 # CONFIGURACIÓN DE LOGGING AVANZADO
@@ -246,19 +330,13 @@ def create_backup(backup_type: str = "auto") -> Optional[str]:
     
     Returns:
         Ruta del backup creado o None si falla
-        
-    NOTA: En PostgreSQL (Cloud/Neon), los backups se manejan automáticamente.
     """
-    # En PostgreSQL, los backups se manejan desde la infraestructura
-    logger.info("Backups manejados por el servidor en modo PostgreSQL")
-    return None
-        
     try:
         if not os.path.exists(DATABASE_PATH):
             logger.warning("No existe base de datos para respaldar")
             return None
         
-        timestamp = get_caracas_time().strftime("%Y-%m-%d_%H-%M-%S")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         backup_filename = f"qr_tracking_{backup_type}_{timestamp}.db"
         backup_path = os.path.join(BACKUPS_DIR, backup_filename)
         
@@ -427,34 +505,140 @@ if os.path.exists(STATIC_DIR):
 # ================================
 
 class CampaignCreate(BaseModel):
+    # ── CAMPOS ORIGINALES (sin cambios para compatibilidad) ──
     campaign_code: str
     client: str
     destination: str
     description: Optional[str] = None
-    active: bool = True
 
-class CampaignUpdate(BaseModel):
-    client: Optional[str] = None
-    destination: Optional[str] = None
-    description: Optional[str] = None
-    active: Optional[bool] = None
+    # ── NUEVOS: TEMPORALIDAD ──
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
 
-class DeviceCreate(BaseModel):
-    device_id: str
-    device_name: Optional[str] = None
-    device_type: Optional[str] = None
-    location: Optional[str] = None
-    venue: Optional[str] = None
-    description: Optional[str] = None
-    active: bool = True
+    # ── NUEVOS: TAXONOMÍA INDUSTRIA ──
+    industry: Optional[str] = None                    # Clave de INDUSTRY_TAXONOMY
+    industry_sub: Optional[str] = None               # Subcategoría libre
+    iab_tier1: Optional[str] = None                  # Código IAB
 
-class DeviceUpdate(BaseModel):
-    device_name: Optional[str] = None
-    device_type: Optional[str] = None
-    location: Optional[str] = None
-    venue: Optional[str] = None
-    description: Optional[str] = None
-    active: Optional[bool] = None
+    # ── NUEVOS: TIPO Y OBJETIVO ──
+    campaign_type: Optional[str] = None              # Clave de CAMPAIGN_TYPES
+    campaign_objective: Optional[str] = None         # Clave de CAMPAIGN_OBJECTIVES
+
+    # ── NUEVOS: INVERSIÓN ──
+    budget_tier: Optional[str] = None                # Clave de BUDGET_TIERS
+    budget_currency: Optional[str] = "USD"
+
+    # ── NUEVOS: FORMATO DOOH ──
+    dooh_format: Optional[str] = None               # Clave de DOOH_FORMATS
+    creative_type: Optional[str] = None             # Clave de CREATIVE_TYPES
+    product_name: Optional[str] = None
+
+    # ── NUEVOS: VENUE Y GEO ──
+    venue_category: Optional[str] = None            # Clave de VENUE_CATEGORIES
+    geo_region: Optional[str] = None
+    geo_country: Optional[str] = "BR"               # ISO 3166-1 alpha-2
+
+    # ── NUEVOS: AMPLIFICACIÓN SOCIAL ──
+    social_amplification: Optional[bool] = False
+    social_platforms: Optional[str] = None          # CSV: 'instagram,tiktok'
+    influencer_support: Optional[bool] = False
+    hashtag: Optional[str] = None
+
+    # ── NUEVOS: METAS ──
+    target_scans: Optional[int] = None
+    target_unique_visitors: Optional[int] = None
+    target_ctr_pct: Optional[float] = None
+    target_audience: Optional[str] = None
+
+    # ── NUEVOS: GESTIÓN INTERNA ──
+    campaign_status: Optional[str] = "draft"
+    campaign_phase: Optional[str] = None
+    tags: Optional[str] = None
+    internal_notes: Optional[str] = None
+    account_manager: Optional[str] = None
+
+    # ── NUEVOS: BENCHMARK ──
+    is_benchmark_eligible: Optional[bool] = True
+
+    @validator('campaign_code')
+    def code_uppercase(cls, v):
+        return v.strip().upper().replace(' ', '_')
+
+    @validator('end_date')
+    def end_after_start(cls, v, values):
+        if v and values.get('start_date') and v <= values['start_date']:
+            raise ValueError('end_date debe ser posterior a start_date')
+        return v
+
+    @validator('industry')
+    def validate_industry(cls, v):
+        if v and v not in INDUSTRY_TAXONOMY:
+            raise ValueError(f'Industria inválida. Opciones: {list(INDUSTRY_TAXONOMY.keys())}')
+        return v
+
+    @validator('campaign_type')
+    def validate_type(cls, v):
+        if v and v not in CAMPAIGN_TYPES:
+            raise ValueError(f'Tipo de campaña inválido. Opciones: {list(CAMPAIGN_TYPES.keys())}')
+        return v
+
+
+# ─────────────────────────────────────────────────────────────
+# SECCIÓN 3: FUNCIÓN HELPER — Generar benchmark_group
+# ─────────────────────────────────────────────────────────────
+
+def generate_benchmark_group(campaign: CampaignCreate) -> str:
+    """
+    Genera el código de grupo de benchmark anónimo.
+    Formato: BG_{INDUSTRY}_{VENUE}_{TYPE}
+    Permite agrupar campañas similares para comparación sin revelar identidad.
+
+    Ejemplos:
+    - BG_RETAIL_MALL_BRAND  → Retail en mall, branding
+    - BG_FOOD_TRANSIT_PROMO → Alimentos en transporte, promoción
+    """
+    industry_map = {
+        "alimentacion_bebidas": "FOOD", "automotriz": "AUTO",
+        "banca_finanzas": "FIN", "belleza_cuidado": "BEAUTY",
+        "bienes_raices": "REALESTATE", "construccion_hogar": "HOME",
+        "educacion": "EDU", "electronica_tecnologia": "TECH",
+        "entretenimiento_medios": "ENT", "farmacia_salud": "HEALTH",
+        "moda_retail": "RETAIL", "restaurantes_gastronomia": "FOOD",
+        "telecomunicaciones": "TELCO", "transporte_turismo": "TRAVEL",
+        "deportes_fitness": "SPORT", "otro": "OTHER",
+    }
+    venue_map = {
+        "centro_comercial": "MALL", "aeropuerto": "AIRPORT",
+        "transporte": "TRANSIT", "via_publica": "OOH",
+        "oficinas": "OFFICE", "restaurantes_fb": "FB",
+        "gimnasios": "GYM", "hoteles": "HOTEL",
+        "estadios": "STADIUM", "universidades": "CAMPUS", "mixto": "MIX",
+    }
+    type_map = {
+        "branding": "BRAND", "lanzamiento": "LAUNCH",
+        "promocion": "PROMO", "generacion_leads": "LEADS",
+        "performance": "PERF", "retencion": "RETAIN",
+        "evento": "EVENT", "estacional": "SEASONAL",
+    }
+
+    ind = industry_map.get(campaign.industry, "GEN")
+    ven = venue_map.get(campaign.venue_category, "GEN")
+    typ = type_map.get(campaign.campaign_type, "GEN")
+
+    return f"BG_{ind}_{ven}_{typ}"
+
+
+# ─────────────────────────────────────────────────────────────
+# SECCIÓN 4: FUNCIÓN HELPER — Calcular duración planeada
+# ─────────────────────────────────────────────────────────────
+
+def compute_planned_duration(start: Optional[date], end: Optional[date]) -> Optional[int]:
+    if start and end:
+        return (end - start).days
+    return None
+
+
+
 
 class ScanCreate(BaseModel):
     campaign_code: str
@@ -477,12 +661,7 @@ class DeviceDataUpdate(BaseModel):
     user_agent: Optional[str] = None
     connection_type: Optional[str] = None
     cpu_cores: Optional[int] = None
-    device_pixel_ratio: Optional[float] = None
-    ua_brand: Optional[str] = None
-    ua_model: Optional[str] = None
-    canvas_hash: Optional[str] = None
-    webgl_vendor: Optional[str] = None
-    webgl_renderer: Optional[str] = None
+    cpu_cores: Optional[float] = None
 
 class QRGenerationLog(BaseModel):
     campaign_id: Optional[int] = None
@@ -501,9 +680,6 @@ class QRGenerateRequest(BaseModel):
     color_light: str = "#FFFFFF"
     include_logo: bool = False
     base_url: Optional[str] = None  # URL base del servidor (ej: http://192.168.1.100:8000)
-    logo_mode: str = "default"
-    brand_logo_base64: Optional[str] = None
-    brand_banner_base64: Optional[str] = None
 
 class QRCustomRequest(BaseModel):
     """Solicitud de generación de QR personalizado desde URL"""
@@ -514,13 +690,6 @@ class QRCustomRequest(BaseModel):
     color_dark: str = "#000000"
     color_light: str = "#FFFFFF"
     error_correction: str = "M"  # L, M, Q, H
-    logo_mode: str = "default"
-    brand_logo_base64: Optional[str] = None
-    brand_banner_base64: Optional[str] = None
-
-class LogoValidationRequest(BaseModel):
-    image_base64: str
-    filename: str
 
 class BackupRequest(BaseModel):
     """Solicitud de backup manual"""
@@ -538,54 +707,56 @@ class RestoreRequest(BaseModel):
 def init_database():
     """Inicializar la base de datos con el esquema"""
     try:
-        with get_db_connection() as conn:
+        with sqlite3.connect(DATABASE_PATH) as conn:
             # Crear esquema básico
             create_basic_schema(conn)
             # Verificar que las tablas existan
             cursor = conn.cursor()
-            cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
             tables = cursor.fetchall()
-            table_names = [t['table_name'] if isinstance(t, dict) else t[0] for t in tables]
-            logger.info(f"Tablas en base de datos: {table_names}")
+            logger.info(f"Tablas en base de datos: {[table[0] for table in tables]}")
         logger.info("Base de datos inicializada correctamente")
     except Exception as e:
         logger.error(f"Error inicializando base de datos: {e}")
 
 def create_basic_schema(conn):
-    """Crear esquema PostgreSQL"""
+    """Crear esquema básico si no existe el archivo SQL"""
     cursor = conn.cursor()
     
+    # Crear tabla campaigns
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS campaigns (
-            id SERIAL PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             campaign_code TEXT NOT NULL UNIQUE,
             client TEXT NOT NULL,
             destination TEXT NOT NULL,
             description TEXT,
-            active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+            active BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     """)
     
+    # Crear tabla physical_devices
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS physical_devices (
-            id SERIAL PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             device_id TEXT NOT NULL UNIQUE,
             device_name TEXT,
             device_type TEXT,
             location TEXT,
             venue TEXT,
             description TEXT,
-            active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+            active BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     """)
     
+    # Crear tabla scans (con campos adicionales para datos del dispositivo)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS scans (
-            id SERIAL PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             campaign_code TEXT NOT NULL,
             client TEXT,
             destination TEXT,
@@ -607,9 +778,9 @@ def create_basic_schema(conn):
             country TEXT,
             city TEXT,
             session_id TEXT,
-            scan_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            redirect_completed BOOLEAN DEFAULT FALSE,
-            redirect_timestamp TIMESTAMP,
+            scan_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            redirect_completed BOOLEAN DEFAULT 0,
+            redirect_timestamp DATETIME,
             duration_seconds REAL,
             campaign_id INTEGER,
             physical_device_id INTEGER,
@@ -618,39 +789,31 @@ def create_basic_schema(conn):
             utm_campaign TEXT,
             utm_term TEXT,
             utm_content TEXT,
-            cpu_cores INTEGER,
-            device_pixel_ratio REAL,
-            device_brand TEXT,
-            device_model TEXT
-        )
+            1.0 INTEGER,
+            1.0 REAL
+        );
     """)
     
+    # Crear tabla qr_generations
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS qr_generations (
-            id SERIAL PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             campaign_id INTEGER,
             physical_device_id INTEGER,
             qr_size INTEGER,
             generated_by TEXT,
-            generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+            generated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     """)
     
-    # Crear índices
-    indices = [
-        "CREATE INDEX IF NOT EXISTS idx_scans_campaign ON scans(campaign_code)",
-        "CREATE INDEX IF NOT EXISTS idx_scans_device ON scans(device_id)",
-        "CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(scan_timestamp)",
-        "CREATE INDEX IF NOT EXISTS idx_scans_session ON scans(session_id)",
-        "CREATE INDEX IF NOT EXISTS idx_campaigns_client ON campaigns(client)",
-        "CREATE INDEX IF NOT EXISTS idx_scans_ip ON scans(ip_address)",
-        "CREATE INDEX IF NOT EXISTS idx_scans_utm_source ON scans(utm_source)"
-    ]
-    for idx in indices:
-        try:
-            cursor.execute(idx)
-        except:
-            pass
+    # Crear índices para mejor rendimiento
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_campaign ON scans(campaign_code);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_device ON scans(device_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_timestamp ON scans(scan_timestamp);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_session ON scans(session_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_campaigns_client ON campaigns(client);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_ip ON scans(ip_address);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_scans_utm_source ON scans(utm_source);")
     
     conn.commit()
     
@@ -662,8 +825,8 @@ def migrate_database(conn):
     cursor = conn.cursor()
     
     # Obtener columnas existentes en la tabla scans
-    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'scans'")
-    existing_columns = [col['column_name'] if isinstance(col, dict) else col[0] for col in cursor.fetchall()]
+    cursor.execute("PRAGMA table_info(scans)")
+    existing_columns = [col[1] for col in cursor.fetchall()]
     
     # Columnas nuevas a agregar (v2.7.3)
     new_columns = {
@@ -672,23 +835,17 @@ def migrate_database(conn):
         'utm_campaign': 'TEXT',
         'utm_term': 'TEXT',
         'utm_content': 'TEXT',
-        'cpu_cores': 'INTEGER',
-        'device_pixel_ratio': 'REAL',
-        'device_brand': 'TEXT',
-        'device_model': 'TEXT',
-        'isp_carrier': 'TEXT'
+        '1.0': 'INTEGER',
+        '1.0': 'REAL'
     }
     
     # Agregar columnas que no existan
     for column_name, column_type in new_columns.items():
         if column_name not in existing_columns:
             try:
-                try:
-                    cursor.execute(f"ALTER TABLE scans ADD COLUMN IF NOT EXISTS {column_name} {column_type}")
-                except Exception:
-                    pass
+                cursor.execute(f"ALTER TABLE scans ADD COLUMN {column_name} {column_type}")
                 logger.info(f"Columna '{column_name}' agregada a tabla scans")
-            except Exception as e:
+            except sqlite3.OperationalError as e:
                 # La columna ya existe (puede ocurrir en casos edge)
                 logger.debug(f"Columna '{column_name}' ya existe o error: {e}")
     
@@ -696,58 +853,42 @@ def migrate_database(conn):
     logger.info("Migración de base de datos completada")
 
 def get_db_connection():
-    """Obtener conexión a la base de datos PostgreSQL"""
-    conn = psycopg2.connect(DATABASE_URL)
-    conn.cursor_factory = psycopg2.extras.DictCursor
+    """Obtener conexión a la base de datos"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row  # Para acceder a columnas por nombre
     return conn
 
 # ================================
 # FUNCIONES DE UTILIDAD
 # ================================
 
-def detect_device_info(user_agent_string: str, client_hint_model: str = None) -> Dict[str, str]:
-    """Detectar información del dispositivo usando device-detector con soporte ClientHints"""
+def detect_device_info(user_agent_string: str) -> Dict[str, str]:
+    """Detectar información del dispositivo desde User-Agent"""
     try:
-        import re
-        from device_detector import DeviceDetector
-        
-        # Inyección de Client Hints si existe y es Android
-        if client_hint_model and "Android" in user_agent_string:
-            user_agent_string = re.sub(r'(Android [^;]+;)\s*[^)]+', rf'\1 {client_hint_model}', user_agent_string)
-            scans_logger.info(f"ClientHints Inyectado -> {client_hint_model}")
-            
-        device = DeviceDetector(user_agent_string).parse()
+        user_agent = user_agents.parse(user_agent_string)
         
         # Determinar tipo de dispositivo
-        dtype = device.device_type()
-        is_mobile = dtype in ['smartphone', 'feature phone', 'phablet']
-        is_tablet = dtype == 'tablet'
-        is_pc = dtype == 'desktop'
+        if user_agent.is_mobile:
+            device_type = "Mobile"
+        elif user_agent.is_tablet:
+            device_type = "Tablet"
+        elif user_agent.is_pc:
+            device_type = "Desktop"
+        else:
+            device_type = "Unknown"
         
-        device_type = "smartphone" if is_mobile else "tablet" if is_tablet else "desktop" if is_pc else "Unknown"
-            
-        device_brand = device.device_brand() if device.device_brand() else "Unknown"
-        device_model = device.device_model() if device.device_model() else "Unknown"
-        
-        os_info = f"{device.os_name()} {device.os_version()}".strip()
-        browser_info = f"{device.client_name()} {device.client_version()}".strip()
-            
         return {
             "device_type": device_type,
-            "device_brand": device_brand,
-            "device_model": device_model,
-            "browser": browser_info if browser_info else "Unknown",
-            "operating_system": os_info if os_info else "Unknown",
-            "is_mobile": is_mobile,
-            "is_tablet": is_tablet,
-            "is_pc": is_pc
+            "browser": f"{user_agent.browser.family} {user_agent.browser.version_string}",
+            "operating_system": f"{user_agent.os.family} {user_agent.os.version_string}",
+            "is_mobile": user_agent.is_mobile,
+            "is_tablet": user_agent.is_tablet,
+            "is_pc": user_agent.is_pc
         }
     except Exception as e:
         logger.warning(f"Error detectando dispositivo: {e}")
         return {
             "device_type": "Unknown",
-            "device_brand": "Unknown",
-            "device_model": "Unknown",
             "browser": "Unknown",
             "operating_system": "Unknown",
             "is_mobile": False,
@@ -860,11 +1001,6 @@ async def index():
         </html>
         """)
 
-@app.get("/api/health")
-async def health_check():
-    """Endpoint vital para que EasyPanel/Docker sepa que la app está viva"""
-    return {"status": "ok", "version": "2.7.3", "timestamp": get_caracas_time().isoformat()}
-
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard():
     """Dashboard con analytics"""
@@ -879,11 +1015,11 @@ async def dashboard():
 async def reports_page():
     """Página de reportes por cliente"""
     try:
-        reports_path = os.path.join(TEMPLATES_DIR, "reports.html")
+        reports_path = os.path.join(TEMPLATES_DIR, "client_reports.html")
         with open(reports_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
-        return HTMLResponse("<h1>Reportes</h1><p>Archivo reports.html no encontrado en /templates</p><a href='/'>← Volver</a>")
+        return HTMLResponse("<h1>Reportes</h1><p>Archivo client_reports.html no encontrado en /templates</p><a href='/'>← Volver</a>")
 
 @app.get("/tracking", response_class=HTMLResponse)
 async def tracking_page():
@@ -1692,7 +1828,7 @@ async def health_check():
                 "total": logs_info["total_logs"],
                 "size_mb": logs_info["total_size_mb"]
             },
-            "timestamp": get_caracas_time().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         logger.error(f"Error en health check: {e}")
@@ -1701,7 +1837,7 @@ async def health_check():
             content={
                 "status": "error",
                 "error": str(e),
-                "timestamp": get_caracas_time().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
         )
 
@@ -1710,7 +1846,7 @@ async def health_check():
 # ================================
 
 @app.get("/track")
-async def track_qr_scan(request: Request, background_tasks: BackgroundTasks):
+async def track_qr_scan(request: Request):
     """Endpoint principal de tracking de QR"""
     try:
         # Obtener parámetros de la URL
@@ -1741,12 +1877,13 @@ async def track_qr_scan(request: Request, background_tasks: BackgroundTasks):
         
         # Detectar información del dispositivo del usuario
         user_agent = request.headers.get("User-Agent", "")
+        device_info = detect_device_info(user_agent)
         client_ip = get_client_ip(request)
         
         # Buscar información de la campaña en la base de datos
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT destination, client FROM campaigns WHERE campaign_code = %s", (campaign_code,))
+            cursor.execute("SELECT destination, client FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             result = cursor.fetchone()
             if result:
                 if not destination:
@@ -1758,62 +1895,7 @@ async def track_qr_scan(request: Request, background_tasks: BackgroundTasks):
         if not destination:
             destination = f"https://google.com/search?q={campaign_code}"
         
-        # Lanzar procesamiento analítico en segundo plano para no bloquear al usuario
-        background_tasks.add_task(
-            process_scan_background,
-            campaign_code, client, destination, device_id, device_name,
-            location, venue, user_agent, client_ip, session_id,
-            utm_source, utm_medium, utm_campaign, utm_term, utm_content
-        )
-        
-        # Redirigir a la página de tracking intermedia para recolectar datos avanzados
-        from urllib.parse import urlencode, quote
-        tracking_params = {
-            "campaign": campaign_code,
-            "client": client,
-            "destination": destination,
-            "device_id": device_id,
-            "device_name": device_name,
-            "location": location,
-            "venue": venue,
-            "session_id": session_id
-        }
-        tracking_url = f"/tracking?{urlencode({k: v for k, v in tracking_params.items() if v}, quote_via=quote)}"
-        
-        return RedirectResponse(url=tracking_url, status_code=307)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error en tracking: {e}")
-        return RedirectResponse(url=f"https://google.com/search?q={campaign_code}", status_code=302)
-
-def process_scan_background(campaign_code: str, client: str, destination: str, 
-                          device_id: str, device_name: str, location: str, venue: str, 
-                          user_agent: str, client_ip: str, session_id: str,
-                          utm_source: str, utm_medium: str, utm_campaign: str, 
-                          utm_term: str, utm_content: str):
-    """
-    Procesa y guarda los datos analíticos del escaneo en segundo plano (Zero Latency)
-    """
-    try:
-        # Detectar información del dispositivo
-        device_info = detect_device_info(user_agent)
-        
-        # Detectar operadora/ISP a través de ip-api
-        isp_carrier = "Unknown"
-        if client_ip and client_ip not in ("127.0.0.1", "::1", "localhost", ""):
-            try:
-                import httpx
-                with httpx.Client(timeout=2.0) as http_client:
-                    resp = http_client.get(f"http://ip-api.com/json/{client_ip}?fields=isp,org")
-                    if resp.status_code == 200:
-                        data = resp.json()
-                        isp_carrier = data.get("isp") or data.get("org") or "Unknown"
-            except Exception as e:
-                logger.warning(f"Error detectando ISP: {e}")
-        
-        # Registrar el escaneo en la base de datos
+        # Registrar el escaneo en la base de datos (incluyendo UTM)
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -1821,25 +1903,181 @@ def process_scan_background(campaign_code: str, client: str, destination: str,
                     campaign_code, client, destination, device_id, device_name, 
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
-                    utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                    device_brand, device_model, isp_carrier
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    utm_source, utm_medium, utm_campaign, utm_term, utm_content
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
-                get_caracas_time().isoformat(),
-                utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                device_info.get("device_brand", "Unknown"), device_info.get("device_model", "Unknown"),
-                isp_carrier
+                datetime.now().isoformat(),
+                utm_source, utm_medium, utm_campaign, utm_term, utm_content
             ))
             conn.commit()
-            
-        # Log del escaneo
-        scans_logger.info(f"QR escaneado (Background): campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
+            scan_id = cursor.lastrowid
         
+        # Log del escaneo (logger específico para scans)
+        scans_logger.info(f"QR escaneado: campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
+        
+        # Crear respuesta HTML con redirección automática mejorada
+        html_response = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Redirigiendo...</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="/static/css/main.css">
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{
+                    font-family: 'Plus Jakarta Sans', sans-serif;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    text-align: center;
+                }}
+                .container {{
+                    background: rgba(255, 255, 255, 0.1);
+                    padding: 50px 40px;
+                    border-radius: 20px;
+                    backdrop-filter: blur(15px);
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    max-width: 400px;
+                    width: 90%;
+                }}
+                h1 {{ font-size: 28px; margin-bottom: 10px; }}
+                .countdown {{
+                    font-size: 72px;
+                    font-weight: 700;
+                    margin: 30px 0;
+                    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                }}
+                .progress-bar {{
+                    width: 100%;
+                    height: 6px;
+                    background: rgba(255,255,255,0.2);
+                    border-radius: 3px;
+                    overflow: hidden;
+                    margin: 20px 0;
+                }}
+                .progress {{
+                    height: 100%;
+                    background: white;
+                    border-radius: 3px;
+                    animation: shrink 3s linear forwards;
+                }}
+                @keyframes shrink {{
+                    from {{ width: 100%; }}
+                    to {{ width: 0%; }}
+                }}
+                .client-name {{ font-size: 18px; opacity: 0.9; margin-bottom: 5px; }}
+                .campaign-code {{ font-size: 12px; opacity: 0.6; }}
+                .manual-link {{
+                    display: inline-block;
+                    margin-top: 25px;
+                    color: white;
+                    opacity: 0.8;
+                    text-decoration: none;
+                    font-size: 14px;
+                    padding: 10px 20px;
+                    border: 1px solid rgba(255,255,255,0.3);
+                    border-radius: 25px;
+                    transition: all 0.3s;
+                }}
+                .manual-link:hover {{
+                    opacity: 1;
+                    background: rgba(255,255,255,0.1);
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🎯 QR Tracking</h1>
+                <div class="countdown" id="countdown">3</div>
+                <div class="progress-bar"><div class="progress"></div></div>
+                <p class="client-name">Redirigiendo a {client or 'destino'}...</p>
+                <p class="campaign-code">Campaña: {campaign_code}</p>
+                <a href="{destination}" class="manual-link">Ir manualmente →</a>
+            </div>
+            <script>
+                const sessionId = '{session_id}';
+                const scanId = {scan_id};
+                const destination = '{destination}';
+                
+                // Capturar datos adicionales del dispositivo (incluyendo CPU cores y DPR)
+                const deviceData = {{
+                    session_id: sessionId,
+                    screen_resolution: screen.width + 'x' + screen.height,
+                    viewport_size: window.innerWidth + 'x' + window.innerHeight,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                    connection_type: navigator.connection ? navigator.connection.effectiveType : 'unknown',
+                    1.0: navigator.hardwareConcurrency || null,
+                    1.0: window.devicePixelRatio || null
+                }};
+                
+                // Enviar datos adicionales
+                fetch('/api/track/device-data', {{
+                    method: 'POST',
+                    headers: {{'Content-Type': 'application/json'}},
+                    body: JSON.stringify(deviceData)
+                }}).catch(console.error);
+                
+                // Countdown visual
+                let count = 3;
+                const countdownEl = document.getElementById('countdown');
+                const interval = setInterval(() => {{
+                    count--;
+                    if (count > 0) {{
+                        countdownEl.textContent = count;
+                    }} else {{
+                        clearInterval(interval);
+                        countdownEl.textContent = '✓';
+                    }}
+                }}, 1000);
+                
+                // Redirigir después de 3 segundos
+                setTimeout(() => {{
+                    // Registrar completado
+                    fetch('/api/track/complete', {{
+                        method: 'POST',
+                        headers: {{'Content-Type': 'application/json'}},
+                        body: JSON.stringify({{
+                            session_id: sessionId,
+                            scan_id: scanId,
+                            completion_time: new Date().toISOString()
+                        }})
+                    }}).catch(console.error);
+                    
+                    window.location.href = destination;
+                }}, 3000);
+                
+                // Beacon al salir
+                window.addEventListener('beforeunload', () => {{
+                    navigator.sendBeacon('/api/track/complete', JSON.stringify({{
+                        session_id: sessionId,
+                        scan_id: scanId,
+                        completion_time: new Date().toISOString()
+                    }}));
+                }});
+            </script>
+        </body>
+        </html>
+        """
+        
+        return HTMLResponse(content=html_response)
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error procesando escaneo en background: {e}")
+        logger.error(f"Error en tracking: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 # ================================
 # APIs DE ADMINISTRACIÓN (BACKUPS/LOGS)
@@ -1957,83 +2195,84 @@ async def get_campaigns():
         logger.error(f"Error obteniendo campañas: {e}")
         return {"success": False, "error": str(e)}
 
+
 @app.post("/api/campaigns")
 async def create_campaign(campaign: CampaignCreate):
-    """Crear nueva campaña"""
     try:
+        campaign.campaign_code = campaign.campaign_code.upper().replace(' ', '_')
+        bg = generate_benchmark_group(campaign)
+        dur = compute_planned_duration(campaign.start_date, campaign.end_date)
+        
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO campaigns (campaign_code, client, destination, description, active)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (
-                campaign.campaign_code, campaign.client, campaign.destination,
-                campaign.description, campaign.active
-            ))
+            query = """
+                INSERT INTO campaigns (
+                    campaign_code, client, destination, description, active,
+                    product_name, start_date, end_date, campaign_status, campaign_phase,
+                    account_manager, hashtag, tags, industry, industry_sub,
+                    geo_country, geo_region, is_benchmark_eligible, campaign_type,
+                    campaign_objective, dooh_format, creative_type, venue_category,
+                    budget_tier, budget_currency, target_audience, social_amplification,
+                    social_platforms, influencer_support, internal_notes, target_scans,
+                    target_unique_visitors, target_ctr_pct, benchmark_group, planned_duration_days
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?
+                ) RETURNING *
+            """
+            values = (
+                campaign.campaign_code, campaign.client, campaign.destination, campaign.description, True,
+                campaign.product_name, campaign.start_date, campaign.end_date, campaign.campaign_status, campaign.campaign_phase,
+                campaign.account_manager, campaign.hashtag, campaign.tags, campaign.industry, campaign.industry_sub,
+                campaign.geo_country, campaign.geo_region, campaign.is_benchmark_eligible, campaign.campaign_type,
+                campaign.campaign_objective, campaign.dooh_format, campaign.creative_type, campaign.venue_category,
+                campaign.budget_tier, campaign.budget_currency, campaign.target_audience, campaign.social_amplification,
+                campaign.social_platforms, campaign.influencer_support, campaign.internal_notes, campaign.target_scans,
+                campaign.target_unique_visitors, campaign.target_ctr_pct, bg, dur
+            )
+            cursor.execute(query, values)
+            new_campaign = cursor.fetchone()
+            if new_campaign:
+                new_campaign = dict(new_campaign)
             conn.commit()
-            cursor.execute("SELECT lastval()")
-            campaign_id = cursor.fetchone()['lastval']
             
-            # Obtener la campaña creada
-            cursor.execute("SELECT * FROM campaigns WHERE id = %s", (campaign_id,))
-            new_campaign = dict(cursor.fetchone())
-        
-        logger.info(f"Campaña creada: {campaign.campaign_code}")
-        return {
-            "success": True,
-            "message": "Campaña creada exitosamente",
-            "campaign": new_campaign
-        }
+        return {"success": True, "message": "Campaña creada exitosamente", "campaign": new_campaign}
     except Exception as e:
         if "UNIQUE" in str(e).upper() or "duplicate" in str(e).lower() or "IntegrityError" in str(type(e)):
             return {"success": False, "error": "El código de campaña ya existe"}
-        logger.error(f"Error creando campaña: {e}")
         return {"success": False, "error": str(e)}
 
 @app.put("/api/campaigns/{campaign_code}")
 async def update_campaign(campaign_code: str, campaign_update: CampaignUpdate):
-    """Actualizar campaña existente"""
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            
-            # Verificar que la campaña existe
-            cursor.execute("SELECT id FROM campaigns WHERE campaign_code = %s", (campaign_code,))
+            cursor.execute("SELECT id FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             if not cursor.fetchone():
                 return {"success": False, "error": "Campaña no encontrada"}
             
-            # Construir query de actualización dinámicamente
             update_fields = []
             values = []
-            
-            if campaign_update.client is not None:
-                update_fields.append("client = %s")
-                values.append(campaign_update.client)
-            if campaign_update.destination is not None:
-                update_fields.append("destination = %s")
-                values.append(campaign_update.destination)
-            if campaign_update.description is not None:
-                update_fields.append("description = %s")
-                values.append(campaign_update.description)
-            if campaign_update.active is not None:
-                update_fields.append("active = %s")
-                values.append(campaign_update.active)
+            upd_dict = campaign_update.dict(exclude_unset=True)
+            for k, v in upd_dict.items():
+                update_fields.append(f"{k} = ?")
+                values.append(v)
             
             if not update_fields:
                 return {"success": False, "error": "No hay campos para actualizar"}
-            
+                
             update_fields.append("updated_at = CURRENT_TIMESTAMP")
             values.append(campaign_code)
             
-            query = f"UPDATE campaigns SET {', '.join(update_fields)} WHERE campaign_code = %s"
+            query = f"UPDATE campaigns SET {', '.join(update_fields)} WHERE campaign_code = ?"
             cursor.execute(query, values)
             conn.commit()
-        
-        logger.info(f"Campaña actualizada: {campaign_code}")
+            
         return {"success": True, "message": "Campaña actualizada exitosamente"}
     except Exception as e:
-        logger.error(f"Error actualizando campaña: {e}")
         return {"success": False, "error": str(e)}
+
 
 @app.put("/api/campaigns/{campaign_code}/pause")
 async def pause_campaign(campaign_code: str):
@@ -2043,7 +2282,7 @@ async def pause_campaign(campaign_code: str):
             cursor = conn.cursor()
             
             # Obtener estado actual
-            cursor.execute("SELECT active, client FROM campaigns WHERE campaign_code = %s", (campaign_code,))
+            cursor.execute("SELECT active, client FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             result = cursor.fetchone()
             
             if not result:
@@ -2056,8 +2295,8 @@ async def pause_campaign(campaign_code: str):
             # Cambiar estado
             cursor.execute("""
                 UPDATE campaigns 
-                SET active = %s, updated_at = CURRENT_TIMESTAMP 
-                WHERE campaign_code = %s
+                SET active = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE campaign_code = ?
             """, (new_active, campaign_code))
             conn.commit()
         
@@ -2081,7 +2320,7 @@ async def get_campaign_tracking_url(campaign_code: str, request: Request):
             cursor.execute("""
                 SELECT campaign_code, client, destination, description 
                 FROM campaigns 
-                WHERE campaign_code = %s
+                WHERE campaign_code = ?
             """, (campaign_code,))
             campaign = cursor.fetchone()
             
@@ -2129,7 +2368,7 @@ async def delete_campaign(campaign_code: str):
             cursor = conn.cursor()
             
             # Verificar que la campaña existe y obtener información
-            cursor.execute("SELECT client, description FROM campaigns WHERE campaign_code = %s", (campaign_code,))
+            cursor.execute("SELECT client, description FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             campaign_row = cursor.fetchone()
             
             if not campaign_row:
@@ -2138,7 +2377,7 @@ async def delete_campaign(campaign_code: str):
             client = campaign_row["client"]
             
             # Eliminar la campaña completamente
-            cursor.execute("DELETE FROM campaigns WHERE campaign_code = %s", (campaign_code,))
+            cursor.execute("DELETE FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             
             if cursor.rowcount == 0:
                 return {"success": False, "error": "No se pudo eliminar la campaña"}
@@ -2187,7 +2426,7 @@ async def get_device(device_id: str):
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM physical_devices WHERE device_id = %s", (device_id,))
+            cursor.execute("SELECT * FROM physical_devices WHERE device_id = ?", (device_id,))
             device_row = cursor.fetchone()
             
             if not device_row:
@@ -2213,24 +2452,23 @@ async def create_device(device: DeviceCreate):
             cursor = conn.cursor()
             
             # Verificar que el device_id no exista ya
-            cursor.execute("SELECT id FROM physical_devices WHERE device_id = %s", (device.device_id,))
+            cursor.execute("SELECT id FROM physical_devices WHERE device_id = ?", (device.device_id,))
             if cursor.fetchone():
                 logger.warning(f"Dispositivo ya existe: {device.device_id}")
                 return {"success": False, "error": "El ID del dispositivo ya existe"}
             
             cursor.execute("""
                 INSERT INTO physical_devices (device_id, device_name, device_type, location, venue, description, active)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
                 device.device_id, device.device_name, device.device_type,
                 device.location, device.venue, device.description, device.active
             ))
             conn.commit()
-            cursor.execute("SELECT lastval()")
-            device_pk_id = cursor.fetchone()['lastval']
+            device_pk_id = cursor.lastrowid
             
             # Obtener el dispositivo creado
-            cursor.execute("SELECT * FROM physical_devices WHERE id = %s", (device_pk_id,))
+            cursor.execute("SELECT * FROM physical_devices WHERE id = ?", (device_pk_id,))
             new_device = dict(cursor.fetchone())
         
         logger.info(f"Dispositivo creado exitosamente: {device.device_id}")
@@ -2239,12 +2477,10 @@ async def create_device(device: DeviceCreate):
             "message": "Dispositivo creado exitosamente",
             "device": new_device
         }
+    except sqlite3.IntegrityError as e:
+        logger.error(f"Error de integridad: {e}")
+        return {"success": False, "error": "El ID del dispositivo ya existe"}
     except Exception as e:
-        # Check if it's an integrity error from psycopg2 or sqlite3
-        if "IntegrityError" in type(e).__name__:
-            logger.error(f"Error de integridad: {e}")
-            return {"success": False, "error": "El ID del dispositivo ya existe"}
-            
         logger.error(f"Error creando dispositivo: {e}")
         return {"success": False, "error": str(e)}
 
@@ -2258,7 +2494,7 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
             cursor = conn.cursor()
             
             # Verificar que el dispositivo existe
-            cursor.execute("SELECT id FROM physical_devices WHERE device_id = %s", (device_id,))
+            cursor.execute("SELECT id FROM physical_devices WHERE device_id = ?", (device_id,))
             if not cursor.fetchone():
                 return {"success": False, "error": "Dispositivo no encontrado"}
             
@@ -2267,22 +2503,22 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
             values = []
             
             if device_update.device_name is not None:
-                update_fields.append("device_name = %s")
+                update_fields.append("device_name = ?")
                 values.append(device_update.device_name)
             if device_update.device_type is not None:
-                update_fields.append("device_type = %s")
+                update_fields.append("device_type = ?")
                 values.append(device_update.device_type)
             if device_update.location is not None:
-                update_fields.append("location = %s")
+                update_fields.append("location = ?")
                 values.append(device_update.location)
             if device_update.venue is not None:
-                update_fields.append("venue = %s")
+                update_fields.append("venue = ?")
                 values.append(device_update.venue)
             if device_update.description is not None:
-                update_fields.append("description = %s")
+                update_fields.append("description = ?")
                 values.append(device_update.description)
             if device_update.active is not None:
-                update_fields.append("active = %s")
+                update_fields.append("active = ?")
                 values.append(device_update.active)
             
             if not update_fields:
@@ -2291,7 +2527,7 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
             update_fields.append("updated_at = CURRENT_TIMESTAMP")
             values.append(device_id)
             
-            query = f"UPDATE physical_devices SET {', '.join(update_fields)} WHERE device_id = %s"
+            query = f"UPDATE physical_devices SET {', '.join(update_fields)} WHERE device_id = ?"
             cursor.execute(query, values)
             conn.commit()
             
@@ -2299,7 +2535,7 @@ async def update_device(device_id: str, device_update: DeviceUpdate):
                 return {"success": False, "error": "No se pudo actualizar el dispositivo"}
             
             # Obtener el dispositivo actualizado
-            cursor.execute("SELECT * FROM physical_devices WHERE device_id = %s", (device_id,))
+            cursor.execute("SELECT * FROM physical_devices WHERE device_id = ?", (device_id,))
             updated_device = dict(cursor.fetchone())
         
         logger.info(f"Dispositivo actualizado: {device_id}")
@@ -2322,7 +2558,7 @@ async def delete_device(device_id: str):
             cursor = conn.cursor()
             
             # Verificar que el dispositivo existe y obtener información
-            cursor.execute("SELECT device_name FROM physical_devices WHERE device_id = %s", (device_id,))
+            cursor.execute("SELECT device_name FROM physical_devices WHERE device_id = ?", (device_id,))
             device_row = cursor.fetchone()
             if not device_row:
                 return {"success": False, "error": "Dispositivo no encontrado"}
@@ -2330,7 +2566,7 @@ async def delete_device(device_id: str):
             device_name = device_row["device_name"]
             
             # Eliminar el dispositivo completamente
-            cursor.execute("DELETE FROM physical_devices WHERE device_id = %s", (device_id,))
+            cursor.execute("DELETE FROM physical_devices WHERE device_id = ?", (device_id,))
             
             if cursor.rowcount == 0:
                 return {"success": False, "error": "No se pudo eliminar el dispositivo"}
@@ -2394,7 +2630,7 @@ async def get_client_analytics(client_name: str):
             cursor = conn.cursor()
             
             # Verificar que el cliente existe
-            cursor.execute("SELECT COUNT(*) FROM campaigns WHERE client = %s", (client_name,))
+            cursor.execute("SELECT COUNT(*) FROM campaigns WHERE client = ?", (client_name,))
             if cursor.fetchone()[0] == 0:
                 return {"success": False, "error": "Cliente no encontrado"}
             
@@ -2402,17 +2638,17 @@ async def get_client_analytics(client_name: str):
             cursor.execute("""
                 SELECT 
                     COUNT(DISTINCT c.id) as total_campaigns,
-                    COUNT(DISTINCT CASE WHEN c.active = TRUE THEN c.id END) as active_campaigns,
+                    COUNT(DISTINCT CASE WHEN c.active = 1 THEN c.id END) as active_campaigns,
                     COALESCE(COUNT(s.id), 0) as total_scans,
-                    COALESCE(COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END), 0) as completed_redirects,
-                    ROUND(COALESCE(AVG(s.duration_seconds), 0)::numeric, 2) as avg_duration,
+                    COALESCE(COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END), 0) as completed_redirects,
+                    ROUND(COALESCE(AVG(s.duration_seconds), 0), 2) as avg_duration,
                     COUNT(DISTINCT s.ip_address) as unique_visitors,
                     COUNT(DISTINCT s.device_id) as unique_devices,
                     MIN(s.scan_timestamp) as first_scan,
                     MAX(s.scan_timestamp) as last_scan
                 FROM campaigns c
                 LEFT JOIN scans s ON c.campaign_code = s.campaign_code
-                WHERE c.client = %s
+                WHERE c.client = ?
             """, (client_name,))
             stats = dict(cursor.fetchone())
             
@@ -2431,11 +2667,11 @@ async def get_client_analytics(client_name: str):
                     c.active,
                     c.created_at,
                     COUNT(s.id) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds)::numeric, 2) as avg_duration
+                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
+                    ROUND(AVG(s.duration_seconds), 2) as avg_duration
                 FROM campaigns c
                 LEFT JOIN scans s ON c.campaign_code = s.campaign_code
-                WHERE c.client = %s
+                WHERE c.client = ?
                 GROUP BY c.id
                 ORDER BY scans DESC
             """, (client_name,))
@@ -2444,13 +2680,13 @@ async def get_client_analytics(client_name: str):
             # Actividad por día (últimos 30 días)
             cursor.execute("""
                 SELECT 
-                    CAST(s.scan_timestamp AS DATE) as date,
+                    DATE(s.scan_timestamp) as date,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions
+                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = %s AND s.scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '30 days'
-                GROUP BY CAST(s.scan_timestamp AS DATE)
+                WHERE c.client = ? AND s.scan_timestamp >= datetime('now', '-30 days')
+                GROUP BY DATE(s.scan_timestamp)
                 ORDER BY date
             """, (client_name,))
             daily_activity = [dict(row) for row in cursor.fetchall()]
@@ -2463,15 +2699,15 @@ async def get_client_analytics(client_name: str):
                     s.location,
                     s.venue,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions
+                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = %s AND s.device_id IS NOT NULL AND s.device_id != ''
-                GROUP BY s.device_id, s.device_name, s.location, s.venue
+                WHERE c.client = ? AND s.device_id IS NOT NULL AND s.device_id != ''
+                GROUP BY s.device_id
                 ORDER BY scans DESC
                 LIMIT 10
             """, (client_name,))
-            devices = [dict(row) for row in cursor.fetchall()]
+            top_devices = [dict(row) for row in cursor.fetchall()]
             
             # Distribución de tipos de dispositivos de usuarios
             cursor.execute("""
@@ -2480,67 +2716,11 @@ async def get_client_analytics(client_name: str):
                     COUNT(*) as count
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = %s
+                WHERE c.client = ?
                 GROUP BY s.user_device_type
                 ORDER BY count DESC
             """, (client_name,))
             device_types = [dict(row) for row in cursor.fetchall()]
-
-            # Distribución de marcas
-            cursor.execute("""
-                SELECT 
-                    COALESCE(NULLIF(s.device_brand, ''), 'Desconocida') as brand,
-                    COUNT(*) as count
-                FROM scans s
-                JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = %s
-                GROUP BY COALESCE(NULLIF(s.device_brand, ''), 'Desconocida')
-                ORDER BY count DESC
-            """, (client_name,))
-            device_brands = [dict(row) for row in cursor.fetchall()]
-
-            # Distribución de navegadores
-            cursor.execute("""
-                SELECT 
-                    COALESCE(NULLIF(s.browser, ''), 'Desconocido') as browser,
-                    COUNT(*) as count
-                FROM scans s
-                JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = %s
-                GROUP BY COALESCE(NULLIF(s.browser, ''), 'Desconocido')
-                ORDER BY count DESC
-            """, (client_name,))
-            browsers = [dict(row) for row in cursor.fetchall()]
-
-            # Sedes / Venues
-            cursor.execute("""
-                SELECT 
-                    COALESCE(NULLIF(s.venue, ''), NULLIF(s.location, ''), 'Desconocida') as venue,
-                    COUNT(*) as scans,
-                    COUNT(DISTINCT s.ip_address) as unique_visitors
-                FROM scans s
-                JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = %s
-                GROUP BY COALESCE(NULLIF(s.venue, ''), NULLIF(s.location, ''), 'Desconocida')
-                ORDER BY scans DESC
-            """, (client_name,))
-            venues = [dict(row) for row in cursor.fetchall()]
-
-            # Últimos escaneos
-            cursor.execute("""
-                SELECT 
-                    s.scan_timestamp, s.campaign_code, s.device_id, s.device_name, 
-                    s.location, s.venue, s.user_device_type, s.browser, s.operating_system, 
-                    s.duration_seconds, s.redirect_completed, s.device_brand, s.device_model,
-                    s.connection_type, s.isp_carrier, s.ip_address,
-                    s.id as scan_id, c.description as campaign_name
-                FROM scans s
-                JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = %s
-                ORDER BY s.scan_timestamp DESC
-                LIMIT 500
-            """, (client_name,))
-            recent_scans = [dict(row) for row in cursor.fetchall()]
         
         return {
             "success": True,
@@ -2548,12 +2728,8 @@ async def get_client_analytics(client_name: str):
             "stats": stats,
             "campaigns": campaigns,
             "daily_activity": daily_activity,
-            "devices": devices,
-            "device_types": device_types,
-            "device_brands": device_brands,
-            "browsers": browsers,
-            "venues": venues,
-            "recent_scans": recent_scans
+            "top_devices": top_devices,
+            "device_types": device_types
         }
     except Exception as e:
         logger.error(f"Error obteniendo analytics de cliente: {e}")
@@ -2566,94 +2742,20 @@ async def get_client_analytics(client_name: str):
 @app.post("/api/track/device-data")
 async def track_device_data(device_data: DeviceDataUpdate):
     """Registrar datos adicionales del dispositivo del usuario"""
-    
-    def resolve_ios_model(screen_res: str, dpr: float, webgl: str) -> Optional[str]:
-        if not screen_res or dpr is None:
-            return None
-            
-        webgl_lower = (webgl or "").lower()
-        
-        # 1. Exact match with WebGL Chip (If Not Masked)
-        model_map_exact = {
-            # iPhone 16 Series
-            ("440x956", 3.0, "a18"): "iPhone 16 Pro Max",
-            ("402x874", 3.0, "a18"): "iPhone 16 Pro",
-            ("430x932", 3.0, "a18"): "iPhone 16 Plus",
-            ("393x852", 3.0, "a18"): "iPhone 16",
-            
-            # iPhone 15 Series
-            ("430x932", 3.0, "a17"): "iPhone 15 Pro Max",
-            ("393x852", 3.0, "a17"): "iPhone 15 Pro",
-            ("430x932", 3.0, "a16"): "iPhone 14 Pro Max / 15 Plus",
-            ("393x852", 3.0, "a16"): "iPhone 14 Pro / 15", 
-            
-            # iPhone 14 / 13 Series
-            ("428x926", 3.0, "a15"): "iPhone 13 Pro Max / 14 Plus",
-            ("390x844", 3.0, "a15"): "iPhone 13 Pro / 14",
-            ("375x812", 3.0, "a15"): "iPhone 13 mini",
-            
-            # iPhone 12 Series
-            ("428x926", 3.0, "a14"): "iPhone 12 Pro Max",
-            ("390x844", 3.0, "a14"): "iPhone 12 / 12 Pro",
-            ("375x812", 3.0, "a14"): "iPhone 12 mini",
-            
-            # iPhone 11 Series
-            ("414x896", 3.0, "a13"): "iPhone 11 Pro Max",
-            ("414x896", 2.0, "a13"): "iPhone 11",
-            ("375x812", 3.0, "a13"): "iPhone 11 Pro",
-            ("375x667", 2.0, "a13"): "iPhone SE (2nd Gen)",
-            
-            # iPhone X / 8 Series
-            ("414x896", 3.0, "a12"): "iPhone XS Max",
-            ("414x896", 2.0, "a12"): "iPhone XR",
-            ("375x812", 3.0, "a12"): "iPhone XS",
-            ("414x736", 3.0, "a11"): "iPhone 8 Plus",
-            ("375x812", 3.0, "a11"): "iPhone X",
-            ("375x667", 2.0, "a11"): "iPhone 8"
-        }
-        
-        chip_key = None
-        for chip in ["a18", "a17", "a16", "a15", "a14", "a13", "a12", "a11"]:
-            if chip in webgl_lower:
-                chip_key = chip
-                break
-                
-        if chip_key:
-            return model_map_exact.get((screen_res, float(dpr), chip_key))
-            
-        # 2. Fallback Probability Match (If WebGL is masked to "Apple GPU")
-        model_map_fallback = {
-            ("440x956", 3.0): "iPhone 16 Pro Max",
-            ("402x874", 3.0): "iPhone 16 Pro",
-            ("430x932", 3.0): "iPhone 14 Pro Max / 15/16 Plus",
-            ("393x852", 3.0): "iPhone 14 Pro / 15/16",
-            ("428x926", 3.0): "iPhone 12/13/14 Pro Max / 14 Plus",
-            ("390x844", 3.0): "iPhone 12/13/14",
-            ("414x896", 3.0): "iPhone XS Max / 11 Pro Max",
-            ("414x896", 2.0): "iPhone XR / 11",
-            ("375x812", 3.0): "iPhone X/XS/11 Pro / 12/13 mini",
-            ("414x736", 3.0): "iPhone 6/7/8 Plus",
-            ("375x812", 2.0): "iPhone (In-App Browser Mode)", # Fallback genérico UIWebView
-            ("375x667", 2.0): "iPhone 6/7/8 / SE"
-        }
-        
-        # If the WebGL was generic or missing, just rely on screen resolution geometry
-        return model_map_fallback.get((screen_res, float(dpr)))
-
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
                 UPDATE scans SET
-                    screen_resolution = COALESCE(%s, screen_resolution),
-                    viewport_size = COALESCE(%s, viewport_size),
-                    timezone = COALESCE(%s, timezone),
-                    language = COALESCE(%s, language),
-                    platform = COALESCE(%s, platform),
-                    connection_type = COALESCE(%s, connection_type),
-                    cpu_cores = COALESCE(%s, cpu_cores),
-                    device_pixel_ratio = COALESCE(%s, device_pixel_ratio)
-                WHERE session_id = %s
+                    screen_resolution = ?,
+                    viewport_size = ?,
+                    timezone = ?,
+                    language = ?,
+                    platform = ?,
+                    connection_type = ?,
+                    1.0 = ?,
+                    1.0 = ?
+                WHERE session_id = ?
             """, (
                 device_data.screen_resolution,
                 device_data.viewport_size,
@@ -2661,49 +2763,16 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.language,
                 device_data.platform,
                 device_data.connection_type,
-                device_data.cpu_cores,
+                device_data.device_pixel_ratio,
                 device_data.device_pixel_ratio,
                 device_data.session_id
             ))
-            
-            # Recolectar marca original para ver si es Apple
-            cursor.execute("SELECT user_agent, device_brand, device_model FROM scans WHERE session_id = %s", (device_data.session_id,))
-            result = cursor.fetchone()
-            
-            new_brand = None
-            new_model = None
-            
-            # 1. Intento de Client Hints (Android / Windows / Mac Chrome)
-            if device_data.ua_model and result and result["user_agent"]:
-                refined_device = detect_device_info(result["user_agent"], client_hint_model=device_data.ua_model)
-                new_brand = refined_device["device_brand"]
-                new_model = refined_device["device_model"]
-                scans_logger.info(f"Dispositivo Refinado con IA (Client Hints): {new_brand} {new_model} (Hash: {device_data.ua_model})")
-                
-            # 2. Heurística Avanzada iOS (WebGL + Resolución)
-            if result and (result["device_brand"] == "Apple" or "iPhone" in (result["user_agent"] or "")):
-                ios_model = resolve_ios_model(
-                    device_data.screen_resolution, 
-                    device_data.device_pixel_ratio, 
-                    device_data.webgl_renderer
-                )
-                if ios_model:
-                    new_brand = "Apple"
-                    new_model = ios_model
-                    scans_logger.info(f"iPhone Inferido Probabilísticamente: {ios_model} (Resolución: {device_data.screen_resolution}, GPU: {device_data.webgl_renderer})")
-            
-            # Ejecutar superposición si descubrimos algo nuevo
-            if new_brand and new_model and (new_brand != "Unknown" or new_model != "Unknown"):
-                cursor.execute("""
-                    UPDATE scans SET device_brand = %s, device_model = %s WHERE session_id = %s
-                """, (new_brand, new_model, device_data.session_id))
-                
             conn.commit()
             
             if cursor.rowcount == 0:
                 return {"success": False, "error": "Session no encontrada"}
         
-        scans_logger.info(f"Datos de dispositivo actualizados: session={device_data.session_id}, cores={device_data.cpu_cores}, dpr={device_data.device_pixel_ratio}")
+        scans_logger.info(f"Datos de dispositivo actualizados: session={device_data.session_id}, cores={device_data.device_pixel_ratio}, dpr={device_data.device_pixel_ratio}")
         return {"success": True, "message": "Datos actualizados"}
     except Exception as e:
         logger.error(f"Error actualizando datos del dispositivo: {e}")
@@ -2713,33 +2782,26 @@ async def track_device_data(device_data: DeviceDataUpdate):
 async def complete_tracking(request: Request):
     """Marcar tracking como completado"""
     try:
-        try:
-            data = await request.json()
-        except:
-            # Fallback for navigator.sendBeacon returning plain text stringified JSON
-            import json
-            raw_body = await request.body()
-            data = json.loads(raw_body.decode('utf-8'))
-            
+        data = await request.json()
         session_id = data.get("session_id")
+        scan_id = data.get("scan_id")
         completion_time = data.get("completion_time")
         
-        if not session_id:
-            return {"success": False, "error": "session_id requerido"}
+        if not session_id or not scan_id:
+            return {"success": False, "error": "session_id y scan_id requeridos"}
         
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
             # Calcular duración si es posible
             cursor.execute("""
-                SELECT id, scan_timestamp FROM scans 
-                WHERE session_id = %s
-                ORDER BY scan_timestamp DESC LIMIT 1
-            """, (session_id,))
+                SELECT scan_timestamp FROM scans 
+                WHERE id = ? AND session_id = ?
+            """, (scan_id, session_id))
             result = cursor.fetchone()
             
-            duration = data.get("time_spent")
-            if duration is None and result and completion_time:
+            duration = None
+            if result and completion_time:
                 try:
                     start_time = datetime.fromisoformat(result["scan_timestamp"].replace("Z", "+00:00"))
                     end_time = datetime.fromisoformat(completion_time.replace("Z", "+00:00"))
@@ -2748,20 +2810,16 @@ async def complete_tracking(request: Request):
                     pass
             
             # Actualizar el registro
-            if result:
-                scan_id = result["id"]
-                cursor.execute("""
-                    UPDATE scans 
-                    SET redirect_completed = TRUE, 
-                        redirect_timestamp = CURRENT_TIMESTAMP,
-                        duration_seconds = %s
-                    WHERE id = %s AND session_id = %s
-                """, (duration, scan_id, session_id))
-                conn.commit()
-                scans_logger.info(f"Tracking completado: session={session_id}, duration={duration}s")
-            else:
-                return {"success": False, "error": "Session no encontrada"}
+            cursor.execute("""
+                UPDATE scans 
+                SET redirect_completed = 1, 
+                    redirect_timestamp = CURRENT_TIMESTAMP,
+                    duration_seconds = ?
+                WHERE id = ? AND session_id = ?
+            """, (duration, scan_id, session_id))
+            conn.commit()
         
+        scans_logger.info(f"Tracking completado: scan_id={scan_id}, duration={duration}s")
         return {"success": True, "message": "Tracking completado"}
     except Exception as e:
         logger.error(f"Error completando tracking: {e}")
@@ -2770,139 +2828,6 @@ async def complete_tracking(request: Request):
 # ================================
 # APIs DE ANALYTICS
 # ================================
-
-@app.get("/api/analytics/device-hierarchy")
-async def get_device_hierarchy():
-    """Obtener jerarquía de dispositivos (Tipo -> Marca -> Modelo -> Navegador)"""
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT 
-                    COALESCE(user_device_type, 'Unknown') as device_type,
-                    COALESCE(device_brand, 'Unknown') as device_brand,
-                    COALESCE(device_model, 'Unknown') as device_model,
-                    COALESCE(browser, 'Unknown') as browser,
-                    COUNT(*) as count
-                FROM scans
-                GROUP BY user_device_type, device_brand, device_model, browser
-                ORDER BY count DESC
-            """)
-            
-            rows = cursor.fetchall()
-            
-            hierarchy = {}
-            for row in rows:
-                dtype = row["device_type"]
-                brand = row["device_brand"]
-                model = row["device_model"]
-                browser = row["browser"]
-                count = row["count"]
-                
-                if dtype not in hierarchy:
-                    hierarchy[dtype] = {"name": dtype, "count": 0, "brands": {}}
-                hierarchy[dtype]["count"] += count
-                
-                if brand not in hierarchy[dtype]["brands"]:
-                    hierarchy[dtype]["brands"][brand] = {"name": brand, "count": 0, "models": {}}
-                hierarchy[dtype]["brands"][brand]["count"] += count
-                
-                if model not in hierarchy[dtype]["brands"][brand]["models"]:
-                    hierarchy[dtype]["brands"][brand]["models"][model] = {"name": model, "count": 0, "browsers": {}}
-                hierarchy[dtype]["brands"][brand]["models"][model]["count"] += count
-                
-                if browser not in hierarchy[dtype]["brands"][brand]["models"][model]["browsers"]:
-                    hierarchy[dtype]["brands"][brand]["models"][model]["browsers"][browser] = {"name": browser, "count": 0}
-                hierarchy[dtype]["brands"][brand]["models"][model]["browsers"][browser]["count"] += count
-            
-            def dict_to_sorted_list(d, children_key=None):
-                result = list(d.values())
-                result.sort(key=lambda x: x["count"], reverse=True)
-                if children_key:
-                    for item in result:
-                        if children_key in item:
-                            next_key = "models" if children_key == "brands" else ("browsers" if children_key == "models" else None)
-                            item[children_key] = dict_to_sorted_list(item[children_key], next_key)
-                return result
-                
-            sorted_hierarchy = dict_to_sorted_list(hierarchy, "brands")
-            
-            return {
-                "success": True,
-                "hierarchy": sorted_hierarchy
-            }
-            
-    except Exception as e:
-        logger.error(f"Error obteniendo jerarquía de dispositivos: {e}")
-        return {"success": False, "error": str(e)}
-@app.get("/api/analytics/device-hierarchy/client/{client_name}")
-async def get_client_device_hierarchy(client_name: str):
-    """Obtener jerarquía de dispositivos para un cliente específico"""
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT 
-                    COALESCE(user_device_type, 'Unknown') as device_type,
-                    COALESCE(device_brand, 'Unknown') as device_brand,
-                    COALESCE(device_model, 'Unknown') as device_model,
-                    COALESCE(browser, 'Unknown') as browser,
-                    COUNT(*) as count
-                FROM scans
-                WHERE client = %s
-                GROUP BY user_device_type, device_brand, device_model, browser
-                ORDER BY count DESC
-            """, (client_name,))
-            
-            rows = cursor.fetchall()
-            
-            hierarchy = {}
-            for row in rows:
-                dtype = row["device_type"]
-                brand = row["device_brand"]
-                model = row["device_model"]
-                browser = row["browser"]
-                count = row["count"]
-                
-                if dtype not in hierarchy:
-                    hierarchy[dtype] = {"name": dtype, "count": 0, "brands": {}}
-                hierarchy[dtype]["count"] += count
-                
-                if brand not in hierarchy[dtype]["brands"]:
-                    hierarchy[dtype]["brands"][brand] = {"name": brand, "count": 0, "models": {}}
-                hierarchy[dtype]["brands"][brand]["count"] += count
-                
-                if model not in hierarchy[dtype]["brands"][brand]["models"]:
-                    hierarchy[dtype]["brands"][brand]["models"][model] = {"name": model, "count": 0, "browsers": {}}
-                hierarchy[dtype]["brands"][brand]["models"][model]["count"] += count
-                
-                if browser not in hierarchy[dtype]["brands"][brand]["models"][model]["browsers"]:
-                    hierarchy[dtype]["brands"][brand]["models"][model]["browsers"][browser] = {"name": browser, "count": 0}
-                hierarchy[dtype]["brands"][brand]["models"][model]["browsers"][browser]["count"] += count
-            
-            def dict_to_sorted_list(d, children_key=None):
-                result = list(d.values())
-                result.sort(key=lambda x: x["count"], reverse=True)
-                if children_key:
-                    for item in result:
-                        if children_key in item:
-                            next_key = "models" if children_key == "brands" else ("browsers" if children_key == "models" else None)
-                            item[children_key] = dict_to_sorted_list(item[children_key], next_key)
-                return result
-                
-            sorted_hierarchy = dict_to_sorted_list(hierarchy, "brands")
-            
-            return {
-                "success": True,
-                "client": client_name,
-                "hierarchy": sorted_hierarchy
-            }
-            
-    except Exception as e:
-        logger.error(f"Error obteniendo jerarquía de dispositivos por cliente: {e}")
-        return {"success": False, "error": str(e)}
 
 @app.get("/api/analytics/dashboard")
 async def get_dashboard_analytics():
@@ -2914,13 +2839,13 @@ async def get_dashboard_analytics():
             # Estadísticas generales mejoradas
             cursor.execute("""
                 SELECT 
-                    (SELECT COUNT(*) FROM campaigns WHERE active = TRUE) as active_campaigns,
-                    (SELECT COUNT(*) FROM physical_devices WHERE active = TRUE) as active_devices,
+                    (SELECT COUNT(*) FROM campaigns WHERE active = 1) as active_campaigns,
+                    (SELECT COUNT(*) FROM physical_devices WHERE active = 1) as active_devices,
                     (SELECT COUNT(*) FROM scans) as total_scans,
-                    (SELECT COUNT(*) FROM scans WHERE redirect_completed = TRUE) as completed_redirects,
+                    (SELECT COUNT(*) FROM scans WHERE redirect_completed = 1) as completed_redirects,
                     (SELECT COUNT(DISTINCT client) FROM campaigns WHERE client != '') as total_clients,
-                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '24 hours') as scans_24h,
-                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '7 days') as scans_7d,
+                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= datetime('now', '-24 hours')) as scans_24h,
+                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= datetime('now', '-7 days')) as scans_7d,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans) as unique_visitors
             """)
             stats = dict(cursor.fetchone())
@@ -2931,8 +2856,8 @@ async def get_dashboard_analytics():
                     s.campaign_code as campaign,
                     s.client,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds)::numeric, 2) as avg_duration,
+                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
+                    ROUND(AVG(s.duration_seconds), 2) as avg_duration,
                     MAX(s.scan_timestamp) as last_scan
                 FROM scans s
                 GROUP BY s.campaign_code, s.client
@@ -2966,11 +2891,11 @@ async def get_dashboard_analytics():
                     pd.venue,
                     pd.device_type,
                     COUNT(s.id) as scans,
-                    COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds)::numeric, 2) as avg_duration
+                    COUNT(CASE WHEN s.redirect_completed = 1 THEN 1 END) as completions,
+                    ROUND(AVG(s.duration_seconds), 2) as avg_duration
                 FROM physical_devices pd
                 LEFT JOIN scans s ON pd.device_id = s.device_id
-                WHERE pd.active = TRUE
+                WHERE pd.active = 1
                 GROUP BY pd.id
                 ORDER BY scans DESC
                 LIMIT 10
@@ -2980,11 +2905,11 @@ async def get_dashboard_analytics():
             # Actividad por horas (últimas 24 horas)
             cursor.execute("""
                 SELECT 
-                    EXTRACT(HOUR FROM scan_timestamp)::INTEGER as hour,
+                    CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour,
                     COUNT(*) as scans
                 FROM scans
-                WHERE scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '24 hours'
-                GROUP BY EXTRACT(HOUR FROM scan_timestamp)
+                WHERE scan_timestamp >= datetime('now', '-24 hours')
+                GROUP BY strftime('%H', scan_timestamp)
                 ORDER BY hour
             """)
             hourly = [dict(row) for row in cursor.fetchall()]
@@ -2994,7 +2919,7 @@ async def get_dashboard_analytics():
                 SELECT 
                     venue,
                     COUNT(*) as scans,
-                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completions,
+                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completions,
                     COUNT(DISTINCT device_id) as devices_count
                 FROM scans 
                 WHERE venue IS NOT NULL AND venue != ''
@@ -3051,7 +2976,7 @@ async def log_qr_generation(qr_log: QRGenerationLog, request: Request):
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO qr_generations (campaign_id, physical_device_id, qr_size, generated_by)
-                VALUES (%s, %s, %s, %s)
+                VALUES (?, ?, ?, ?)
             """, (
                 qr_log.campaign_id, qr_log.physical_device_id, 
                 qr_log.qr_size, generated_by
@@ -3068,9 +2993,7 @@ async def log_qr_generation(qr_log: QRGenerationLog, request: Request):
 # ================================
 
 def generate_qr_image(data: str, size: int = 300, error_correction: str = "M", 
-                      color_dark: str = "#000000", color_light: str = "#FFFFFF",
-                      logo_mode: str = "default",
-                      brand_logo_base64: Optional[str] = None) -> Optional[str]:
+                      color_dark: str = "#000000", color_light: str = "#FFFFFF") -> Optional[str]:
     """
     Genera una imagen QR y la devuelve como base64
     
@@ -3080,131 +3003,50 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         error_correction: Nivel de corrección de errores (L, M, Q, H)
         color_dark: Color de los módulos oscuros (hex)
         color_light: Color del fondo (hex)
-        logo_mode: Modo de logo
-        brand_logo_base64: Base64 subido por el usuario
     
     Returns:
         Imagen en formato base64 o None si hay error
     """
     if not QR_LIBRARY_AVAILABLE:
-        logger.error("Biblioteca segno no disponible")
+        logger.error("Biblioteca qrcode no disponible")
         return None
     
     try:
-        # Forzar alta corrección 'H' si se usará logo central (cubre 25% del área)
-        if logo_mode in ["default", "brand_only", "brand_full"]:
-            error_correction = "H"
-            
-        # Segno crea la matriz con error dinámico (L, M, Q, H) - minúsculas requeridas
-        error_level = error_correction.lower() if error_correction.lower() in ['l', 'm', 'q', 'h'] else 'm'
-        qr = segno.make(data, error=error_level)
+        # Mapear nivel de corrección de errores
+        error_levels = {
+            "L": ERROR_CORRECT_L,  # ~7% corrección
+            "M": ERROR_CORRECT_M,  # ~15% corrección
+            "Q": ERROR_CORRECT_Q,  # ~25% corrección
+            "H": ERROR_CORRECT_H   # ~30% corrección
+        }
+        error_level = error_levels.get(error_correction.upper(), ERROR_CORRECT_M)
         
+        # Crear código QR
+        qr = qrcode.QRCode(
+            version=None,  # Auto-determinar versión
+            error_correction=error_level,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+        
+        # Convertir colores hex a RGB
         def hex_to_rgb(hex_color):
             hex_color = hex_color.lstrip('#')
             return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
         
-        # Segno guarda directamente un PNG en memoria usando io.BytesIO
-        # Ajustamos border=5 para máxima compatibilidad con lectores viejos
-        qr_buffer = io.BytesIO()
-        qr.save(qr_buffer, kind='png', scale=10, border=5, dark=color_dark, light=color_light)
-        qr_buffer.seek(0)
+        fill_color = hex_to_rgb(color_dark)
+        back_color = hex_to_rgb(color_light)
         
-        # Abrimos la imagen recién generada con Pillow
-        img = Image.open(qr_buffer).convert('RGBA')
+        # Crear imagen
+        img = qr.make_image(fill_color=fill_color, back_color=back_color)
         
-        # Redimensionar al tamaño final solicitado en UI
+        # Redimensionar si es necesario
         if img.size[0] != size:
             img = img.resize((size, size), Image.LANCZOS if PIL_AVAILABLE else Image.NEAREST)
-            
-        # Determinar qué base64 usar en función del logo_mode
-        center_logo_b64 = None
-        banner_b64 = None
-        if logo_mode == "default":
-            center_logo_b64 = CENTAURO_LOGO_BASE64
-        elif logo_mode == "brand_only":
-            center_logo_b64 = brand_logo_base64
-        elif logo_mode == "brand_full":
-            center_logo_b64 = brand_logo_base64
-            banner_b64 = CENTAURO_BANNER_BASE64
-            
-        # Procesar e inyectar el LOGO
-        if center_logo_b64 and PIL_AVAILABLE:
-            try:
-                if ',' in center_logo_b64:
-                    center_logo_b64 = center_logo_b64.split(',')[1]
-                
-                logo_bytes = base64.b64decode(center_logo_b64)
-                logo_img = Image.open(io.BytesIO(logo_bytes))
-                
-                if logo_img.mode != 'RGBA':
-                    logo_img = logo_img.convert('RGBA')
-                
-                qr_width, qr_height = img.size
-                # LOGO TAMAÑO SEGURO AL 25% (Asegura escaneo 99%)
-                logo_max_size = int(min(qr_width, qr_height) * 0.25)
-                
-                logo_width, logo_height = logo_img.size
-                ratio = min(logo_max_size / logo_width, logo_max_size / logo_height)
-                new_size = (int(logo_width * ratio), int(logo_height * ratio))
-                
-                logo_img = logo_img.resize(new_size, Image.LANCZOS)
-                
-                pos_x = (qr_width - new_size[0]) // 2
-                pos_y = (qr_height - new_size[1]) // 2
-                
-                # Crear un fondo blanco con un pequeño margen para el logo (Quiet Masking)
-                padding = 10
-                bg_size = (new_size[0] + padding * 2, new_size[1] + padding * 2)
-                bg_pos_x = pos_x - padding
-                bg_pos_y = pos_y - padding
-                
-                img = img.convert('RGBA')
-                
-                # Dibujar rectángulo blanco limpio
-                draw = ImageDraw.Draw(img)
-                draw.rectangle(
-                    [bg_pos_x, bg_pos_y, bg_pos_x + bg_size[0], bg_pos_y + bg_size[1]],
-                    fill=(255, 255, 255, 255)
-                )
-                
-                # Pegar archivo transpartente encima del recuadro
-                img.paste(logo_img, (pos_x, pos_y), logo_img)
-            except Exception as e:
-                logger.error(f"Error superponiendo logo en QR con segno: {str(e)}")
-
-        # Procesar e inyectar el BANNER inferior
-        if banner_b64 and PIL_AVAILABLE:
-            try:
-                if ',' in banner_b64:
-                    banner_b64 = banner_b64.split(',')[1]
-                
-                banner_bytes = base64.b64decode(banner_b64)
-                banner_img = Image.open(io.BytesIO(banner_bytes))
-                
-                if banner_img.mode != 'RGBA':
-                    banner_img = banner_img.convert('RGBA')
-                
-                qr_width, qr_height = img.size
-                
-                banner_width, banner_height = banner_img.size
-                ratio = qr_width / banner_width
-                new_banner_size = (int(banner_width * ratio), int(banner_height * ratio))
-                banner_img = banner_img.resize(new_banner_size, Image.LANCZOS)
-                
-                padding_y = 10
-                final_height = qr_height + new_banner_size[1] + padding_y
-                
-                final_img = Image.new('RGB', (qr_width, final_height), hex_to_rgb(color_light))
-                
-                img = img.convert('RGBA')
-                final_img.paste(img, (0, 0), img)
-                final_img.paste(banner_img, (0, qr_height + padding_y), banner_img)
-                
-                img = final_img
-            except Exception as e:
-                logger.error(f"Error superponiendo banner en QR con segno: {str(e)}")
         
-        # Convertir contenedor Pillow modificado de vuelta a un buffer de byte B64
+        # Convertir a base64
         buffer = io.BytesIO()
         img.save(buffer, format='PNG')
         buffer.seek(0)
@@ -3213,7 +3055,7 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         return img_base64
         
     except Exception as e:
-        logger.error(f"Error generando imagen QR con segno: {e}")
+        logger.error(f"Error generando imagen QR: {e}")
         return None
 
 @app.post("/api/qr/generate")
@@ -3229,7 +3071,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
         if not QR_LIBRARY_AVAILABLE:
             return {
                 "success": False, 
-                "error": "Biblioteca de generación de QR no disponible. Instale: pip install segno"
+                "error": "Biblioteca de generación de QR no disponible. Instale: pip install qrcode[pil]"
             }
         
         # Obtener datos de la campaña
@@ -3238,7 +3080,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
             cursor.execute("""
                 SELECT id, campaign_code, client, destination, active 
                 FROM campaigns 
-                WHERE campaign_code = %s
+                WHERE campaign_code = ?
             """, (qr_request.campaign_code,))
             campaign = cursor.fetchone()
             
@@ -3256,7 +3098,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
                 cursor.execute("""
                     SELECT id, device_id, device_name, location, venue 
                     FROM physical_devices 
-                    WHERE device_id = %s
+                    WHERE device_id = ?
                 """, (qr_request.device_id,))
                 device = cursor.fetchone()
                 if device:
@@ -3288,20 +3130,13 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
         
         tracking_url = f"{base_url}/track?{urlencode(params, quote_via=quote)}"
         
-        # Forzar alta corrección si hay logo
-        error_correction = "M"
-        if qr_request.brand_logo_base64:
-            error_correction = "H"
-            
         # Generar imagen QR
         qr_image = generate_qr_image(
             data=tracking_url,
             size=qr_request.size,
-            error_correction=error_correction,
+            error_correction="M",
             color_dark=qr_request.color_dark,
-            color_light=qr_request.color_light,
-            logo_mode=qr_request.logo_mode,
-            brand_logo_base64=qr_request.brand_logo_base64
+            color_light=qr_request.color_light
         )
         
         if not qr_image:
@@ -3313,7 +3148,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO qr_generations (campaign_id, physical_device_id, qr_size, generated_by)
-                    VALUES (%s, %s, %s, %s)
+                    VALUES (?, ?, ?, ?)
                 """, (
                     campaign_data["id"],
                     device_data["id"] if device_data else None,
@@ -3337,9 +3172,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
             },
             "device": device_data,
             "size": qr_request.size,
-            "format": qr_request.format,
-            "logo_mode": qr_request.logo_mode,
-            "filename_suffix": "_" + qr_request.logo_mode[:2].upper()
+            "format": qr_request.format
         }
         
     except Exception as e:
@@ -3359,7 +3192,7 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
         if not QR_LIBRARY_AVAILABLE:
             return {
                 "success": False, 
-                "error": "Biblioteca de generación de QR no disponible. Instale: pip install segno"
+                "error": "Biblioteca de generación de QR no disponible. Instale: pip install qrcode[pil]"
             }
         
         # Validar URL/texto
@@ -3377,10 +3210,6 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
         error_correction = qr_request.error_correction.upper()
         if error_correction not in valid_error_levels:
             error_correction = "M"
-            
-        # Forzar alta corrección si hay logo
-        if qr_request.brand_logo_base64:
-            error_correction = "H"
         
         # Generar imagen QR
         qr_image = generate_qr_image(
@@ -3388,9 +3217,7 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
             size=qr_request.size,
             error_correction=error_correction,
             color_dark=qr_request.color_dark,
-            color_light=qr_request.color_light,
-            logo_mode=qr_request.logo_mode,
-            brand_logo_base64=qr_request.brand_logo_base64
+            color_light=qr_request.color_light
         )
         
         if not qr_image:
@@ -3402,7 +3229,7 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO qr_generations (campaign_id, physical_device_id, qr_size, generated_by)
-                    VALUES (%s, %s, %s, %s)
+                    VALUES (?, ?, ?, ?)
                 """, (None, None, qr_request.size, get_client_ip(request)))
                 conn.commit()
         except Exception as log_error:
@@ -3416,128 +3243,12 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
             "url": url,
             "size": qr_request.size,
             "error_correction": error_correction,
-            "format": qr_request.format,
-            "logo_mode": qr_request.logo_mode,
-            "filename_suffix": "_" + qr_request.logo_mode[:2].upper()
+            "format": qr_request.format
         }
         
     except Exception as e:
         logger.error(f"Error generando QR personalizado: {e}")
         return {"success": False, "error": str(e)}
-
-class QRGenerateWithLogoRequest(BaseModel):
-    data: str
-    size: int = 300
-    color_dark: str = "#000000"
-    color_light: str = "#FFFFFF"
-    logo_mode: str = "default"
-    brand_logo_base64: Optional[str] = None
-    brand_banner_base64: Optional[str] = None
-    error_correction: str = "H"
-
-@app.post("/api/qr/generate-with-logo")
-async def generate_qr_with_logo(request: QRGenerateWithLogoRequest):
-    """Endpoint simplificado para generar un QR con el logo solicitado"""
-    try:
-        qr_image = generate_qr_image(
-            data=request.data,
-            size=request.size,
-            error_correction=request.error_correction,
-            color_dark=request.color_dark,
-            color_light=request.color_light,
-            logo_mode=request.logo_mode,
-            brand_logo_base64=request.brand_logo_base64
-        )
-        if not qr_image:
-            return {"success": False, "error": "Error generando imagen QR"}
-        return {"success": True, "qr_image": qr_image}
-    except Exception as e:
-        logger.error(f"Error al regenerar logo QR: {e}")
-        return {"success": False, "error": str(e)}
-
-@app.post("/api/qr/validate-logo")
-async def validate_logo(request: LogoValidationRequest):
-    """Valida una imagen subida como logo para QR"""
-    try:
-        # Extraer base64
-        base64_data = request.image_base64
-        if ',' in base64_data:
-            base64_data = base64_data.split(',')[1]
-            
-        image_bytes = base64.b64decode(base64_data)
-        
-        # Calcular tamaño
-        file_size_kb = len(image_bytes) / 1024
-        
-        # Leer imagen con Pillow
-        if not PIL_AVAILABLE:
-            return {"can_proceed": False, "score": 0.0, "errors": ["La biblioteca Pillow no está instalada"]}
-            
-        img = Image.open(io.BytesIO(image_bytes))
-        width, height = img.size
-        
-        result = {
-            "can_proceed": True,
-            "score": 1.0,
-            "checks": {},
-            "warnings": [],
-            "errors": []
-        }
-        
-        # Validar dimensiones
-        if width < 100 or height < 100:
-            result["checks"]["dimensions"] = {"passed": False, "optimal": False, "message": f"Dimensiones muy pequeñas ({width}x{height}px). Mínimo 100x100px."}
-            result["errors"].append("La imagen es demasiado pequeña para asegurar buena calidad al escanear.")
-            result["can_proceed"] = False
-            result["score"] -= 0.5
-        elif width > 1024 or height > 1024:
-            result["checks"]["dimensions"] = {"passed": True, "optimal": False, "message": f"Dimensiones grandes ({width}x{height}px). Será redimensionada."}
-            result["warnings"].append("La resolución es alta; la imagen será comprimida y redimensionada durante la generación.")
-            result["score"] -= 0.1
-        else:
-            result["checks"]["dimensions"] = {"passed": True, "optimal": True, "message": f"Dimensiones óptimas ({width}x{height}px)."}
-            
-        # Validar tamaño archivo (ejemplo: max 2MB)
-        if file_size_kb > 2048:
-            result["checks"]["file_size"] = {"passed": False, "optimal": False, "message": f"Archivo muy pesado ({file_size_kb:.1f} KB). Máximo 2MB."}
-            result["errors"].append("El tamaño del archivo supera el límite de 2MB.")
-            result["can_proceed"] = False
-            result["score"] -= 0.5
-        elif file_size_kb > 500:
-            result["checks"]["file_size"] = {"passed": True, "optimal": False, "message": f"Archivo algo pesado ({file_size_kb:.1f} KB)."}
-            result["warnings"].append("El archivo pesa más de 500KB.")
-            result["score"] -= 0.1
-        else:
-            result["checks"]["file_size"] = {"passed": True, "optimal": True, "message": f"Tamaño de archivo adecuado ({file_size_kb:.1f} KB)."}
-            
-        # Validar ratio (cuadrado ideal para QR)
-        ratio = max(width, height) / min(width, height)
-        if ratio > 2.0:
-            result["checks"]["aspect_ratio"] = {"passed": True, "optimal": False, "message": "Proporción alargada. Para mejores resultados use imágenes cuadradas o circulares."}
-            result["warnings"].append("La imagen es muy alargada y podría reducir la legibilidad del código QR.")
-            result["score"] -= 0.2
-        else:
-            result["checks"]["aspect_ratio"] = {"passed": True, "optimal": True, "message": "Proporción adecuada."}
-            
-        # Validar formato con transparencia
-        if img.mode not in ('RGBA', 'LA') and 'transparency' not in img.info:
-            result["checks"]["transparency"] = {"passed": True, "optimal": False, "message": "Sin fondo transparente. Ocultará más bloques del QR."}
-            result["warnings"].append("Se recomienda usar imágenes PNG con fondo transparente para no obstruir el QR.")
-            result["score"] -= 0.1
-        else:
-            result["checks"]["transparency"] = {"passed": True, "optimal": True, "message": "Fondo transparente detectado (o soportado)."}
-            
-        result["score"] = max(0.0, result["score"])
-        
-        return result
-        
-    except Exception as e:
-        logger.error(f"Error procesando logo para validación: {str(e)}")
-        return {
-            "can_proceed": False,
-            "score": 0.0,
-            "errors": [f"El archivo no es una imagen válida o está dañado: {str(e)}"]
-        }
 
 @app.get("/api/qr/status")
 async def get_qr_status():
@@ -3546,7 +3257,7 @@ async def get_qr_status():
         "success": True,
         "qr_library_available": QR_LIBRARY_AVAILABLE,
         "pil_available": PIL_AVAILABLE,
-        "message": "Sistema de generación de QR operativo" if QR_LIBRARY_AVAILABLE else "Instale: pip install segno Pillow"
+        "message": "Sistema de generación de QR operativo" if QR_LIBRARY_AVAILABLE else "Instale: pip install qrcode[pil] Pillow"
     }
 
 # ================================
@@ -3573,26 +3284,26 @@ async def get_scans(
             params = []
             
             if campaign_code:
-                query += " AND campaign_code = %s"
+                query += " AND campaign_code = ?"
                 params.append(campaign_code)
             
             if device_id:
-                query += " AND device_id = %s"
+                query += " AND device_id = ?"
                 params.append(device_id)
             
             if client:
-                query += " AND client = %s"
+                query += " AND client = ?"
                 params.append(client)
             
             if start_date:
-                query += " AND scan_timestamp >= %s"
+                query += " AND scan_timestamp >= ?"
                 params.append(start_date)
             
             if end_date:
-                query += " AND scan_timestamp <= %s"
+                query += " AND scan_timestamp <= ?"
                 params.append(end_date)
             
-            query += " ORDER BY scan_timestamp DESC LIMIT %s OFFSET %s"
+            query += " ORDER BY scan_timestamp DESC LIMIT ? OFFSET ?"
             params.extend([limit, offset])
             
             cursor.execute(query, params)
@@ -3601,8 +3312,7 @@ async def get_scans(
             # Contar total de registros
             count_query = query.replace("SELECT *", "SELECT COUNT(*)").split("ORDER BY")[0]
             cursor.execute(count_query, params[:-2])  # Sin limit y offset
-            row = cursor.fetchone()
-            total = list(row.values())[0] if row else 0
+            total = cursor.fetchone()[0]
         
         return {
             "success": True,
@@ -3623,7 +3333,7 @@ async def get_campaign_stats(campaign_code: str):
             cursor = conn.cursor()
             
             # Verificar que la campaña existe
-            cursor.execute("SELECT * FROM campaigns WHERE campaign_code = %s", (campaign_code,))
+            cursor.execute("SELECT * FROM campaigns WHERE campaign_code = ?", (campaign_code,))
             campaign = cursor.fetchone()
             if not campaign:
                 return {"success": False, "error": "Campaña no encontrada"}
@@ -3632,14 +3342,14 @@ async def get_campaign_stats(campaign_code: str):
             cursor.execute("""
                 SELECT 
                     COUNT(*) as total_scans,
-                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completed_redirects,
-                    ROUND(AVG(duration_seconds)::numeric, 2) as avg_duration,
+                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completed_redirects,
+                    ROUND(AVG(duration_seconds), 2) as avg_duration,
                     MIN(scan_timestamp) as first_scan,
                     MAX(scan_timestamp) as last_scan,
                     COUNT(DISTINCT ip_address) as unique_visitors,
                     COUNT(DISTINCT device_id) as unique_devices
                 FROM scans 
-                WHERE campaign_code = %s
+                WHERE campaign_code = ?
             """, (campaign_code,))
             stats = dict(cursor.fetchone())
             
@@ -3647,8 +3357,8 @@ async def get_campaign_stats(campaign_code: str):
             cursor.execute("""
                 SELECT device_id, device_name, location, venue, COUNT(*) as scans
                 FROM scans 
-                WHERE campaign_code = %s AND device_id IS NOT NULL
-                GROUP BY device_id, device_name, location, venue
+                WHERE campaign_code = ? AND device_id IS NOT NULL
+                GROUP BY device_id
                 ORDER BY scans DESC
                 LIMIT 5
             """, (campaign_code,))
@@ -3658,7 +3368,7 @@ async def get_campaign_stats(campaign_code: str):
             cursor.execute("""
                 SELECT user_device_type, COUNT(*) as count
                 FROM scans 
-                WHERE campaign_code = %s
+                WHERE campaign_code = ?
                 GROUP BY user_device_type
                 ORDER BY count DESC
             """, (campaign_code,))
@@ -3667,11 +3377,11 @@ async def get_campaign_stats(campaign_code: str):
             # Actividad por día (últimos 30 días)
             cursor.execute("""
                 SELECT 
-                    CAST(scan_timestamp AS DATE) as date,
+                    DATE(scan_timestamp) as date,
                     COUNT(*) as scans
                 FROM scans
-                WHERE campaign_code = %s AND scan_timestamp >= CURRENT_TIMESTAMP - INTERVAL '30 days'
-                GROUP BY CAST(scan_timestamp AS DATE)
+                WHERE campaign_code = ? AND scan_timestamp >= datetime('now', '-30 days')
+                GROUP BY DATE(scan_timestamp)
                 ORDER BY date
             """, (campaign_code,))
             daily_activity = [dict(row) for row in cursor.fetchall()]
@@ -3696,7 +3406,7 @@ async def get_device_stats(device_id: str):
             cursor = conn.cursor()
             
             # Verificar que el dispositivo existe
-            cursor.execute("SELECT * FROM physical_devices WHERE device_id = %s", (device_id,))
+            cursor.execute("SELECT * FROM physical_devices WHERE device_id = ?", (device_id,))
             device = cursor.fetchone()
             if not device:
                 return {"success": False, "error": "Dispositivo no encontrado"}
@@ -3705,14 +3415,14 @@ async def get_device_stats(device_id: str):
             cursor.execute("""
                 SELECT 
                     COUNT(*) as total_scans,
-                    COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completed_redirects,
-                    ROUND(AVG(duration_seconds)::numeric, 2) as avg_duration,
+                    COUNT(CASE WHEN redirect_completed = 1 THEN 1 END) as completed_redirects,
+                    ROUND(AVG(duration_seconds), 2) as avg_duration,
                     MIN(scan_timestamp) as first_scan,
                     MAX(scan_timestamp) as last_scan,
                     COUNT(DISTINCT ip_address) as unique_visitors,
                     COUNT(DISTINCT campaign_code) as unique_campaigns
                 FROM scans 
-                WHERE device_id = %s
+                WHERE device_id = ?
             """, (device_id,))
             stats = dict(cursor.fetchone())
             
@@ -3720,8 +3430,8 @@ async def get_device_stats(device_id: str):
             cursor.execute("""
                 SELECT campaign_code, client, COUNT(*) as scans
                 FROM scans 
-                WHERE device_id = %s
-                GROUP BY campaign_code, client
+                WHERE device_id = ?
+                GROUP BY campaign_code
                 ORDER BY scans DESC
                 LIMIT 5
             """, (device_id,))
@@ -3730,11 +3440,11 @@ async def get_device_stats(device_id: str):
             # Actividad por hora del día
             cursor.execute("""
                 SELECT 
-                    EXTRACT(HOUR FROM scan_timestamp)::INTEGER as hour,
+                    CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour,
                     COUNT(*) as scans
                 FROM scans
-                WHERE device_id = %s
-                GROUP BY EXTRACT(HOUR FROM scan_timestamp)
+                WHERE device_id = ?
+                GROUP BY strftime('%H', scan_timestamp)
                 ORDER BY hour
             """, (device_id,))
             hourly_activity = [dict(row) for row in cursor.fetchall()]
@@ -3785,23 +3495,23 @@ async def export_scans(
             params = []
             
             if campaign_code:
-                query += " AND s.campaign_code = %s"
+                query += " AND s.campaign_code = ?"
                 params.append(campaign_code)
             
             if device_id:
-                query += " AND s.device_id = %s"
+                query += " AND s.device_id = ?"
                 params.append(device_id)
             
             if client:
-                query += " AND (s.client = %s OR c.client = %s)"
+                query += " AND (s.client = ? OR c.client = ?)"
                 params.extend([client, client])
             
             if start_date:
-                query += " AND s.scan_timestamp >= %s"
+                query += " AND s.scan_timestamp >= ?"
                 params.append(start_date)
             
             if end_date:
-                query += " AND s.scan_timestamp <= %s"
+                query += " AND s.scan_timestamp <= ?"
                 params.append(end_date)
             
             query += " ORDER BY s.scan_timestamp DESC"
@@ -3833,7 +3543,7 @@ async def export_scans(
             "success": True,
             "data": scans,
             "total": len(scans),
-            "export_timestamp": get_caracas_time().isoformat()
+            "export_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -3859,7 +3569,7 @@ async def export_client_data(client_name: str, format: str = "json"):
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
                 LEFT JOIN physical_devices pd ON s.device_id = pd.device_id
-                WHERE c.client = %s
+                WHERE c.client = ?
                 ORDER BY s.scan_timestamp DESC
             """, (client_name,))
             scans = [dict(row) for row in cursor.fetchall()]
@@ -3891,7 +3601,7 @@ async def export_client_data(client_name: str, format: str = "json"):
             "client": client_name,
             "data": scans,
             "total": len(scans),
-            "export_timestamp": get_caracas_time().isoformat()
+            "export_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -3957,7 +3667,7 @@ if __name__ == "__main__":
                 for campaign_code, client, destination, description in example_campaigns:
                     cursor.execute("""
                         INSERT INTO campaigns (campaign_code, client, destination, description)
-                        VALUES (%s, %s, %s, %s)
+                        VALUES (?, ?, ?, ?)
                     """, (campaign_code, client, destination, description))
                 
                 # Dispositivos de ejemplo
@@ -3973,7 +3683,7 @@ if __name__ == "__main__":
                 for device_id, device_name, device_type, location, venue in example_devices:
                     cursor.execute("""
                         INSERT INTO physical_devices (device_id, device_name, device_type, location, venue)
-                        VALUES (%s, %s, %s, %s, %s)
+                        VALUES (?, ?, ?, ?, ?)
                     """, (device_id, device_name, device_type, location, venue))
                 
                 conn.commit()
@@ -3985,7 +3695,324 @@ if __name__ == "__main__":
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
+        port=8000,
         reload=True,
         log_level="info"
     )
+
+
+
+# ─────────────────────────────────────────────────────────────
+# SECCIÓN 5: ENDPOINTS NUEVOS (SÍNCRONOS)
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/analytics/compare/vs-previous/{campaign_code}")
+async def compare_vs_previous(campaign_code: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM campaigns WHERE campaign_code = ?", (campaign_code.upper(),))
+        current = cursor.fetchone()
+        if not current:
+            raise HTTPException(404, "Campaña no encontrada")
+
+        cursor.execute("""
+            SELECT c.*, 
+                   COUNT(s.id) as total_scans,
+                   COUNT(CASE WHEN s.id THEN 1 END) as unique_visitors,
+                   AVG(s.duration_seconds) as avg_duration,
+                   AVG(1.0) as avg_dpr
+            FROM campaigns c
+            LEFT JOIN scans s ON s.campaign_code = c.campaign_code
+            WHERE c.client = ?
+              AND c.campaign_code != ?
+              AND c.campaign_status IN ('completed', 'active')
+            GROUP BY c.id
+            ORDER BY c.end_date DESC NULLS LAST, c.created_at DESC
+            LIMIT 1
+        """, (current["client"], campaign_code.upper()))
+        previous = cursor.fetchone()
+
+        if not previous:
+            return {"status": "no_previous", "message": "No hay campaña anterior para comparar"}
+
+        cursor.execute("""
+            SELECT 
+                COUNT(id) as total_scans,
+                COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                AVG(duration_seconds) as avg_duration,
+                AVG(1.0) as avg_dpr,
+                COUNT(CASE WHEN operating_system LIKE '%ios%' THEN 1 END) * 100.0 / NULLIF(COUNT(id), 0) as ios_pct
+            FROM scans WHERE campaign_code = ?
+        """, (campaign_code.upper(),))
+        current_kpis = cursor.fetchone()
+
+        def safe_delta(current_val, prev_val):
+            if prev_val and prev_val > 0:
+                return round(((current_val or 0) - prev_val) / prev_val * 100, 1)
+            return None
+
+        return {
+            "current": {
+                "campaign_code": current["campaign_code"],
+                "campaign_type": current["campaign_type"],
+                "industry": current["industry"],
+                "start_date": str(current["start_date"]) if current["start_date"] else None,
+                "end_date": str(current["end_date"]) if current["end_date"] else None,
+                "total_scans": current_kpis["total_scans"],
+                "unique_visitors": current_kpis["unique_visitors"],
+                "avg_duration": round(current_kpis["avg_duration"] or 0, 1),
+                "ios_pct": round(current_kpis["ios_pct"] or 0, 1) if current_kpis["ios_pct"] else 0,
+            },
+            "previous": {
+                "campaign_code": previous["campaign_code"],
+                "campaign_type": previous["campaign_type"],
+                "start_date": str(previous["start_date"]) if previous["start_date"] else None,
+                "end_date": str(previous["end_date"]) if previous["end_date"] else None,
+                "total_scans": previous["total_scans"],
+                "unique_visitors": previous["unique_visitors"],
+                "avg_duration": round(previous["avg_duration"] or 0, 1),
+            },
+            "deltas": {
+                "scans_delta_pct": safe_delta(current_kpis["total_scans"], previous["total_scans"]),
+                "unique_delta_pct": safe_delta(current_kpis["unique_visitors"], previous["unique_visitors"]),
+                "duration_delta_pct": safe_delta(current_kpis["avg_duration"], previous["avg_duration"]),
+            },
+            "comparison_type": "vs_previous_own"
+        }
+
+@app.get("/api/analytics/compare/vs-benchmark/{campaign_code}")
+async def compare_vs_benchmark(campaign_code: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM campaigns WHERE campaign_code = ?", (campaign_code.upper(),))
+        current = cursor.fetchone()
+        if not current:
+            raise HTTPException(404, "Campaña no encontrada")
+
+        bench_group = current["benchmark_group"]
+        if not bench_group:
+            bench_group = generate_benchmark_group(current)
+
+        cursor.execute("""
+            SELECT 
+                COUNT(id) as total_scans,
+                COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                AVG(duration_seconds) as avg_duration,
+                COUNT(CASE WHEN operating_system LIKE '%ios%' THEN 1 END) * 100.0 / NULLIF(COUNT(id), 0) as ios_pct,
+                AVG(1.0) as avg_dpr,
+                AVG(1.0) as avg_cpu
+            FROM scans WHERE campaign_code = ?
+        """, (campaign_code.upper(),))
+        current_kpis = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT 
+                COUNT(s.id) as total_scans,
+                COUNT(CASE WHEN s.id THEN 1 END) as unique_visitors,
+                AVG(s.duration_seconds) as avg_duration,
+                AVG(1.0) as avg_dpr,
+                c.campaign_type,
+                c.dooh_format,
+                c.creative_type,
+                c.social_amplification,
+                c.planned_duration_days
+            FROM campaigns c
+            JOIN scans s ON s.campaign_code = c.campaign_code
+            WHERE c.benchmark_group = ?
+              AND c.campaign_code != ?
+              AND c.is_benchmark_eligible = TRUE
+              AND c.campaign_status = 'completed'
+            GROUP BY c.id
+            ORDER BY COUNT(s.id) DESC
+            LIMIT 1
+        """, (bench_group, campaign_code.upper()))
+        best_in_group = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT 
+                AVG(scan_count) as avg_scans,
+                AVG(unique_count) as avg_unique,
+                AVG(dur_avg) as avg_duration
+            FROM (
+                SELECT 
+                    c.id,
+                    COUNT(s.id) as scan_count,
+                    COUNT(CASE WHEN s.id THEN 1 END) as unique_count,
+                    AVG(s.duration_seconds) as dur_avg
+                FROM campaigns c
+                JOIN scans s ON s.campaign_code = c.campaign_code
+                WHERE c.benchmark_group = ?
+                  AND c.campaign_code != ?
+                  AND c.is_benchmark_eligible = TRUE
+                GROUP BY c.id
+            ) sub
+        """, (bench_group, campaign_code.upper()))
+        group_avg = cursor.fetchone()
+
+        if not best_in_group:
+            return {"status": "no_benchmark", "message": "No hay datos de benchmark suficientes"}
+
+        def safe_delta(current_val, prev_val):
+            if prev_val and prev_val > 0:
+                return round(((current_val or 0) - prev_val) / prev_val * 100, 1)
+            return None
+
+        total_current = current_kpis["total_scans"] or 0
+        avg_scans = group_avg["avg_scans"] or 0
+        percentile = "Above Average" if total_current > avg_scans else "Below Average"
+
+        return {
+            "current": {
+                "campaign_code": current["campaign_code"],
+                "total_scans": current_kpis["total_scans"],
+                "unique_visitors": current_kpis["unique_visitors"],
+                "avg_duration": round(current_kpis["avg_duration"] or 0, 1)
+            },
+            "benchmark_best": {
+                "campaign_type": best_in_group["campaign_type"],
+                "dooh_format": best_in_group["dooh_format"],
+                "creative_type": best_in_group["creative_type"],
+                "total_scans": best_in_group["total_scans"],
+                "unique_visitors": best_in_group["unique_visitors"],
+                "avg_duration": round(best_in_group["avg_duration"] or 0, 1)
+            },
+            "benchmark_group_stats": {
+                "group_id": bench_group,
+                "avg_scans": round(avg_scans, 1),
+                "avg_unique": round(group_avg["avg_unique"] or 0, 1),
+                "percentile_estimated": percentile
+            },
+            "deltas_vs_best": {
+                "scans_delta_pct": safe_delta(current_kpis["total_scans"], best_in_group["total_scans"]),
+                "duration_delta_pct": safe_delta(current_kpis["avg_duration"], best_in_group["avg_duration"]),
+            },
+            "comparison_type": "vs_benchmark_anonymous"
+        }
+
+@app.get("/api/analytics/compare/vs-selected/{campaign_code}/{compare_code}")
+async def compare_vs_selected(campaign_code: str, compare_code: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM campaigns WHERE campaign_code = ?", (campaign_code.upper(),))
+        current = cursor.fetchone()
+        
+        cursor.execute("SELECT * FROM campaigns WHERE campaign_code = ?", (compare_code.upper(),))
+        compare = cursor.fetchone()
+        
+        if not current or not compare:
+            raise HTTPException(404, "Campaña no encontrada")
+
+        is_same_client = current["client"] == compare["client"]
+        
+        def fetch_kpis(code):
+            cursor.execute("""
+                SELECT 
+                    COUNT(id) as total_scans,
+                    COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                    AVG(duration_seconds) as avg_duration
+                FROM scans WHERE campaign_code = ?
+            """, (code.upper(),))
+            return cursor.fetchone()
+            
+        current_kpis = fetch_kpis(campaign_code)
+        compare_kpis = fetch_kpis(compare_code)
+
+        def safe_delta(current_val, prev_val):
+            if prev_val and prev_val > 0:
+                return round(((current_val or 0) - prev_val) / prev_val * 100, 1)
+            return None
+
+        comp_data = {
+            "campaign_code": compare["campaign_code"] if is_same_client else "ANONYMOUS_REF",
+            "client": compare["client"] if is_same_client else "Confidencial",
+            "industry": compare["industry"],
+            "campaign_type": compare["campaign_type"],
+            "total_scans": compare_kpis["total_scans"],
+            "unique_visitors": compare_kpis["unique_visitors"],
+            "avg_duration": round(compare_kpis["avg_duration"] or 0, 1)
+        }
+
+        return {
+            "current": {
+                "campaign_code": current["campaign_code"],
+                "industry": current["industry"],
+                "campaign_type": current["campaign_type"],
+                "total_scans": current_kpis["total_scans"],
+                "unique_visitors": current_kpis["unique_visitors"],
+                "avg_duration": round(current_kpis["avg_duration"] or 0, 1)
+            },
+            "compare_to": comp_data,
+            "deltas": {
+                "scans_delta_pct": safe_delta(current_kpis["total_scans"], compare_kpis["total_scans"]),
+                "unique_delta_pct": safe_delta(current_kpis["unique_visitors"], compare_kpis["unique_visitors"]),
+            },
+            "comparison_type": "vs_selected",
+            "is_anonymous": not is_same_client
+        }
+
+@app.get("/api/analytics/industry-benchmarks")
+async def get_industry_benchmarks():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                c.industry,
+                COUNT(DISTINCT c.id) as total_campaigns,
+                AVG(kpi.total_scans) as avg_scans,
+                AVG(kpi.unique_visitors) as avg_unique,
+                AVG(kpi.avg_duration) as avg_duration
+            FROM campaigns c
+            LEFT JOIN (
+                SELECT campaign_code, 
+                       COUNT(id) as total_scans,
+                       COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                       AVG(duration_seconds) as avg_duration
+                FROM scans GROUP BY campaign_code
+            ) kpi ON c.campaign_code = kpi.campaign_code
+            WHERE c.is_benchmark_eligible = TRUE
+              AND c.industry IS NOT NULL
+            GROUP BY c.industry
+            HAVING COUNT(DISTINCT c.id) >= 2
+            ORDER BY avg_scans DESC
+        """)
+        benchmarks = cursor.fetchall()
+        
+        return {
+            "success": True,
+            "data": [dict(b) for b in benchmarks] if benchmarks else []
+        }
+
+@app.get("/api/analytics/compare/available/{campaign_code}")
+async def get_available_for_comparison(campaign_code: str, industry_filter: bool = False):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT client, industry FROM campaigns WHERE campaign_code = ?", (campaign_code.upper(),))
+        current = cursor.fetchone()
+        if not current:
+            raise HTTPException(404, "Campaña no encontrada")
+            
+        where_clause = "campaign_code != ? AND campaign_status IN ('completed', 'active')"
+        params = [campaign_code.upper()]
+        
+        if industry_filter and current["industry"]:
+            where_clause += " AND industry = ?"
+            params.append(current["industry"])
+            
+        cursor.execute(f"SELECT * FROM campaigns WHERE {where_clause} ORDER BY created_at DESC", tuple(params))
+        campaigns = cursor.fetchall()
+        
+        result = []
+        for c in campaigns:
+            is_same_client = (c["client"] == current["client"])
+            if is_same_client or c["is_benchmark_eligible"]:
+                result.append({
+                    "campaign_code": c["campaign_code"] if is_same_client else "ANONYMOUS_" + str(c["id"]),
+                    "client": c["client"] if is_same_client else "Confidencial",
+                    "product_name": c["product_name"] if is_same_client else "Producto de " + (c["industry"] or "Industria"),
+                    "industry": c["industry"],
+                    "campaign_type": c["campaign_type"],
+                    "is_own_client": is_same_client
+                })
+                
+        return {"success": True, "available": result}
