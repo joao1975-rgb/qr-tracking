@@ -789,8 +789,8 @@ def create_basic_schema(conn):
             utm_campaign TEXT,
             utm_term TEXT,
             utm_content TEXT,
-            1.0 INTEGER,
-            1.0 REAL
+            device_pixel_ratio INTEGER,
+            device_pixel_ratio REAL
         );
     """)
     
@@ -835,8 +835,8 @@ def migrate_database(conn):
         'utm_campaign': 'TEXT',
         'utm_term': 'TEXT',
         'utm_content': 'TEXT',
-        '1.0': 'INTEGER',
-        '1.0': 'REAL'
+        'device_pixel_ratio': 'INTEGER',
+        'device_pixel_ratio': 'REAL'
     }
     
     # Agregar columnas que no existan
@@ -963,7 +963,7 @@ async def index():
         <html lang="es">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=device_pixel_ratio">
             <title>QR Tracking System</title>
             <link rel="stylesheet" href="/static/css/main.css">
             <style>
@@ -1055,7 +1055,7 @@ async def generate_qr_page():
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=device_pixel_ratio">
     <title>Generar QR - QR Tracking System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1609,7 +1609,7 @@ async def admin_system():
         <html lang="es">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=device_pixel_ratio">
             <title>Administración del Sistema - QR Tracking</title>
             <link rel="stylesheet" href="/static/css/main.css">
             <style>
@@ -1924,7 +1924,7 @@ async def track_qr_scan(request: Request):
         <html>
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=device_pixel_ratio">
             <title>Redirigiendo...</title>
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -2018,8 +2018,8 @@ async def track_qr_scan(request: Request):
                     language: navigator.language,
                     platform: navigator.platform,
                     connection_type: navigator.connection ? navigator.connection.effectiveType : 'unknown',
-                    1.0: navigator.hardwareConcurrency || null,
-                    1.0: window.devicePixelRatio || null
+                    device_pixel_ratio: navigator.hardwareConcurrency || null,
+                    device_pixel_ratio: window.devicePixelRatio || null
                 }};
                 
                 // Enviar datos adicionales
@@ -2753,8 +2753,8 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     language = ?,
                     platform = ?,
                     connection_type = ?,
-                    1.0 = ?,
-                    1.0 = ?
+                    device_pixel_ratio = ?,
+                    device_pixel_ratio = ?
                 WHERE session_id = ?
             """, (
                 device_data.screen_resolution,
@@ -3720,7 +3720,7 @@ async def compare_vs_previous(campaign_code: str):
                    COUNT(s.id) as total_scans,
                    COUNT(CASE WHEN s.id THEN 1 END) as unique_visitors,
                    AVG(s.duration_seconds) as avg_duration,
-                   AVG(1.0) as avg_dpr
+                   AVG(device_pixel_ratio) as avg_dpr
             FROM campaigns c
             LEFT JOIN scans s ON s.campaign_code = c.campaign_code
             WHERE c.client = ?
@@ -3740,7 +3740,7 @@ async def compare_vs_previous(campaign_code: str):
                 COUNT(id) as total_scans,
                 COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
                 AVG(duration_seconds) as avg_duration,
-                AVG(1.0) as avg_dpr,
+                AVG(device_pixel_ratio) as avg_dpr,
                 COUNT(CASE WHEN operating_system LIKE '%ios%' THEN 1 END) * 100.0 / NULLIF(COUNT(id), 0) as ios_pct
             FROM scans WHERE campaign_code = ?
         """, (campaign_code.upper(),))
@@ -3799,8 +3799,8 @@ async def compare_vs_benchmark(campaign_code: str):
                 COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
                 AVG(duration_seconds) as avg_duration,
                 COUNT(CASE WHEN operating_system LIKE '%ios%' THEN 1 END) * 100.0 / NULLIF(COUNT(id), 0) as ios_pct,
-                AVG(1.0) as avg_dpr,
-                AVG(1.0) as avg_cpu
+                AVG(device_pixel_ratio) as avg_dpr,
+                AVG(device_pixel_ratio) as avg_cpu
             FROM scans WHERE campaign_code = ?
         """, (campaign_code.upper(),))
         current_kpis = cursor.fetchone()
@@ -3810,7 +3810,7 @@ async def compare_vs_benchmark(campaign_code: str):
                 COUNT(s.id) as total_scans,
                 COUNT(CASE WHEN s.id THEN 1 END) as unique_visitors,
                 AVG(s.duration_seconds) as avg_duration,
-                AVG(1.0) as avg_dpr,
+                AVG(device_pixel_ratio) as avg_dpr,
                 c.campaign_type,
                 c.dooh_format,
                 c.creative_type,
