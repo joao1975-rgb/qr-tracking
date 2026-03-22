@@ -676,6 +676,16 @@ class CampaignUpdate(BaseModel):
     internal_notes: Optional[str] = None
     account_manager: Optional[str] = None
 
+
+class DeviceCreate(BaseModel):
+    device_id: str
+    device_name: Optional[str] = None
+    device_type: Optional[str] = None
+    location: Optional[str] = None
+    venue: Optional[str] = None
+    description: Optional[str] = None
+    active: bool = True
+
 class ScanCreate(BaseModel):
     campaign_code: str
     client: Optional[str] = None
