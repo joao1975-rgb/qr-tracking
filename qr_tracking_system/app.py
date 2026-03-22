@@ -686,6 +686,14 @@ class DeviceCreate(BaseModel):
     description: Optional[str] = None
     active: bool = True
 
+class DeviceUpdate(BaseModel):
+    device_name: Optional[str] = None
+    device_type: Optional[str] = None
+    location: Optional[str] = None
+    venue: Optional[str] = None
+    description: Optional[str] = None
+    active: Optional[bool] = None
+
 class ScanCreate(BaseModel):
     campaign_code: str
     client: Optional[str] = None
