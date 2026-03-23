@@ -1404,11 +1404,11 @@
 
         function initializeDates() {
             const today = new Date();
-            const weekAgo = new Date(today);
-            weekAgo.setDate(weekAgo.getDate() - 7);
+            const pastDate = new Date(today);
+            pastDate.setDate(pastDate.getDate() - 90); // default to 90 days for historical visibility
 
             document.getElementById('filterEndDate').value = today.toISOString().split('T')[0];
-            document.getElementById('filterStartDate').value = weekAgo.toISOString().split('T')[0];
+            document.getElementById('filterStartDate').value = pastDate.toISOString().split('T')[0];
         }
 
         function startAutoRefresh() {
