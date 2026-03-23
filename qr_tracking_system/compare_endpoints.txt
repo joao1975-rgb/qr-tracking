@@ -1,0 +1,310 @@
+@app.get("/api/analytics/compare/vs-previous/{campaign_code}")
+async def compare_vs_previous(campaign_code: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM campaigns WHERE campaign_code = %s", (campaign_code.upper(),))
+        current = cursor.fetchone()
+        if not current:
+            raise HTTPException(404, "Campaña no encontrada")
+
+        cursor.execute("""
+            SELECT c.*, 
+                   COUNT(s.id) as total_scans,
+                   COUNT(CASE WHEN s.id THEN 1 END) as unique_visitors,
+                   AVG(s.duration_seconds) as avg_duration,
+                   AVG(device_pixel_ratio) as avg_dpr
+            FROM campaigns c
+            LEFT JOIN scans s ON s.campaign_code = c.campaign_code
+            WHERE c.client = %s
+              AND c.campaign_code != %s
+              AND c.campaign_status IN ('completed', 'active')
+            GROUP BY c.id
+            ORDER BY c.end_date DESC NULLS LAST, c.created_at DESC
+            LIMIT 1
+        """, (current["client"], campaign_code.upper()))
+        previous = cursor.fetchone()
+
+        if not previous:
+            return {"status": "no_previous", "message": "No hay campaña anterior para comparar"}
+
+        cursor.execute("""
+            SELECT 
+                COUNT(id) as total_scans,
+                COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                AVG(duration_seconds) as avg_duration,
+                AVG(device_pixel_ratio) as avg_dpr,
+                COUNT(CASE WHEN operating_system LIKE '%ios%' THEN 1 END) * 100.0 / NULLIF(COUNT(id), 0) as ios_pct
+            FROM scans WHERE campaign_code = %s
+        """, (campaign_code.upper(),))
+        current_kpis = cursor.fetchone()
+
+        def safe_delta(current_val, prev_val):
+            if prev_val and prev_val > 0:
+                return round(((current_val or 0) - prev_val) / prev_val * 100, 1)
+            return None
+
+        return {
+            "current": {
+                "campaign_code": current["campaign_code"],
+                "campaign_type": current["campaign_type"],
+                "industry": current["industry"],
+                "start_date": str(current["start_date"]) if current["start_date"] else None,
+                "end_date": str(current["end_date"]) if current["end_date"] else None,
+                "total_scans": current_kpis["total_scans"],
+                "unique_visitors": current_kpis["unique_visitors"],
+                "avg_duration": round(current_kpis["avg_duration"] or 0, 1),
+                "ios_pct": round(current_kpis["ios_pct"] or 0, 1) if current_kpis["ios_pct"] else 0,
+            },
+            "previous": {
+                "campaign_code": previous["campaign_code"],
+                "campaign_type": previous["campaign_type"],
+                "start_date": str(previous["start_date"]) if previous["start_date"] else None,
+                "end_date": str(previous["end_date"]) if previous["end_date"] else None,
+                "total_scans": previous["total_scans"],
+                "unique_visitors": previous["unique_visitors"],
+                "avg_duration": round(previous["avg_duration"] or 0, 1),
+            },
+            "deltas": {
+                "scans_delta_pct": safe_delta(current_kpis["total_scans"], previous["total_scans"]),
+                "unique_delta_pct": safe_delta(current_kpis["unique_visitors"], previous["unique_visitors"]),
+                "duration_delta_pct": safe_delta(current_kpis["avg_duration"], previous["avg_duration"]),
+            },
+            "comparison_type": "vs_previous_own"
+        }
+
+@app.get("/api/analytics/compare/vs-benchmark/{campaign_code}")
+async def compare_vs_benchmark(campaign_code: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM campaigns WHERE campaign_code = %s", (campaign_code.upper(),))
+        current = cursor.fetchone()
+        if not current:
+            raise HTTPException(404, "Campaña no encontrada")
+
+        bench_group = current["benchmark_group"]
+        if not bench_group:
+            bench_group = generate_benchmark_group(current)
+
+        cursor.execute("""
+            SELECT 
+                COUNT(id) as total_scans,
+                COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                AVG(duration_seconds) as avg_duration,
+                COUNT(CASE WHEN operating_system LIKE '%ios%' THEN 1 END) * 100.0 / NULLIF(COUNT(id), 0) as ios_pct,
+                AVG(device_pixel_ratio) as avg_dpr,
+                AVG(device_pixel_ratio) as avg_cpu
+            FROM scans WHERE campaign_code = %s
+        """, (campaign_code.upper(),))
+        current_kpis = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT 
+                COUNT(s.id) as total_scans,
+                COUNT(CASE WHEN s.id THEN 1 END) as unique_visitors,
+                AVG(s.duration_seconds) as avg_duration,
+                AVG(device_pixel_ratio) as avg_dpr,
+                c.campaign_type,
+                c.dooh_format,
+                c.creative_type,
+                c.social_amplification,
+                c.planned_duration_days
+            FROM campaigns c
+            JOIN scans s ON s.campaign_code = c.campaign_code
+            WHERE c.benchmark_group = %s
+              AND c.campaign_code != %s
+              AND c.is_benchmark_eligible = TRUE
+              AND c.campaign_status = 'completed'
+            GROUP BY c.id
+            ORDER BY COUNT(s.id) DESC
+            LIMIT 1
+        """, (bench_group, campaign_code.upper()))
+        best_in_group = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT 
+                AVG(scan_count) as avg_scans,
+                AVG(unique_count) as avg_unique,
+                AVG(dur_avg) as avg_duration
+            FROM (
+                SELECT 
+                    c.id,
+                    COUNT(s.id) as scan_count,
+                    COUNT(CASE WHEN s.id THEN 1 END) as unique_count,
+                    AVG(s.duration_seconds) as dur_avg
+                FROM campaigns c
+                JOIN scans s ON s.campaign_code = c.campaign_code
+                WHERE c.benchmark_group = %s
+                  AND c.campaign_code != %s
+                  AND c.is_benchmark_eligible = TRUE
+                GROUP BY c.id
+            ) sub
+        """, (bench_group, campaign_code.upper()))
+        group_avg = cursor.fetchone()
+
+        if not best_in_group:
+            return {"status": "no_benchmark", "message": "No hay datos de benchmark suficientes"}
+
+        def safe_delta(current_val, prev_val):
+            if prev_val and prev_val > 0:
+                return round(((current_val or 0) - prev_val) / prev_val * 100, 1)
+            return None
+
+        total_current = current_kpis["total_scans"] or 0
+        avg_scans = group_avg["avg_scans"] or 0
+        percentile = "Above Average" if total_current > avg_scans else "Below Average"
+
+        return {
+            "current": {
+                "campaign_code": current["campaign_code"],
+                "total_scans": current_kpis["total_scans"],
+                "unique_visitors": current_kpis["unique_visitors"],
+                "avg_duration": round(current_kpis["avg_duration"] or 0, 1)
+            },
+            "benchmark_best": {
+                "campaign_type": best_in_group["campaign_type"],
+                "dooh_format": best_in_group["dooh_format"],
+                "creative_type": best_in_group["creative_type"],
+                "total_scans": best_in_group["total_scans"],
+                "unique_visitors": best_in_group["unique_visitors"],
+                "avg_duration": round(best_in_group["avg_duration"] or 0, 1)
+            },
+            "benchmark_group_stats": {
+                "group_id": bench_group,
+                "avg_scans": round(avg_scans, 1),
+                "avg_unique": round(group_avg["avg_unique"] or 0, 1),
+                "percentile_estimated": percentile
+            },
+            "deltas_vs_best": {
+                "scans_delta_pct": safe_delta(current_kpis["total_scans"], best_in_group["total_scans"]),
+                "duration_delta_pct": safe_delta(current_kpis["avg_duration"], best_in_group["avg_duration"]),
+            },
+            "comparison_type": "vs_benchmark_anonymous"
+        }
+
+@app.get("/api/analytics/compare/vs-selected/{campaign_code}/{compare_code}")
+async def compare_vs_selected(campaign_code: str, compare_code: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM campaigns WHERE campaign_code = %s", (campaign_code.upper(),))
+        current = cursor.fetchone()
+        
+        cursor.execute("SELECT * FROM campaigns WHERE campaign_code = %s", (compare_code.upper(),))
+        compare = cursor.fetchone()
+        
+        if not current or not compare:
+            raise HTTPException(404, "Campaña no encontrada")
+
+        is_same_client = current["client"] == compare["client"]
+        
+        def fetch_kpis(code):
+            cursor.execute("""
+                SELECT 
+                    COUNT(id) as total_scans,
+                    COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                    AVG(duration_seconds) as avg_duration
+                FROM scans WHERE campaign_code = %s
+            """, (code.upper(),))
+            return cursor.fetchone()
+            
+        current_kpis = fetch_kpis(campaign_code)
+        compare_kpis = fetch_kpis(compare_code)
+
+        def safe_delta(current_val, prev_val):
+            if prev_val and prev_val > 0:
+                return round(((current_val or 0) - prev_val) / prev_val * 100, 1)
+            return None
+
+        comp_data = {
+            "campaign_code": compare["campaign_code"] if is_same_client else "ANONYMOUS_REF",
+            "client": compare["client"] if is_same_client else "Confidencial",
+            "industry": compare["industry"],
+            "campaign_type": compare["campaign_type"],
+            "total_scans": compare_kpis["total_scans"],
+            "unique_visitors": compare_kpis["unique_visitors"],
+            "avg_duration": round(compare_kpis["avg_duration"] or 0, 1)
+        }
+
+        return {
+            "current": {
+                "campaign_code": current["campaign_code"],
+                "industry": current["industry"],
+                "campaign_type": current["campaign_type"],
+                "total_scans": current_kpis["total_scans"],
+                "unique_visitors": current_kpis["unique_visitors"],
+                "avg_duration": round(current_kpis["avg_duration"] or 0, 1)
+            },
+            "compare_to": comp_data,
+            "deltas": {
+                "scans_delta_pct": safe_delta(current_kpis["total_scans"], compare_kpis["total_scans"]),
+                "unique_delta_pct": safe_delta(current_kpis["unique_visitors"], compare_kpis["unique_visitors"]),
+            },
+            "comparison_type": "vs_selected",
+            "is_anonymous": not is_same_client
+        }
+
+@app.get("/api/analytics/industry-benchmarks")
+async def get_industry_benchmarks():
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                c.industry,
+                COUNT(DISTINCT c.id) as total_campaigns,
+                AVG(kpi.total_scans) as avg_scans,
+                AVG(kpi.unique_visitors) as avg_unique,
+                AVG(kpi.avg_duration) as avg_duration
+            FROM campaigns c
+            LEFT JOIN (
+                SELECT campaign_code, 
+                       COUNT(id) as total_scans,
+                       COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                       AVG(duration_seconds) as avg_duration
+                FROM scans GROUP BY campaign_code
+            ) kpi ON c.campaign_code = kpi.campaign_code
+            WHERE c.is_benchmark_eligible = TRUE
+              AND c.industry IS NOT NULL
+            GROUP BY c.industry
+            HAVING COUNT(DISTINCT c.id) >= 2
+            ORDER BY avg_scans DESC
+        """)
+        benchmarks = cursor.fetchall()
+        
+        return {
+            "success": True,
+            "data": [dict(b) for b in benchmarks] if benchmarks else []
+        }
+
+@app.get("/api/analytics/compare/available/{campaign_code}")
+async def get_available_for_comparison(campaign_code: str, industry_filter: bool = False):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT client, industry FROM campaigns WHERE campaign_code = %s", (campaign_code.upper(),))
+        current = cursor.fetchone()
+        if not current:
+            raise HTTPException(404, "Campaña no encontrada")
+            
+        where_clause = "campaign_code != %s AND campaign_status IN ('completed', 'active')"
+        params = [campaign_code.upper()]
+        
+        if industry_filter and current["industry"]:
+            where_clause += " AND industry = %s"
+            params.append(current["industry"])
+            
+        cursor.execute(f"SELECT * FROM campaigns WHERE {where_clause} ORDER BY created_at DESC", tuple(params))
+        campaigns = cursor.fetchall()
+        
+        result = []
+        for c in campaigns:
+            is_same_client = (c["client"] == current["client"])
+            if is_same_client or c["is_benchmark_eligible"]:
+                result.append({
+                    "campaign_code": c["campaign_code"] if is_same_client else "ANONYMOUS_" + str(c["id"]),
+                    "client": c["client"] if is_same_client else "Confidencial",
+                    "product_name": c["product_name"] if is_same_client else "Producto de " + (c["industry"] or "Industria"),
+                    "industry": c["industry"],
+                    "campaign_type": c["campaign_type"],
+                    "is_own_client": is_same_client
+                })
+                
+        return {"success": True, "available": result}

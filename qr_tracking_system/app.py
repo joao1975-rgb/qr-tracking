@@ -3625,7 +3625,7 @@ async def compare_vs_previous(campaign_code: str):
         cursor.execute("""
             SELECT c.*, 
                    COUNT(s.id) as total_scans,
-                   COUNT(CASE WHEN s.id THEN 1 END) as unique_visitors,
+                   COUNT(CASE WHEN s.id IS NOT NULL THEN 1 END) as unique_visitors,
                    AVG(s.duration_seconds) as avg_duration,
                    AVG(device_pixel_ratio) as avg_dpr
             FROM campaigns c
@@ -3645,7 +3645,7 @@ async def compare_vs_previous(campaign_code: str):
         cursor.execute("""
             SELECT 
                 COUNT(id) as total_scans,
-                COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                COUNT(CASE WHEN id IS NOT NULL THEN 1 END) as unique_visitors,
                 AVG(duration_seconds) as avg_duration,
                 AVG(device_pixel_ratio) as avg_dpr,
                 COUNT(CASE WHEN operating_system LIKE '%ios%' THEN 1 END) * 100.0 / NULLIF(COUNT(id), 0) as ios_pct
@@ -3703,7 +3703,7 @@ async def compare_vs_benchmark(campaign_code: str):
         cursor.execute("""
             SELECT 
                 COUNT(id) as total_scans,
-                COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                COUNT(CASE WHEN id IS NOT NULL THEN 1 END) as unique_visitors,
                 AVG(duration_seconds) as avg_duration,
                 COUNT(CASE WHEN operating_system LIKE '%ios%' THEN 1 END) * 100.0 / NULLIF(COUNT(id), 0) as ios_pct,
                 AVG(device_pixel_ratio) as avg_dpr,
@@ -3715,7 +3715,7 @@ async def compare_vs_benchmark(campaign_code: str):
         cursor.execute("""
             SELECT 
                 COUNT(s.id) as total_scans,
-                COUNT(CASE WHEN s.id THEN 1 END) as unique_visitors,
+                COUNT(CASE WHEN s.id IS NOT NULL THEN 1 END) as unique_visitors,
                 AVG(s.duration_seconds) as avg_duration,
                 AVG(device_pixel_ratio) as avg_dpr,
                 c.campaign_type,
@@ -3744,7 +3744,7 @@ async def compare_vs_benchmark(campaign_code: str):
                 SELECT 
                     c.id,
                     COUNT(s.id) as scan_count,
-                    COUNT(CASE WHEN s.id THEN 1 END) as unique_count,
+                    COUNT(CASE WHEN s.id IS NOT NULL THEN 1 END) as unique_count,
                     AVG(s.duration_seconds) as dur_avg
                 FROM campaigns c
                 JOIN scans s ON s.campaign_code = c.campaign_code
@@ -3816,7 +3816,7 @@ async def compare_vs_selected(campaign_code: str, compare_code: str):
             cursor.execute("""
                 SELECT 
                     COUNT(id) as total_scans,
-                    COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                    COUNT(CASE WHEN id IS NOT NULL THEN 1 END) as unique_visitors,
                     AVG(duration_seconds) as avg_duration
                 FROM scans WHERE campaign_code = %s
             """, (code.upper(),))
@@ -3873,7 +3873,7 @@ async def get_industry_benchmarks():
             LEFT JOIN (
                 SELECT campaign_code, 
                        COUNT(id) as total_scans,
-                       COUNT(CASE WHEN id THEN 1 END) as unique_visitors,
+                       COUNT(CASE WHEN id IS NOT NULL THEN 1 END) as unique_visitors,
                        AVG(duration_seconds) as avg_duration
                 FROM scans GROUP BY campaign_code
             ) kpi ON c.campaign_code = kpi.campaign_code
