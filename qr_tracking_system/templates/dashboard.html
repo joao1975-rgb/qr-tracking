@@ -1152,6 +1152,16 @@
                 <div class="stat-value" id="activeDevices">-</div>
                 <div class="stat-label">Dispositivos DOOH</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #6366f1; background: rgba(99, 102, 241, 0.1);">⏱️</div>
+                <div class="stat-value" id="avgDuration">-</div>
+                <div class="stat-label">Duración Prom.</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #ec4899; background: rgba(236, 72, 153, 0.1);">🍎</div>
+                <div class="stat-value" id="iosPct">-</div>
+                <div class="stat-label">Usuarios iOS</div>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -1549,6 +1559,30 @@
             animateNumber('totalClients', stats.total_clients || 0);
             animateNumber('activeCampaigns', stats.active_campaigns || 0);
             animateNumber('activeDevices', stats.active_devices || 0);
+            animateDecimal('avgDuration', stats.avg_duration || 0, 's');
+            animateDecimal('iosPct', stats.ios_pct || 0, '%');
+        }
+
+        function animateDecimal(elementId, targetValue, suffix) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            const startValue = parseFloat(element.textContent) || 0;
+            const duration = 500;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                const currentValue = startValue + (targetValue - startValue) * progress;
+                element.textContent = currentValue.toFixed(1) + suffix;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+
+            requestAnimationFrame(update);
         }
 
         function animateNumber(elementId, targetValue) {
@@ -2204,6 +2238,8 @@
             document.getElementById('totalClients').textContent = '0';
             document.getElementById('activeCampaigns').textContent = '0';
             document.getElementById('activeDevices').textContent = '0';
+            document.getElementById('avgDuration').textContent = '0.0s';
+            document.getElementById('iosPct').textContent = '0.0%';
         }
 
         // =============================================

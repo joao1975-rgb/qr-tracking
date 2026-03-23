@@ -2590,7 +2590,7 @@ async def get_client_analytics(client_name: str):
                     COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
-                WHERE c.client = %s AND s.scan_timestamp >= datetime('now', '-30 days')
+                WHERE c.client = %s AND s.scan_timestamp >= NOW() - INTERVAL '30 days'
                 GROUP BY DATE(s.scan_timestamp)
                 ORDER BY date
             """, (client_name,))
@@ -2743,15 +2743,17 @@ async def get_dashboard_analytics():
             
             # Estadísticas generales mejoradas
             cursor.execute("""
-                SELECT 
+                SELECT
                     (SELECT COUNT(*) FROM campaigns WHERE active = TRUE) as active_campaigns,
                     (SELECT COUNT(*) FROM physical_devices WHERE active = TRUE) as active_devices,
                     (SELECT COUNT(*) FROM scans) as total_scans,
                     (SELECT COUNT(*) FROM scans WHERE redirect_completed = TRUE) as completed_redirects,
                     (SELECT COUNT(DISTINCT client) FROM campaigns WHERE client != '') as total_clients,
-                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= datetime('now', '-24 hours')) as scans_24h,
-                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= datetime('now', '-7 days')) as scans_7d,
-                    (SELECT COUNT(DISTINCT ip_address) FROM scans) as unique_visitors
+                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= NOW() - INTERVAL '24 hours') as scans_24h,
+                    (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= NOW() - INTERVAL '7 days') as scans_7d,
+                    (SELECT COUNT(DISTINCT ip_address) FROM scans) as unique_visitors,
+                    (SELECT AVG(duration_seconds) FROM scans) as avg_duration,
+                    (SELECT COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM scans), 0) FROM scans WHERE operating_system ILIKE '%ios%') as ios_pct
             """)
             stats = dict(cursor.fetchone())
             
@@ -2810,11 +2812,11 @@ async def get_dashboard_analytics():
             # Actividad por horas (últimas 24 horas)
             cursor.execute("""
                 SELECT 
-                    CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour,
+                    CAST(EXTRACT(HOUR FROM scan_timestamp) AS INTEGER) as hour,
                     COUNT(*) as scans
                 FROM scans
-                WHERE scan_timestamp >= datetime('now', '-24 hours')
-                GROUP BY strftime('%H', scan_timestamp)
+                WHERE scan_timestamp >= NOW() - INTERVAL '24 hours'
+                GROUP BY EXTRACT(HOUR FROM scan_timestamp)
                 ORDER BY hour
             """)
             hourly = [dict(row) for row in cursor.fetchall()]
@@ -3285,7 +3287,7 @@ async def get_campaign_stats(campaign_code: str):
                     DATE(scan_timestamp) as date,
                     COUNT(*) as scans
                 FROM scans
-                WHERE campaign_code = %s AND scan_timestamp >= datetime('now', '-30 days')
+                WHERE campaign_code = %s AND scan_timestamp >= NOW() - INTERVAL '30 days'
                 GROUP BY DATE(scan_timestamp)
                 ORDER BY date
             """, (campaign_code,))
@@ -3345,11 +3347,11 @@ async def get_device_stats(device_id: str):
             # Actividad por hora del día
             cursor.execute("""
                 SELECT 
-                    CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour,
+                    CAST(EXTRACT(HOUR FROM scan_timestamp) AS INTEGER) as hour,
                     COUNT(*) as scans
                 FROM scans
                 WHERE device_id = %s
-                GROUP BY strftime('%H', scan_timestamp)
+                GROUP BY EXTRACT(HOUR FROM scan_timestamp)
                 ORDER BY hour
             """, (device_id,))
             hourly_activity = [dict(row) for row in cursor.fetchall()]
