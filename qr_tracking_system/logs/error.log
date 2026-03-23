@@ -1,1 +1,37 @@
 2026-02-25 00:13:09,523 - qr_tracking - ERROR - [app.py:567] - Error inicializando base de datos: no such column: utm_source
+2026-03-22 07:14:27,665 - qr_tracking.database - ERROR - [database.py:112] - Error en conexión a base de datos: 'sqlite3.Cursor' object does not support the context manager protocol (missed __exit__ method)
+2026-03-22 08:29:47,994 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: near "1.0": syntax error
+2026-03-22 08:31:21,123 - qr_tracking - ERROR - [app.py:552] - Error inicializando base de datos: connection to server at "localhost" (::1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+2026-03-22 09:45:40,303 - qr_tracking - ERROR - [app.py:3692] - Error creando datos de ejemplo: no such table: campaigns
+2026-03-22 09:45:41,230 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 09:53:58,979 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:04:56,060 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:26:27,211 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:26:41,249 - qr_tracking - ERROR - [app.py:756] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:37:50,771 - qr_tracking - ERROR - [app.py:756] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:54:40,597 - qr_tracking - ERROR - [app.py:756] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:57:49,660 - qr_tracking - ERROR - [app.py:766] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:30:27,940 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:38:13,816 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:39:13,761 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:39:34,104 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:39:56,518 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:41:50,857 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:44:40,955 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:45:14,518 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:48:48,831 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:49:45,817 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:54:13,595 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:57:00,251 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:58:22,006 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 12:21:50,705 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 12:32:49,890 - qr_tracking.database - ERROR - [database.py:115] - Error en conexión a base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 12:32:49,891 - qr_tracking.database - ERROR - [database.py:465] - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 17:51:52,376 - qr_tracking.database - ERROR - [database.py:115] - Error en conexión a base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 17:51:52,377 - qr_tracking.database - ERROR - [database.py:465] - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 18:03:28,792 - qr_tracking.database - ERROR - [database.py:115] - Error en conexión a base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 18:03:28,793 - qr_tracking.database - ERROR - [database.py:465] - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'

@@ -13,3 +13,488 @@
 2026-02-25 00:14:34,152 - qr_tracking - INFO - [app.py:2376] - Dispositivos obtenidos: 0
 2026-02-25 00:20:32,490 - qr_tracking - INFO - [app.py:2367] - Obteniendo dispositivos...
 2026-02-25 00:20:32,492 - qr_tracking - INFO - [app.py:2376] - Dispositivos obtenidos: 0
+2026-03-21 23:34:27,588 - qr_tracking - INFO - [app.py:425] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:34:59,917 - qr_tracking - INFO - [app.py:425] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:43:16,169 - qr_tracking - INFO - [app.py:378] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:43:54,205 - qr_tracking - INFO - [app.py:379] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:44:53,339 - qr_tracking - INFO - [app.py:383] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:46:03,742 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:46:20,300 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:46:56,077 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:47:15,600 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:48:02,776 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:48:30,902 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-21 23:49:48,365 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 07:11:42,950 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 07:12:27,279 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 07:12:51,054 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 07:14:06,819 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 07:14:27,148 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 07:14:27,665 - qr_tracking.database - ERROR - [database.py:112] - Error en conexión a base de datos: 'sqlite3.Cursor' object does not support the context manager protocol (missed __exit__ method)
+2026-03-22 07:14:54,788 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 07:22:30,851 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 08:29:46,761 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 08:29:47,003 - qr_tracking - INFO - [app.py:3658] - Creando datos de ejemplo...
+2026-03-22 08:29:47,011 - qr_tracking - INFO - [app.py:3690] - Datos de ejemplo creados
+2026-03-22 08:29:47,712 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 08:29:47,968 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 08:29:47,991 - qr_tracking - INFO - [app.py:3618] - ============================================================
+2026-03-22 08:29:47,991 - qr_tracking - INFO - [app.py:3619] - Iniciando QR Tracking System v2.7.2
+2026-03-22 08:29:47,991 - qr_tracking - INFO - [app.py:3620] - ============================================================
+2026-03-22 08:29:47,994 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: near "1.0": syntax error
+2026-03-22 08:29:47,997 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_08-29-47.db (0.05 MB)
+2026-03-22 08:29:47,998 - qr_tracking - INFO - [app.py:3631] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 08:29:47,998 - qr_tracking - INFO - [app.py:3632] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 08:29:47,998 - qr_tracking - INFO - [app.py:3633] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 08:29:47,999 - qr_tracking - INFO - [app.py:3634] - Sistema iniciado correctamente
+2026-03-22 08:29:47,999 - qr_tracking - INFO - [app.py:3635] - ============================================================
+2026-03-22 08:31:15,969 - qr_tracking - INFO - [app.py:3640] - Cerrando QR Tracking System
+2026-03-22 08:31:15,974 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_08-31-15.db (0.05 MB)
+2026-03-22 08:31:15,974 - qr_tracking - INFO - [app.py:3643] - Sistema cerrado correctamente
+2026-03-22 08:31:16,789 - qr_tracking - INFO - [app.py:423] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 08:31:17,022 - qr_tracking - INFO - [app.py:423] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 08:31:17,045 - qr_tracking - INFO - [app.py:3908] - ============================================================
+2026-03-22 08:31:17,045 - qr_tracking - INFO - [app.py:3909] - Iniciando QR Tracking System v2.7.2
+2026-03-22 08:31:17,045 - qr_tracking - INFO - [app.py:3910] - ============================================================
+2026-03-22 08:31:21,123 - qr_tracking - ERROR - [app.py:552] - Error inicializando base de datos: connection to server at "localhost" (::1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused (0x0000274D/10061)
+	Is the server running on that host and accepting TCP/IP connections?
+
+2026-03-22 08:31:21,127 - qr_tracking - INFO - [app.py:253] - Backups manejados por el servidor en modo PostgreSQL
+2026-03-22 08:31:21,128 - qr_tracking - INFO - [app.py:3921] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 08:31:21,129 - qr_tracking - INFO - [app.py:3922] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 08:31:21,129 - qr_tracking - INFO - [app.py:3923] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 08:31:21,129 - qr_tracking - INFO - [app.py:3924] - Sistema iniciado correctamente
+2026-03-22 08:31:21,129 - qr_tracking - INFO - [app.py:3925] - ============================================================
+2026-03-22 08:31:37,127 - qr_tracking - INFO - [app.py:3930] - Cerrando QR Tracking System
+2026-03-22 08:31:37,128 - qr_tracking - INFO - [app.py:253] - Backups manejados por el servidor en modo PostgreSQL
+2026-03-22 08:31:37,130 - qr_tracking - INFO - [app.py:3933] - Sistema cerrado correctamente
+2026-03-22 09:41:27,315 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 09:45:40,151 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 09:45:40,303 - qr_tracking - ERROR - [app.py:3692] - Error creando datos de ejemplo: no such table: campaigns
+2026-03-22 09:45:41,007 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 09:45:41,187 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 09:45:41,211 - qr_tracking - INFO - [app.py:3618] - ============================================================
+2026-03-22 09:45:41,212 - qr_tracking - INFO - [app.py:3619] - Iniciando QR Tracking System v2.7.2
+2026-03-22 09:45:41,212 - qr_tracking - INFO - [app.py:3620] - ============================================================
+2026-03-22 09:45:41,230 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 09:45:41,234 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_09-45-41.db (0.02 MB)
+2026-03-22 09:45:41,235 - qr_tracking - INFO - [app.py:3631] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 09:45:41,235 - qr_tracking - INFO - [app.py:3632] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 09:45:41,235 - qr_tracking - INFO - [app.py:3633] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 09:45:41,236 - qr_tracking - INFO - [app.py:3634] - Sistema iniciado correctamente
+2026-03-22 09:45:41,236 - qr_tracking - INFO - [app.py:3635] - ============================================================
+2026-03-22 09:53:57,839 - qr_tracking - INFO - [app.py:3640] - Cerrando QR Tracking System
+2026-03-22 09:53:57,840 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_09-53-57.db (0.02 MB)
+2026-03-22 09:53:57,841 - qr_tracking - INFO - [app.py:3643] - Sistema cerrado correctamente
+2026-03-22 09:53:58,730 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 09:53:58,952 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 09:53:58,977 - qr_tracking - INFO - [app.py:3618] - ============================================================
+2026-03-22 09:53:58,977 - qr_tracking - INFO - [app.py:3619] - Iniciando QR Tracking System v2.7.2
+2026-03-22 09:53:58,977 - qr_tracking - INFO - [app.py:3620] - ============================================================
+2026-03-22 09:53:58,979 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 09:53:58,982 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_09-53-58.db (0.02 MB)
+2026-03-22 09:53:58,983 - qr_tracking - INFO - [app.py:3631] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 09:53:58,983 - qr_tracking - INFO - [app.py:3632] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 09:53:58,983 - qr_tracking - INFO - [app.py:3633] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 09:53:58,983 - qr_tracking - INFO - [app.py:3634] - Sistema iniciado correctamente
+2026-03-22 09:53:58,983 - qr_tracking - INFO - [app.py:3635] - ============================================================
+2026-03-22 10:04:54,767 - qr_tracking - INFO - [app.py:3640] - Cerrando QR Tracking System
+2026-03-22 10:04:54,770 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-04-54.db (0.02 MB)
+2026-03-22 10:04:54,771 - qr_tracking - INFO - [app.py:3643] - Sistema cerrado correctamente
+2026-03-22 10:04:55,776 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:04:56,030 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:04:56,059 - qr_tracking - INFO - [app.py:3618] - ============================================================
+2026-03-22 10:04:56,059 - qr_tracking - INFO - [app.py:3619] - Iniciando QR Tracking System v2.7.2
+2026-03-22 10:04:56,059 - qr_tracking - INFO - [app.py:3620] - ============================================================
+2026-03-22 10:04:56,060 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:04:56,062 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-04-56.db (0.02 MB)
+2026-03-22 10:04:56,064 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-02-25_00-13-09.db
+2026-03-22 10:04:56,064 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 1 automáticos, 0 manuales eliminados
+2026-03-22 10:04:56,065 - qr_tracking - INFO - [app.py:3631] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 10:04:56,066 - qr_tracking - INFO - [app.py:3632] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 10:04:56,067 - qr_tracking - INFO - [app.py:3633] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:04:56,067 - qr_tracking - INFO - [app.py:3634] - Sistema iniciado correctamente
+2026-03-22 10:04:56,067 - qr_tracking - INFO - [app.py:3635] - ============================================================
+2026-03-22 10:24:53,764 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:26:25,645 - qr_tracking - INFO - [app.py:3640] - Cerrando QR Tracking System
+2026-03-22 10:26:25,646 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-26-25.db (0.02 MB)
+2026-03-22 10:26:25,647 - qr_tracking - INFO - [app.py:3643] - Sistema cerrado correctamente
+2026-03-22 10:26:26,990 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:26:27,186 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:26:27,209 - qr_tracking - INFO - [app.py:3618] - ============================================================
+2026-03-22 10:26:27,209 - qr_tracking - INFO - [app.py:3619] - Iniciando QR Tracking System v2.7.2
+2026-03-22 10:26:27,210 - qr_tracking - INFO - [app.py:3620] - ============================================================
+2026-03-22 10:26:27,211 - qr_tracking - ERROR - [app.py:720] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:26:27,213 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-26-27.db (0.02 MB)
+2026-03-22 10:26:27,214 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_08-29-47.db
+2026-03-22 10:26:27,215 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_08-31-15.db
+2026-03-22 10:26:27,216 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 10:26:27,216 - qr_tracking - INFO - [app.py:3631] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 10:26:27,216 - qr_tracking - INFO - [app.py:3632] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 10:26:27,216 - qr_tracking - INFO - [app.py:3633] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:26:27,216 - qr_tracking - INFO - [app.py:3634] - Sistema iniciado correctamente
+2026-03-22 10:26:27,217 - qr_tracking - INFO - [app.py:3635] - ============================================================
+2026-03-22 10:26:40,007 - qr_tracking - INFO - [app.py:3640] - Cerrando QR Tracking System
+2026-03-22 10:26:40,012 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-26-40.db (0.02 MB)
+2026-03-22 10:26:40,024 - qr_tracking - INFO - [app.py:3643] - Sistema cerrado correctamente
+2026-03-22 10:26:40,984 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:26:41,218 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:26:41,247 - qr_tracking - INFO - [app.py:3654] - ============================================================
+2026-03-22 10:26:41,248 - qr_tracking - INFO - [app.py:3655] - Iniciando QR Tracking System v2.7.2
+2026-03-22 10:26:41,248 - qr_tracking - INFO - [app.py:3656] - ============================================================
+2026-03-22 10:26:41,249 - qr_tracking - ERROR - [app.py:756] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:26:41,251 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-26-41.db (0.02 MB)
+2026-03-22 10:26:41,253 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_10-26-40.db
+2026-03-22 10:26:41,253 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_10-26-41.db
+2026-03-22 10:26:41,254 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 10:26:41,255 - qr_tracking - INFO - [app.py:3667] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 10:26:41,255 - qr_tracking - INFO - [app.py:3668] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 10:26:41,255 - qr_tracking - INFO - [app.py:3669] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:26:41,255 - qr_tracking - INFO - [app.py:3670] - Sistema iniciado correctamente
+2026-03-22 10:26:41,256 - qr_tracking - INFO - [app.py:3671] - ============================================================
+2026-03-22 10:37:49,358 - qr_tracking - INFO - [app.py:3676] - Cerrando QR Tracking System
+2026-03-22 10:37:49,361 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-37-49.db (0.02 MB)
+2026-03-22 10:37:49,361 - qr_tracking - INFO - [app.py:3679] - Sistema cerrado correctamente
+2026-03-22 10:37:50,462 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:37:50,724 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:37:50,769 - qr_tracking - INFO - [app.py:3654] - ============================================================
+2026-03-22 10:37:50,769 - qr_tracking - INFO - [app.py:3655] - Iniciando QR Tracking System v2.7.2
+2026-03-22 10:37:50,770 - qr_tracking - INFO - [app.py:3656] - ============================================================
+2026-03-22 10:37:50,771 - qr_tracking - ERROR - [app.py:756] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:37:50,772 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-37-50.db (0.02 MB)
+2026-03-22 10:37:50,773 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_10-37-49.db
+2026-03-22 10:37:50,774 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_10-37-50.db
+2026-03-22 10:37:50,775 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 10:37:50,775 - qr_tracking - INFO - [app.py:3667] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 10:37:50,776 - qr_tracking - INFO - [app.py:3668] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 10:37:50,776 - qr_tracking - INFO - [app.py:3669] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:37:50,776 - qr_tracking - INFO - [app.py:3670] - Sistema iniciado correctamente
+2026-03-22 10:37:50,776 - qr_tracking - INFO - [app.py:3671] - ============================================================
+2026-03-22 10:54:38,275 - qr_tracking - INFO - [app.py:3676] - Cerrando QR Tracking System
+2026-03-22 10:54:38,279 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-54-38.db (0.02 MB)
+2026-03-22 10:54:38,280 - qr_tracking - INFO - [app.py:3679] - Sistema cerrado correctamente
+2026-03-22 10:54:40,306 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:54:40,555 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:54:40,594 - qr_tracking - INFO - [app.py:3654] - ============================================================
+2026-03-22 10:54:40,595 - qr_tracking - INFO - [app.py:3655] - Iniciando QR Tracking System v2.7.2
+2026-03-22 10:54:40,595 - qr_tracking - INFO - [app.py:3656] - ============================================================
+2026-03-22 10:54:40,597 - qr_tracking - ERROR - [app.py:756] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:54:40,600 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-54-40.db (0.02 MB)
+2026-03-22 10:54:40,603 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_10-54-38.db
+2026-03-22 10:54:40,605 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_10-54-40.db
+2026-03-22 10:54:40,607 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 10:54:40,608 - qr_tracking - INFO - [app.py:3667] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 10:54:40,609 - qr_tracking - INFO - [app.py:3668] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 10:54:40,609 - qr_tracking - INFO - [app.py:3669] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:54:40,610 - qr_tracking - INFO - [app.py:3670] - Sistema iniciado correctamente
+2026-03-22 10:54:40,610 - qr_tracking - INFO - [app.py:3671] - ============================================================
+2026-03-22 10:57:48,502 - qr_tracking - INFO - [app.py:3676] - Cerrando QR Tracking System
+2026-03-22 10:57:48,504 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-57-48.db (0.02 MB)
+2026-03-22 10:57:48,504 - qr_tracking - INFO - [app.py:3679] - Sistema cerrado correctamente
+2026-03-22 10:57:48,991 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:57:49,418 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:57:49,628 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:57:49,659 - qr_tracking - INFO - [app.py:3664] - ============================================================
+2026-03-22 10:57:49,659 - qr_tracking - INFO - [app.py:3665] - Iniciando QR Tracking System v2.7.2
+2026-03-22 10:57:49,659 - qr_tracking - INFO - [app.py:3666] - ============================================================
+2026-03-22 10:57:49,660 - qr_tracking - ERROR - [app.py:766] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 10:57:49,662 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_10-57-49.db (0.02 MB)
+2026-03-22 10:57:49,663 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_10-57-48.db
+2026-03-22 10:57:49,664 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_10-57-49.db
+2026-03-22 10:57:49,665 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 10:57:49,665 - qr_tracking - INFO - [app.py:3677] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 10:57:49,666 - qr_tracking - INFO - [app.py:3678] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 10:57:49,666 - qr_tracking - INFO - [app.py:3679] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 10:57:49,666 - qr_tracking - INFO - [app.py:3680] - Sistema iniciado correctamente
+2026-03-22 10:57:49,667 - qr_tracking - INFO - [app.py:3681] - ============================================================
+2026-03-22 11:30:26,803 - qr_tracking - INFO - [app.py:3686] - Cerrando QR Tracking System
+2026-03-22 11:30:26,806 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-30-26.db (0.02 MB)
+2026-03-22 11:30:26,806 - qr_tracking - INFO - [app.py:3689] - Sistema cerrado correctamente
+2026-03-22 11:30:27,670 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:30:27,911 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:30:27,938 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:30:27,939 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:30:27,939 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:30:27,940 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:30:27,942 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-30-27.db (0.02 MB)
+2026-03-22 11:30:27,944 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-30-26.db
+2026-03-22 11:30:27,944 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-30-27.db
+2026-03-22 11:30:27,945 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:30:27,945 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:30:27,946 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:30:27,946 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:30:27,946 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:30:27,946 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:30:37,741 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:38:12,267 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:38:12,268 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-38-12.db (0.02 MB)
+2026-03-22 11:38:12,269 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:38:13,564 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:38:13,785 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:38:13,814 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:38:13,814 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:38:13,814 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:38:13,816 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:38:13,818 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-38-13.db (0.02 MB)
+2026-03-22 11:38:13,820 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-38-12.db
+2026-03-22 11:38:13,820 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-38-13.db
+2026-03-22 11:38:13,821 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:38:13,821 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:38:13,822 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:38:13,822 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:38:13,822 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:38:13,823 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:39:12,006 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:39:12,008 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-39-12.db (0.02 MB)
+2026-03-22 11:39:12,009 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:39:13,504 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:13,732 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:13,759 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:39:13,759 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:39:13,759 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:39:13,761 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:39:13,765 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-39-13.db (0.02 MB)
+2026-03-22 11:39:13,767 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-39-12.db
+2026-03-22 11:39:13,768 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-39-13.db
+2026-03-22 11:39:13,769 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:39:13,769 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:39:13,769 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:39:13,770 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:13,770 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:39:13,770 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:39:32,538 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:39:32,540 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-39-32.db (0.02 MB)
+2026-03-22 11:39:32,540 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:39:33,655 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:34,070 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:34,103 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:39:34,103 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:39:34,103 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:39:34,104 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:39:34,107 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-39-34.db (0.02 MB)
+2026-03-22 11:39:34,109 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-39-32.db
+2026-03-22 11:39:34,110 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-39-34.db
+2026-03-22 11:39:34,113 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:39:34,113 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:39:34,113 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:39:34,114 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:34,114 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:39:34,114 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:39:54,868 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:39:54,871 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-39-54.db (0.02 MB)
+2026-03-22 11:39:54,871 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:39:56,272 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:56,487 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:56,516 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:39:56,516 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:39:56,517 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:39:56,518 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:39:56,520 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-39-56.db (0.02 MB)
+2026-03-22 11:39:56,521 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-39-54.db
+2026-03-22 11:39:56,522 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-39-56.db
+2026-03-22 11:39:56,524 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:39:56,526 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:39:56,526 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:39:56,526 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:39:56,527 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:39:56,527 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:41:49,223 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:41:49,226 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-41-49.db (0.02 MB)
+2026-03-22 11:41:49,227 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:41:50,596 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:41:50,822 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:41:50,855 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:41:50,855 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:41:50,855 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:41:50,857 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:41:50,859 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-41-50.db (0.02 MB)
+2026-03-22 11:41:50,861 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-41-49.db
+2026-03-22 11:41:50,861 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-41-50.db
+2026-03-22 11:41:50,862 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:41:50,862 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:41:50,863 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:41:50,863 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:41:50,863 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:41:50,863 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:44:39,360 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:44:39,364 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-44-39.db (0.02 MB)
+2026-03-22 11:44:39,364 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:44:40,716 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:44:40,924 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:44:40,953 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:44:40,953 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:44:40,954 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:44:40,955 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:44:40,957 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-44-40.db (0.02 MB)
+2026-03-22 11:44:40,960 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-44-39.db
+2026-03-22 11:44:40,961 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-44-40.db
+2026-03-22 11:44:40,962 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:44:40,962 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:44:40,963 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:44:40,963 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:44:40,963 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:44:40,963 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:45:13,340 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:45:13,342 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-45-13.db (0.02 MB)
+2026-03-22 11:45:13,343 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:45:14,294 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:45:14,487 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:45:14,516 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:45:14,516 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:45:14,517 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:45:14,518 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:45:14,520 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-45-14.db (0.02 MB)
+2026-03-22 11:45:14,521 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-45-13.db
+2026-03-22 11:45:14,522 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-45-14.db
+2026-03-22 11:45:14,523 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:45:14,523 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:45:14,523 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:45:14,523 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:45:14,523 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:45:14,524 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:48:47,057 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:48:47,066 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-48-47.db (0.02 MB)
+2026-03-22 11:48:47,092 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:48:48,577 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:48:48,780 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:48:48,827 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:48:48,829 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:48:48,829 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:48:48,831 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:48:48,834 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-48-48.db (0.02 MB)
+2026-03-22 11:48:48,836 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-48-47.db
+2026-03-22 11:48:48,836 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-48-48.db
+2026-03-22 11:48:48,838 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:48:48,840 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:48:48,840 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:48:48,840 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:48:48,841 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:48:48,841 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:49:44,111 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:49:44,115 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-49-44.db (0.02 MB)
+2026-03-22 11:49:44,116 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:49:45,565 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:49:45,785 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:49:45,816 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:49:45,816 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:49:45,816 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:49:45,817 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:49:45,819 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-49-45.db (0.02 MB)
+2026-03-22 11:49:45,821 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-49-44.db
+2026-03-22 11:49:45,822 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-49-45.db
+2026-03-22 11:49:45,822 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:49:45,823 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:49:45,823 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:49:45,823 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:49:45,823 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:49:45,824 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:54:12,446 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:54:12,450 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-54-12.db (0.02 MB)
+2026-03-22 11:54:12,451 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:54:13,356 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:54:13,566 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:54:13,593 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:54:13,593 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:54:13,593 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:54:13,595 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:54:13,597 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-54-13.db (0.02 MB)
+2026-03-22 11:54:13,599 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-54-12.db
+2026-03-22 11:54:13,599 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-54-13.db
+2026-03-22 11:54:13,600 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:54:13,600 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:54:13,600 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:54:13,601 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:54:13,601 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:54:13,601 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:56:58,418 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:56:58,420 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-56-58.db (0.02 MB)
+2026-03-22 11:56:58,421 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:56:59,951 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:57:00,197 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:57:00,244 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:57:00,245 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:57:00,245 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:57:00,251 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:57:00,254 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-57-00.db (0.02 MB)
+2026-03-22 11:57:00,256 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-56-58.db
+2026-03-22 11:57:00,258 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-57-00.db
+2026-03-22 11:57:00,261 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:57:00,266 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:57:00,267 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:57:00,268 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:57:00,268 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:57:00,269 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 11:58:20,811 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 11:58:20,814 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-58-20.db (0.02 MB)
+2026-03-22 11:58:20,815 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 11:58:21,781 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:58:21,977 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:58:22,004 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 11:58:22,004 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 11:58:22,004 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 11:58:22,006 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 11:58:22,008 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_11-58-22.db (0.02 MB)
+2026-03-22 11:58:22,009 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-58-20.db
+2026-03-22 11:58:22,010 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_11-58-22.db
+2026-03-22 11:58:22,011 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 11:58:22,012 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 11:58:22,012 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 11:58:22,012 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 11:58:22,013 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 11:58:22,013 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 12:21:49,072 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 12:21:49,077 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_12-21-49.db (0.02 MB)
+2026-03-22 12:21:49,078 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 12:21:50,473 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 12:21:50,672 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 12:21:50,704 - qr_tracking - INFO - [app.py:3672] - ============================================================
+2026-03-22 12:21:50,704 - qr_tracking - INFO - [app.py:3673] - Iniciando QR Tracking System v2.7.2
+2026-03-22 12:21:50,704 - qr_tracking - INFO - [app.py:3674] - ============================================================
+2026-03-22 12:21:50,705 - qr_tracking - ERROR - [app.py:774] - Error inicializando base de datos: duplicate column name: device_pixel_ratio
+2026-03-22 12:21:50,708 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_12-21-50.db (0.02 MB)
+2026-03-22 12:21:50,710 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_12-21-49.db
+2026-03-22 12:21:50,710 - qr_tracking - INFO - [app.py:383] - Backup automático eliminado: qr_tracking_auto_2026-03-22_12-21-50.db
+2026-03-22 12:21:50,711 - qr_tracking - INFO - [app.py:399] - Limpieza de backups: 2 automáticos, 0 manuales eliminados
+2026-03-22 12:21:50,711 - qr_tracking - INFO - [app.py:3685] - Directorio de logs: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\logs
+2026-03-22 12:21:50,711 - qr_tracking - INFO - [app.py:3686] - Directorio de backups: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\backups
+2026-03-22 12:21:50,712 - qr_tracking - INFO - [app.py:3687] - Directorio de archivos estáticos: C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 12:21:50,712 - qr_tracking - INFO - [app.py:3688] - Sistema iniciado correctamente
+2026-03-22 12:21:50,712 - qr_tracking - INFO - [app.py:3689] - ============================================================
+2026-03-22 12:22:06,810 - qr_tracking - INFO - [app.py:3694] - Cerrando QR Tracking System
+2026-03-22 12:22:06,813 - qr_tracking - INFO - [app.py:350] - Backup creado: qr_tracking_auto_2026-03-22_12-22-06.db (0.02 MB)
+2026-03-22 12:22:06,813 - qr_tracking - INFO - [app.py:3697] - Sistema cerrado correctamente
+2026-03-22 12:22:07,355 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 12:22:07,919 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 12:22:08,220 - qr_tracking - INFO - [app.py:501] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 12:22:08,255 - qr_tracking - INFO - [app.py:3518] - ============================================================
+2026-03-22 12:22:08,255 - qr_tracking - INFO - [app.py:3519] - Iniciando QR Tracking System v2.7.2
+2026-03-22 12:22:08,255 - qr_tracking - INFO - [app.py:3520] - ============================================================
+2026-03-22 12:32:49,552 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 12:32:49,790 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 12:32:49,822 - qr_tracking - INFO - [app.py:3519] - ============================================================
+2026-03-22 12:32:49,822 - qr_tracking - INFO - [app.py:3520] - Iniciando QR Tracking System v2.7.2
+2026-03-22 12:32:49,823 - qr_tracking - INFO - [app.py:3521] - ============================================================
+2026-03-22 12:32:49,823 - qr_tracking.database - INFO - [database.py:432] - Inicializando base de datos (SQLite)...
+2026-03-22 12:32:49,890 - qr_tracking.database - ERROR - [database.py:115] - Error en conexión a base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 12:32:49,891 - qr_tracking.database - ERROR - [database.py:465] - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 12:33:17,201 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 17:51:51,932 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 17:51:52,332 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 17:51:52,368 - qr_tracking - INFO - [app.py:3523] - ============================================================
+2026-03-22 17:51:52,369 - qr_tracking - INFO - [app.py:3524] - Iniciando QR Tracking System v2.7.2
+2026-03-22 17:51:52,369 - qr_tracking - INFO - [app.py:3525] - ============================================================
+2026-03-22 17:51:52,369 - qr_tracking.database - INFO - [database.py:432] - Inicializando base de datos (SQLite)...
+2026-03-22 17:51:52,376 - qr_tracking.database - ERROR - [database.py:115] - Error en conexión a base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 17:51:52,377 - qr_tracking.database - ERROR - [database.py:465] - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 17:52:51,828 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 18:03:28,495 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 18:03:28,751 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-03-22 18:03:28,791 - qr_tracking - INFO - [app.py:3523] - ============================================================
+2026-03-22 18:03:28,791 - qr_tracking - INFO - [app.py:3524] - Iniciando QR Tracking System v2.7.2
+2026-03-22 18:03:28,791 - qr_tracking - INFO - [app.py:3525] - ============================================================
+2026-03-22 18:03:28,791 - qr_tracking.database - INFO - [database.py:432] - Inicializando base de datos (SQLite)...
+2026-03-22 18:03:28,792 - qr_tracking.database - ERROR - [database.py:115] - Error en conexión a base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 18:03:28,793 - qr_tracking.database - ERROR - [database.py:465] - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-03-22 18:04:25,784 - qr_tracking - INFO - [app.py:502] - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
