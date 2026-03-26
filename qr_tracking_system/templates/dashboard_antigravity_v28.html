@@ -1201,25 +1201,18 @@ body {
   </div>
 
   <nav class="nav-tabs">
-    <div class="nav-tab active" onclick="switchTab('overview',this)">
+    <a href="/dashboard" class="nav-tab active" style="text-decoration:none;">
       <span class="tab-icon">⬡</span> Overview
-    </div>
-    <div class="nav-tab" onclick="switchTab('campaigns',this)">
+    </a>
+    <a href="/admin/campaigns" class="nav-tab" style="text-decoration:none;">
       <span class="tab-icon">◈</span> Campañas
-    </div>
-    <div class="nav-tab" onclick="switchTab('audience',this)">
-      <span class="tab-icon">◎</span> Audiencias
-    </div>
-    <div class="nav-tab" onclick="switchTab('devices',this)">
+    </a>
+    <a href="/devices" class="nav-tab" style="text-decoration:none;">
       <span class="tab-icon">⊡</span> Dispositivos
-    </div>
-    <div class="nav-tab" onclick="switchTab('compare',this)">
-      <span class="tab-icon">⇄</span> Comparar
-      <span class="tab-badge">3</span>
-    </div>
-    <div class="nav-tab" onclick="switchTab('benchmarks',this)">
-      <span class="tab-icon">⊕</span> Benchmarks
-    </div>
+    </a>
+    <a href="/admin/system" class="nav-tab" style="text-decoration:none;">
+      <span class="tab-icon">⊕</span> Sistema
+    </a>
   </nav>
 
   <div class="topbar-right">
