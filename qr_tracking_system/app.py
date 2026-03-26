@@ -906,7 +906,7 @@ async def index():
 async def dashboard():
     """Dashboard con analytics"""
     try:
-        dashboard_path = os.path.join(TEMPLATES_DIR, "dashboard_antigravity_v28.html")
+        dashboard_path = os.path.join(TEMPLATES_DIR, "phygital_dashboard.html")
         with open(dashboard_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
