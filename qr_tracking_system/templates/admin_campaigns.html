@@ -229,17 +229,7 @@
         
         /* Modal */
         .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
+            display: none !important; /* Desactivado porque el contenedor principal ahora hace el backdrop */
         }
         
         .modal-backdrop.show {
@@ -247,14 +237,37 @@
         }
         
         .modal {
-            background: white;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-            animation: modalIn 0.3s ease;
+            /* ESTE ES EL CONTENEDOR PRINCIPAL QUE BLOQUEA LA PANTALLA */
+            position: fixed !important;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(17, 19, 23, 0.8) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 10000 !important;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            border-radius: 0 !important; /* Quitar bordes del fondo */
+        }
+        
+        .modal-dialog {
+            /* LA VENTANA FLOTANTE EN SI */
+            background: linear-gradient(180deg, rgba(30, 32, 35, 0.95) 0%, rgba(20, 22, 25, 0.95) 100%) !important;
+            border: 1px solid rgba(184, 195, 255, 0.2) !important;
+            border-radius: 20px !important;
+            width: 100%;
+            max-width: 860px !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 40px rgba(93, 63, 211, 0.15) !important;
+            color: #e2e2e6 !important;
+            animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
         
         @keyframes modalIn {
@@ -269,16 +282,21 @@
         }
         
         .modal-header {
-            padding: 25px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 24px 32px;
+            border-bottom: 1px solid rgba(131, 131, 131, 0.15) !important;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: rgba(0,0,0,0.2) !important;
+            border-radius: 20px 20px 0 0;
         }
         
         .modal-title {
-            font-size: 1.25rem;
+            font-family: 'Space Grotesk', sans-serif !important;
+            font-size: 1.5rem;
             font-weight: 700;
+            color: #b8c3ff !important;
+            letter-spacing: -0.5px;
         }
         
         .modal-close {
@@ -560,240 +578,474 @@
     </div>
     
     <!-- ── Modal de Nueva Campaña / Edición ── -->
-
-<style>
-/* STITCH-INSPIRED GLASSMORPHISM CSS FOR CAMPAÑA MODAL */
-#campaignModal.modal-overlay {
-    position: fixed; inset: 0; z-index: 1000;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-}
-
-#campaignModal .glass-panel {
-    background: rgba(30, 32, 35, 0.85);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(72, 69, 84, 0.3);
-    border-radius: 16px;
-    width: 100%; max-width: 800px; max-height: 90vh;
-    color: #e2e2e6;
-    display: flex; flex-direction: column;
-    box-shadow: 0 24px 48px rgba(0,0,0,0.6);
-    font-family: 'Inter', sans-serif;
-    overflow: hidden;
-}
-
-#campaignModal .modal-header {
-    padding: 24px 32px;
-    border-bottom: 1px solid rgba(72, 69, 84, 0.2);
-    display: flex; justify-content: space-between; align-items: center;
-    background: rgba(26, 28, 31, 0.5);
-}
-
-#campaignModal .modal-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 24px; font-weight: 700; color: #b8c3ff;
-    margin: 0; letter-spacing: -0.5px;
-}
-#campaignModal .modal-subtitle {
-    font-size: 14px; color: #c9c4d7; margin: 4px 0 0 0; font-weight: 500;
-}
-
-#campaignModal .modal-close {
-    background: transparent; border: none; font-size: 20px;
-    color: #c9c4d7; cursor: pointer; border-radius: 50%; width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s, color 0.2s;
-}
-#campaignModal .modal-close:hover {
-    background: rgba(40, 42, 45, 1); color: #fff;
-}
-
-#campaignModal .modal-body {
-    padding: 32px; overflow-y: auto;
-}
-
-/* Form Styles */
-#campaignModal .form-group {
-    margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px;
-}
-#campaignModal .two-cols {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
-}
-#campaignModal label {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 12px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 1px; color: #c9c4d7;
-}
-
-#campaignModal input[type="text"], 
-#campaignModal input[type="url"], 
-#campaignModal select, 
-#campaignModal textarea {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid #484554;
-    color: #e2e2e6;
-    padding: 12px 0; font-size: 15px; outline: none;
-    transition: border-color 0.2s;
-    font-family: 'Inter', sans-serif;
-}
-#campaignModal input:focus, #campaignModal select:focus, #campaignModal textarea:focus {
-    border-bottom-color: #b8c3ff;
-}
-#campaignModal select option { background: #1e2023; color: #fff; }
-
-#campaignModal textarea {
-    background: rgba(26, 28, 31, 0.5);
-    border: 1px solid rgba(72, 69, 84, 0.2);
-    border-radius: 8px; padding: 16px; min-height: 80px; resize: none;
-}
-
-/* Radio Cards */
-#campaignModal .radio-cards {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 8px;
-}
-#campaignModal .radio-card {
-    background: rgba(26, 28, 31, 0.8);
-    border: 1px solid rgba(72, 69, 84, 0.2);
-    border-radius: 12px; padding: 20px 16px;
-    cursor: pointer; text-align: center; transition: all 0.2s;
-    display: flex; flex-direction: column; align-items: center; gap: 12px;
-}
-#campaignModal input[type="radio"] { display: none; }
-#campaignModal input[type="radio"]:checked + .radio-card {
-    border-color: #2ae500;
-    background: rgba(42, 229, 0, 0.05);
-}
-#campaignModal .radio-card .icon { font-size: 32px; }
-#campaignModal .radio-card .title { font-size: 14px; font-weight: 600; }
-
-/* Gradient Button */
-#campaignModal .btn-submit {
-    background: linear-gradient(135deg, #0846ed, #4804dd);
-    color: white; border: none; padding: 16px 32px;
-    border-radius: 8px; font-family: 'Space Grotesk', sans-serif;
-    font-weight: 800; font-size: 14px; letter-spacing: 1px;
-    cursor: pointer; transition: transform 0.2s; width: 100%; box-shadow: 0 8px 16px rgba(8, 70, 237, 0.2);
-}
-#campaignModal .btn-submit:hover { transform: translateY(-2px); }
-
-#campaignModal .btn-cancel {
-    background: transparent; color: #c9c4d7; border: none; padding: 16px 32px;
-    font-weight: 600; cursor: pointer; transition: color 0.2s;
-}
-#campaignModal .btn-cancel:hover { color: #fff; }
-
-#campaignModal .modal-footer {
-    padding: 24px 32px; border-top: 1px solid rgba(72, 69, 84, 0.2);
-    display: flex; justify-content: flex-end; gap: 16px; background: rgba(17, 19, 23, 0.8);
-}
-</style>
-
-<div id="campaignModal" class="modal-overlay" style="display:none">
-  <div class="glass-panel">
+<div id="campaignModal" class="modal" style="display:none" onclick="if(event.target === this) closeCampaignModal()">
+  <div class="modal-backdrop" onclick="closeCampaignModal()"></div>
+  <div class="modal-dialog" style="max-width:760px;max-height:90vh;overflow-y:auto">
     
-    <header class="modal-header">
-      <div>
-        <h2 id="modalTitle" class="modal-title">Nueva Campaña</h2>
-        <p class="modal-subtitle">Configura los parámetros de tu observatorio cinético</p>
-      </div>
-      <button type="button" onclick="closeCampaignModal()" class="modal-close">✕</button>
-    </header>
+    <!-- Header -->
+    <div class="modal-header">
+      <h2 id="modalTitle" class="modal-title">Nueva Campaña</h2>
+      <button onclick="closeCampaignModal()" class="modal-close">✕</button>
+    </div>
 
-    <div class="modal-body">
-      <form id="campaignForm" onsubmit="submitCampaign(event)">
-        <!-- Essential Hidden Defaults for API compatibility -->
-        <input type="hidden" name="goal_conversion_rate" value="0">
-        <input type="hidden" name="goal_scans" value="0">
-        <input type="hidden" name="campaign_category" value="Estándar">
-        <input type="hidden" name="is_digital" value="true">
-        <input type="hidden" name="fb_pixel" value="">
-        <input type="hidden" name="tiktok_pixel" value="">
-        <input type="hidden" name="google_analytics" value="">
-        
-        <div class="two-cols">
+    <form id="campaignForm" onsubmit="submitCampaign(event)">
+      
+      <!-- ── TAB NAVIGATION ── -->
+      <div class="form-tabs" style="display:flex;gap:4px;padding:12px 20px 0;border-bottom:1px solid var(--border);margin-bottom:0">
+        <button type="button" class="form-tab active" onclick="showTab('tab-basic',this)">📋 Básico</button>
+        <button type="button" class="form-tab" onclick="showTab('tab-industry',this)">🏭 Industria</button>
+        <button type="button" class="form-tab" onclick="showTab('tab-campaign',this)">🎯 Campaña</button>
+        <button type="button" class="form-tab" onclick="showTab('tab-social',this)">📱 Digital</button>
+        <button type="button" class="form-tab" onclick="showTab('tab-goals',this)">📊 Metas</button>
+      </div>
+
+      <div style="padding:20px">
+
+        <!-- ══════════════════════════════════════
+             TAB 1: DATOS BÁSICOS (siempre visibles)
+             ══════════════════════════════════════ -->
+        <div id="tab-basic" class="tab-panel">
+          
+          <div class="form-row-2">
             <div class="form-group required">
               <label>Código de Campaña</label>
               <input type="text" name="campaign_code" id="campaign_code" 
                      placeholder="Ej: NIKE_VERANO_2025" 
-                     pattern="[A-Z0-9_-]+" style="text-transform:uppercase" required>
+                     pattern="[A-Z0-9_-]+" 
+                     title="Solo mayúsculas, números, guion y guion bajo"
+                     style="text-transform:uppercase" required>
+              <small>Se generará automáticamente en mayúsculas · Sin espacios</small>
             </div>
-            
             <div class="form-group required">
               <label>Cliente / Anunciante</label>
               <input type="text" name="client" id="client" 
                      placeholder="Nombre del cliente" required>
             </div>
-        </div>
+          </div>
 
-        <div class="two-cols">
+          <div class="form-group required">
+            <label>URL de Destino</label>
+            <input type="url" name="destination" id="destination" 
+                   placeholder="https://..." required>
+            <small>URL completa a donde redirige el QR</small>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea name="description" id="description" rows="2" 
+                      placeholder="Descripción breve de la campaña (visible para el cliente)"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre del Producto / Servicio</label>
+            <input type="text" name="product_name" id="product_name" 
+                   placeholder="Ej: Nike Air Max 2025 · Tarjeta Platino · Pizza Familiar">
+            <small>Producto o servicio específico anunciado (para comparativas)</small>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>📅 Fecha de Inicio</label>
+              <input type="date" name="start_date" id="start_date">
+            </div>
+            <div class="form-group">
+              <label>📅 Fecha de Finalización</label>
+              <input type="date" name="end_date" id="end_date">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Estado de Campaña</label>
+              <select name="campaign_status" id="campaign_status">
+                <option value="draft">🔘 Borrador (en preparación)</option>
+                <option value="active">🟢 Activa (en curso)</option>
+                <option value="paused">🟡 Pausada</option>
+                <option value="completed">✅ Completada</option>
+                <option value="archived">📦 Archivada</option>
+                <option value="cancelled">❌ Cancelada</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Fase de Campaña</label>
+              <select name="campaign_phase" id="campaign_phase">
+                <option value="">Sin especificar</option>
+                <option value="lanzamiento">🚀 Lanzamiento</option>
+                <option value="sustento">📈 Sustento / Continuación</option>
+                <option value="cierre">📉 Cierre / Recall</option>
+                <option value="recall">🧠 Post-campaña / Recall</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Account Manager</label>
+              <input type="text" name="account_manager" id="account_manager" 
+                     placeholder="Nombre del ejecutivo de cuenta">
+            </div>
+            <div class="form-group">
+              <label>Hashtag Principal</label>
+              <input type="text" name="hashtag" id="hashtag" 
+                     placeholder="#MiCampaña2025">
+              <small>Hashtag para correlación con RRSS</small>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Tags / Etiquetas</label>
+            <input type="text" name="tags" id="tags" 
+                   placeholder="navidad, 2025, premium, lanzamiento (separados por coma)">
+            <small>Para búsqueda y filtrado interno</small>
+          </div>
+
+        </div><!-- /tab-basic -->
+
+
+        <!-- ══════════════════════════════════════
+             TAB 2: INDUSTRIA Y CLASIFICACIÓN
+             ══════════════════════════════════════ -->
+        <div id="tab-industry" class="tab-panel" style="display:none">
+          
+          <div class="info-banner" style="margin-bottom:16px">
+            <strong>¿Por qué importa la industria?</strong> 
+            La clasificación IAB permite comparar tu campaña con benchmarks del mismo sector 
+            y habilita el módulo de comparación anónima con otras campañas de la BD.
+          </div>
+
+          <div class="form-row-2">
             <div class="form-group required">
-              <label>Industria / Sector</label>
-              <select name="industry" id="industry" required>
-                <option value="" disabled selected>Selecciona sector</option>
-                <option value="Retail & Moda">Retail & Moda</option>
-                <option value="Tecnología">Tecnología</option>
-                <option value="Automotriz">Automotriz</option>
-                <option value="Entretenimiento">Entretenimiento</option>
-                <option value="Inmobiliaria">Inmobiliaria</option>
-                <option value="Otro">Otro</option>
+              <label>Industria (Taxonomía IAB)</label>
+              <select name="industry" id="industry" onchange="updateBenchmarkPreview()" required>
+                <option value="">── Seleccionar industria ──</option>
+                <optgroup label="Consumo Masivo">
+                  <option value="alimentacion_bebidas">🍔 Alimentación y Bebidas</option>
+                  <option value="restaurantes_gastronomia">🍽️ Restaurantes y Gastronomía</option>
+                  <option value="moda_retail">👗 Moda y Retail</option>
+                  <option value="belleza_cuidado">💄 Belleza y Cuidado Personal</option>
+                  <option value="deportes_fitness">🏋️ Deportes y Fitness</option>
+                </optgroup>
+                <optgroup label="Tecnología y Servicios">
+                  <option value="electronica_tecnologia">📱 Electrónica y Tecnología</option>
+                  <option value="telecomunicaciones">📡 Telecomunicaciones</option>
+                  <option value="servicios_profesionales">💼 Servicios Profesionales</option>
+                  <option value="educacion">📚 Educación</option>
+                </optgroup>
+                <optgroup label="Finanzas y Seguros">
+                  <option value="banca_finanzas">🏦 Banca y Finanzas</option>
+                  <option value="seguros">🛡️ Seguros</option>
+                </optgroup>
+                <optgroup label="Real Estate y Construcción">
+                  <option value="bienes_raices">🏠 Bienes Raíces</option>
+                  <option value="construccion_hogar">🔨 Construcción y Hogar</option>
+                </optgroup>
+                <optgroup label="Entretenimiento y Turismo">
+                  <option value="entretenimiento_medios">🎬 Entretenimiento y Medios</option>
+                  <option value="transporte_turismo">✈️ Transporte y Turismo</option>
+                </optgroup>
+                <optgroup label="Salud y Social">
+                  <option value="farmacia_salud">💊 Farmacia y Salud</option>
+                  <option value="ong_social">❤️ ONG y Causa Social</option>
+                  <option value="gobierno_institucional">🏛️ Gobierno e Institucional</option>
+                </optgroup>
+                <optgroup label="Energía">
+                  <option value="energia_servicios">⚡ Energía y Servicios Públicos</option>
+                  <option value="automotriz">🚗 Automotriz</option>
+                </optgroup>
+                <option value="otro">📋 Otro / No clasificado</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Sub-industria / Categoría específica</label>
+              <input type="text" name="industry_sub" id="industry_sub" 
+                     placeholder="Ej: Cerveza artesanal · SUV Premium · App fintech">
+              <small>Mayor granularidad para análisis sectorial</small>
+            </div>
+          </div>
+
+          <!-- Preview de benchmark de industria -->
+          <div id="benchmarkPreview" class="benchmark-card" style="display:none;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);margin-top:8px">
+            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px">📊 Benchmarks globales para esta industria (IAB/OAAA 2024)</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="benchmarkValues"></div>
+          </div>
+
+          <div class="form-row-2" style="margin-top:16px">
+            <div class="form-group">
+              <label>País</label>
+              <select name="geo_country" id="geo_country">
+                <option value="BR">🇧🇷 Brasil</option>
+                <option value="CO">🇨🇴 Colombia</option>
+                <option value="MX">🇲🇽 México</option>
+                <option value="AR">🇦🇷 Argentina</option>
+                <option value="CL">🇨🇱 Chile</option>
+                <option value="PE">🇵🇪 Perú</option>
+                <option value="VE">🇻🇪 Venezuela</option>
+                <option value="EC">🇪🇨 Ecuador</option>
+                <option value="PA">🇵🇦 Panamá</option>
+                <option value="US">🇺🇸 Estados Unidos</option>
+                <option value="ES">🇪🇸 España</option>
+                <option value="OTHER">🌍 Otro</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Ciudad(es) / Región</label>
+              <input type="text" name="geo_region" id="geo_region" 
+                     placeholder="Ej: São Paulo, Rio de Janeiro">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" name="is_benchmark_eligible" id="is_benchmark_eligible" checked>
+              <span>Incluir en pool de benchmarks anónimos</span>
+            </label>
+            <small style="color:var(--text-secondary)">
+              Al activar, los KPIs de esta campaña (sin nombre de cliente) se incluyen 
+              en comparaciones de benchmark para otros clientes del mismo sector.
+            </small>
+          </div>
+
+        </div><!-- /tab-industry -->
+
+
+        <!-- ══════════════════════════════════════
+             TAB 3: TIPO Y OBJETIVO DE CAMPAÑA
+             ══════════════════════════════════════ -->
+        <div id="tab-campaign" class="tab-panel" style="display:none">
+
+          <div class="form-row-2">
+            <div class="form-group required">
+              <label>Tipo de Campaña</label>
+              <select name="campaign_type" id="campaign_type" required>
+                <option value="">── Seleccionar tipo ──</option>
+                <option value="branding">🏆 Branding / Imagen de Marca</option>
+                <option value="lanzamiento">🚀 Lanzamiento de Producto/Servicio</option>
+                <option value="promocion">🏷️ Promoción / Oferta Táctica</option>
+                <option value="generacion_leads">🎣 Generación de Leads / Prospectos</option>
+                <option value="performance">💰 Performance / Conversión Directa</option>
+                <option value="retencion">🔄 Retención y Lealtad (CRM)</option>
+                <option value="reposicionamiento">🔀 Reposicionamiento de Marca</option>
+                <option value="evento">🎉 Evento / Activación Experiencial</option>
+                <option value="lanzamiento_tienda">🏪 Apertura de Tienda / Sucursal</option>
+                <option value="estacional">📅 Temporada / Estacional</option>
+                <option value="causa_rse">❤️ Causa Social / RSE</option>
               </select>
             </div>
             <div class="form-group required">
-              <label>Marca (Brand)</label>
-              <input type="text" name="brand" id="brand" placeholder="Nombre específico de la marca" required>
+              <label>Objetivo Principal (Funnel)</label>
+              <select name="campaign_objective" id="campaign_objective" required>
+                <option value="">── Seleccionar objetivo ──</option>
+                <option value="awareness">👁️ Awareness — Notoriedad / Recordación</option>
+                <option value="consideracion">🤔 Consideración — Evaluación / Interés</option>
+                <option value="intencion">🛒 Intención — Casi lista para comprar</option>
+                <option value="conversion">💳 Conversión — Compra / Lead</option>
+                <option value="lealtad">⭐ Lealtad — Retención / Frecuencia</option>
+                <option value="advocacy">📢 Advocacy — Embajadores / NPS</option>
+              </select>
             </div>
-        </div>
-        
-        <div class="form-group required">
-          <label>URL de Destino</label>
-          <input type="url" name="destination" id="destination" 
-                 placeholder="https://tu-sitio.com/landing" required>
-        </div>
+          </div>
 
-        <div class="form-group">
-          <label>Tipo de Campaña</label>
-          <div class="radio-cards">
-            <label>
-              <input type="radio" name="campaign_type" value="Digital Billboard" checked>
-              <div class="radio-card">
-                <div class="icon" style="color: #b8c3ff;">🎯</div>
-                <div class="title">Digital Billboard</div>
-              </div>
-            </label>
-            <label>
-              <input type="radio" name="campaign_type" value="Flyer/Poster">
-              <div class="radio-card">
-                <div class="icon" style="color: #c9beff;">📄</div>
-                <div class="title">Flyer / Poster</div>
-              </div>
-            </label>
-            <label>
-              <input type="radio" name="campaign_type" value="Point of Sale">
-              <div class="radio-card">
-                <div class="icon" style="color: #bbaeff;">🏪</div>
-                <div class="title">Point of Sale</div>
-              </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Formato DOOH</label>
+              <select name="dooh_format" id="dooh_format">
+                <option value="">Sin especificar</option>
+                <option value="cartelera_digital">🖥️ Cartelera Digital (exterior grande)</option>
+                <option value="pantalla_mall">🏬 Pantalla de Centro Comercial</option>
+                <option value="pantalla_aeropuerto">✈️ Pantalla de Aeropuerto</option>
+                <option value="pantalla_transito">🚇 Pantalla de Transporte Público</option>
+                <option value="pantalla_calle">🚦 Pantalla de Calle (small format)</option>
+                <option value="pantalla_interior">🏢 Pantalla Interior (oficina/lobby)</option>
+                <option value="pantalla_interactiva">👆 Pantalla Interactiva / Touchscreen</option>
+                <option value="multipantalla">📺 Múltiples Formatos Simultáneos</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo de Creatividad</label>
+              <select name="creative_type" id="creative_type">
+                <option value="">Sin especificar</option>
+                <option value="imagen_estatica">🖼️ Imagen Estática (JPEG/PNG)</option>
+                <option value="video">▶️ Video</option>
+                <option value="animacion">✨ Animación / GIF / HTML5</option>
+                <option value="interactivo_qr">📲 Interactivo con QR Destacado</option>
+                <option value="ar">🥽 Realidad Aumentada (AR)</option>
+                <option value="dinamico">⚡ Dinámico (clima/hora/datos en vivo)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Categoría de Venue</label>
+              <select name="venue_category" id="venue_category">
+                <option value="">Sin especificar</option>
+                <option value="centro_comercial">🏬 Centro Comercial (Mall)</option>
+                <option value="aeropuerto">✈️ Aeropuerto</option>
+                <option value="transporte">🚇 Transporte Público (metro/bus/tren)</option>
+                <option value="via_publica">🛣️ Vía Pública / Outdoor</option>
+                <option value="oficinas">🏢 Oficinas / Coworking / Edificios</option>
+                <option value="restaurantes_fb">🍽️ Restaurantes / Food & Beverage</option>
+                <option value="gimnasios">🏋️ Gimnasios / Centros Fitness</option>
+                <option value="hoteles">🏨 Hoteles / Hospitalidad</option>
+                <option value="estadios">🏟️ Estadios / Arenas / Eventos</option>
+                <option value="universidades">🎓 Universidades / Campuses</option>
+                <option value="mixto">🔀 Mixto (múltiples venues)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tier de Presupuesto</label>
+              <select name="budget_tier" id="budget_tier">
+                <option value="">Sin especificar</option>
+                <option value="micro">💰 Micro — hasta $1,000</option>
+                <option value="pequeno">💰💰 Pequeño — $1K–$10K</option>
+                <option value="mediano">💰💰💰 Mediano — $10K–$50K</option>
+                <option value="grande">💰💰💰💰 Grande — $50K–$200K</option>
+                <option value="enterprise">🏆 Enterprise — más de $200K</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Audiencia Objetivo</label>
+              <input type="text" name="target_audience" id="target_audience" 
+                     placeholder="Ej: Hombres 25-45, NSE A-B, amantes del deporte">
+            </div>
+            <div class="form-group">
+              <label>Moneda de Inversión</label>
+              <select name="budget_currency" id="budget_currency">
+                <option value="USD">🇺🇸 USD — Dólar americano</option>
+                <option value="BRL">🇧🇷 BRL — Real brasileño</option>
+                <option value="COP">🇨🇴 COP — Peso colombiano</option>
+                <option value="MXN">🇲🇽 MXN — Peso mexicano</option>
+                <option value="ARS">🇦🇷 ARS — Peso argentino</option>
+                <option value="VES">🇻🇪 VES — Bolívar venezolano</option>
+                <option value="CLP">🇨🇱 CLP — Peso chileno</option>
+              </select>
+            </div>
+          </div>
+
+        </div><!-- /tab-campaign -->
+
+
+        <!-- ══════════════════════════════════════
+             TAB 4: AMPLIFICACIÓN DIGITAL Y SOCIAL
+             ══════════════════════════════════════ -->
+        <div id="tab-social" class="tab-panel" style="display:none">
+
+          <div class="info-banner" style="margin-bottom:16px">
+            Las campañas con amplificación en RRSS generan hasta <strong>3x más escaneos</strong> 
+            que las campañas solo físicas (OAAA/Harris Poll 2024).
+          </div>
+
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+              <input type="checkbox" name="social_amplification" id="social_amplification" 
+                     onchange="toggleSocialFields(this.checked)" style="width:18px;height:18px">
+              <strong>🔊 Esta campaña tiene amplificación en Redes Sociales</strong>
             </label>
           </div>
-        </div>
 
-        <div class="form-group">
-          <label>Notas Adicionales</label>
-          <textarea name="description" id="description" placeholder="Detalles sobre la ubicación o el objetivo..."></textarea>
-        </div>
-        
-        <div class="modal-footer">
-            <button type="button" class="btn-cancel" onclick="closeCampaignModal()">CANCELAR</button>
-            <button type="submit" class="btn-submit" id="submitCampaignBtn">GUARDAR CAMPAÑA</button>
-        </div>
-      </form>
-    </div>
+          <div id="socialFields" style="display:none">
+            <div class="form-group">
+              <label>Plataformas de RRSS utilizadas</label>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px">
+                <label class="checkbox-pill">
+                  <input type="checkbox" name="social_platforms" value="instagram"> 📸 Instagram
+                </label>
+                <label class="checkbox-pill">
+                  <input type="checkbox" name="social_platforms" value="tiktok"> 🎵 TikTok
+                </label>
+                <label class="checkbox-pill">
+                  <input type="checkbox" name="social_platforms" value="facebook"> 📘 Facebook
+                </label>
+                <label class="checkbox-pill">
+                  <input type="checkbox" name="social_platforms" value="youtube"> ▶️ YouTube
+                </label>
+                <label class="checkbox-pill">
+                  <input type="checkbox" name="social_platforms" value="twitter"> 🐦 X/Twitter
+                </label>
+                <label class="checkbox-pill">
+                  <input type="checkbox" name="social_platforms" value="linkedin"> 💼 LinkedIn
+                </label>
+                <label class="checkbox-pill">
+                  <input type="checkbox" name="social_platforms" value="whatsapp"> 💬 WhatsApp
+                </label>
+                <label class="checkbox-pill">
+                  <input type="checkbox" name="social_platforms" value="snapchat"> 👻 Snapchat
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                <input type="checkbox" name="influencer_support" id="influencer_support">
+                <span>👑 La campaña incluye creadores de contenido / influencers</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:16px">
+            <label>Notas Internas (no visible para el cliente)</label>
+            <textarea name="internal_notes" id="internal_notes" rows="3" 
+                      placeholder="Notas del equipo, links a assets, consideraciones especiales..."></textarea>
+          </div>
+
+        </div><!-- /tab-social -->
+
+
+        <!-- ══════════════════════════════════════
+             TAB 5: METAS Y KPIs OBJETIVO
+             ══════════════════════════════════════ -->
+        <div id="tab-goals" class="tab-panel" style="display:none">
+
+          <div class="info-banner" style="margin-bottom:16px">
+            Definir metas permite al dashboard mostrar el % de cumplimiento y 
+            activar alertas automáticas cuando se alcancen o no los objetivos.
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-group">
+              <label>🎯 Meta: Escaneos Totales</label>
+              <input type="number" name="target_scans" id="target_scans" 
+                     min="1" placeholder="Ej: 10000">
+            </div>
+            <div class="form-group">
+              <label>👤 Meta: Visitantes Únicos</label>
+              <input type="number" name="target_unique_visitors" id="target_unique_visitors" 
+                     min="1" placeholder="Ej: 7000">
+            </div>
+            <div class="form-group">
+              <label>📈 Meta: CTR (% sobre impresiones)</label>
+              <input type="number" name="target_ctr_pct" id="target_ctr_pct" 
+                     min="0.1" max="100" step="0.1" placeholder="Ej: 2.5">
+              <small>% de personas que escanean vs que ven el DOOH</small>
+            </div>
+          </div>
+
+          <!-- Referencia de benchmarks por industria -->
+          <div id="goalsBenchmarkRef" class="benchmark-card" 
+               style="padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);margin-top:8px">
+            <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">
+              💡 Selecciona una industria en la pestaña "Industria" para ver los benchmarks de referencia
+            </div>
+          </div>
+
+        </div><!-- /tab-goals -->
+
+      </div><!-- /padding wrapper -->
+
+      <!-- ── Footer de botones ── -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeCampaignModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <span id="submitIcon">✓</span> Guardar Campaña
+        </button>
+      </div>
+
+    </form>
   </div>
 </div>
-
 
 <!-- ── ESTILOS adicionales para el formulario ── -->
 <style>
