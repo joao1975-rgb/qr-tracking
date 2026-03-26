@@ -906,7 +906,7 @@ async def index():
 async def dashboard():
     """Dashboard con analytics"""
     try:
-        dashboard_path = os.path.join(TEMPLATES_DIR, "dashboard.html")
+        dashboard_path = os.path.join(TEMPLATES_DIR, "dashboard_antigravity_v28.html")
         with open(dashboard_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
@@ -935,6 +935,16 @@ async def tracking_page():
 @app.get("/admin")
 async def admin_redirect():
     return RedirectResponse(url="/admin/campaigns")
+
+@app.get("/admin/system", response_class=HTMLResponse)
+async def admin_system():
+    """Panel de Benchmarks del Sistema"""
+    try:
+        admin_path = os.path.join(TEMPLATES_DIR, "admin_system_benchmarks.html")
+        with open(admin_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse("<h1>Error</h1><p>Archivo admin_system_benchmarks.html no encontrado</p><a href='/'>← Volver</a>")
 
 @app.get("/admin/campaigns", response_class=HTMLResponse)
 async def admin_campaigns():
@@ -2546,7 +2556,7 @@ async def get_client_analytics(client_name: str):
                     COUNT(DISTINCT CASE WHEN c.active = TRUE THEN c.id END) as active_campaigns,
                     COALESCE(COUNT(s.id), 0) as total_scans,
                     COALESCE(COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END), 0) as completed_redirects,
-                    ROUND(COALESCE(AVG(s.duration_seconds), 0), 2) as avg_duration,
+                    ROUND(CAST(COALESCE(AVG(s.duration_seconds), 0) AS numeric), 2) as avg_duration,
                     COUNT(DISTINCT s.ip_address) as unique_visitors,
                     COUNT(DISTINCT s.device_id) as unique_devices,
                     MIN(s.scan_timestamp) as first_scan,
@@ -2573,7 +2583,7 @@ async def get_client_analytics(client_name: str):
                     c.created_at,
                     COUNT(s.id) as scans,
                     COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds), 2) as avg_duration
+                    ROUND(CAST(AVG(s.duration_seconds) AS numeric), 2) as avg_duration
                 FROM campaigns c
                 LEFT JOIN scans s ON c.campaign_code = s.campaign_code
                 WHERE c.client = %s
@@ -2764,7 +2774,7 @@ async def get_dashboard_analytics():
                     s.client,
                     COUNT(*) as scans,
                     COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds), 2) as avg_duration,
+                    ROUND(CAST(AVG(s.duration_seconds) AS numeric), 2) as avg_duration,
                     MAX(s.scan_timestamp) as last_scan
                 FROM scans s
                 GROUP BY s.campaign_code, s.client
@@ -2799,7 +2809,7 @@ async def get_dashboard_analytics():
                     pd.device_type,
                     COUNT(s.id) as scans,
                     COUNT(CASE WHEN s.redirect_completed = TRUE THEN 1 END) as completions,
-                    ROUND(AVG(s.duration_seconds), 2) as avg_duration
+                    ROUND(CAST(AVG(s.duration_seconds) AS numeric), 2) as avg_duration
                 FROM physical_devices pd
                 LEFT JOIN scans s ON pd.device_id = s.device_id
                 WHERE pd.active = TRUE
@@ -3250,7 +3260,7 @@ async def get_campaign_stats(campaign_code: str):
                 SELECT 
                     COUNT(*) as total_scans,
                     COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completed_redirects,
-                    ROUND(AVG(duration_seconds), 2) as avg_duration,
+                    ROUND(CAST(AVG(duration_seconds) AS numeric), 2) as avg_duration,
                     MIN(scan_timestamp) as first_scan,
                     MAX(scan_timestamp) as last_scan,
                     COUNT(DISTINCT ip_address) as unique_visitors,
@@ -3323,7 +3333,7 @@ async def get_device_stats(device_id: str):
                 SELECT 
                     COUNT(*) as total_scans,
                     COUNT(CASE WHEN redirect_completed = TRUE THEN 1 END) as completed_redirects,
-                    ROUND(AVG(duration_seconds), 2) as avg_duration,
+                    ROUND(CAST(AVG(duration_seconds) AS numeric), 2) as avg_duration,
                     MIN(scan_timestamp) as first_scan,
                     MAX(scan_timestamp) as last_scan,
                     COUNT(DISTINCT ip_address) as unique_visitors,
@@ -3923,3 +3933,25 @@ async def get_available_for_comparison(campaign_code: str, industry_filter: bool
                 })
                 
         return {"success": True, "available": result}
+@app.get('/api/admin/system/benchmarks')
+async def get_system_benchmarks():
+    return {"source": "System Truth", "industries": {key: {**INDUSTRY_TAXONOMY.get(key, {}), "benchmarks": INDUSTRY_BENCHMARKS.get(key, {})} for key in INDUSTRY_TAXONOMY}}
+
+@app.get('/api/analytics/scan-breakdown/{campaign_code}')
+async def get_scan_breakdown(campaign_code: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT session_id, ip_address, COUNT(*) as scan_count FROM scans WHERE campaign_code = %s GROUP BY session_id, ip_address", (campaign_code.upper(),))
+        rows = cursor.fetchall()
+        single = 0
+        multi = 0
+        total_ret = 0
+        for r in rows:
+            c = r["scan_count"]
+            if c == 1: single += 1
+            elif c > 1: 
+                multi += 1
+                total_ret += c
+        avg = round(total_ret/multi, 2) if multi > 0 else 0
+        return {"campaign_code": campaign_code.upper(), "single_scan_visitors": single, "multi_scan_visitors": multi, "avg_scans_per_returnee": avg, "total_visitors": single + multi}
+

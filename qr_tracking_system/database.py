@@ -67,6 +67,15 @@ def adapt_query(query: str) -> str:
     # Convertir LIKE a ILIKE para que Postgres sea case-insensitive (como SQLite)
     adapted = re.sub(r'\bLIKE\b', 'ILIKE', adapted, flags=re.IGNORECASE)
     
+    # Fix Postgres ROUND(AVG(...), 2) by casting to numeric
+    # Because Postgres AVG() returns double precision, which ROUND(..., int) doesn't accept
+    adapted = re.sub(
+        r"ROUND\s*\(\s*AVG\s*\((.*?)\)\s*,\s*(\d+)\s*\)",
+        r"ROUND(CAST(AVG(\1) AS NUMERIC), \2)",
+        adapted,
+        flags=re.IGNORECASE
+    )
+    
     # CURRENT_TIMESTAMP funciona igual en ambos
     
     return adapted
@@ -102,8 +111,8 @@ def get_db_connection():
     try:
         if IS_POSTGRES:
             conn = get_postgres_connection()
-            # Usar RealDictCursor para obtener resultados como diccionarios
-            conn.cursor_factory = psycopg2.extras.RealDictCursor
+            # Usar DictCursor para soportar tanto acceso por clave as como por índice
+            conn.cursor_factory = psycopg2.extras.DictCursor
         else:
             # Extraer path de SQLite del DATABASE_URL
             db_path = DATABASE_URL.replace("sqlite:///", "")
@@ -156,7 +165,10 @@ class DatabaseCursor:
         
         # SQLite Row y psycopg2 RealDictRow son compatibles con dict()
         if hasattr(result, 'keys'):
-            return dict(result)
+            d = dict(result)
+            for i, v in enumerate(result.values() if hasattr(result, 'values') else []):
+                d[i] = v
+            return d
         return result
     
     def fetchall(self):
@@ -164,7 +176,13 @@ class DatabaseCursor:
         results = self.cursor.fetchall()
         # Convertir a lista de diccionarios
         if results and hasattr(results[0], 'keys'):
-            return [dict(row) for row in results]
+            out = []
+            for r in results:
+                d = dict(r)
+                for i, v in enumerate(r.values() if hasattr(r, 'values') else []):
+                    d[i] = v
+                out.append(d)
+            return out
         return results
     
     @property
