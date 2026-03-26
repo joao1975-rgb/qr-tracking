@@ -1182,6 +1182,82 @@ body {
 .kpi-card:nth-child(6) { animation-delay: 0.30s; }
 .kpi-card:nth-child(7) { animation-delay: 0.35s; }
 .kpi-card:nth-child(8) { animation-delay: 0.40s; }
+:root {
+  --dash-accent: #3B8BD4;
+  --dash-green: #1D9E75;
+  --dash-amber: #BA7517;
+  --dash-red: #E24B4A;
+  --dash-purple: #7F77DD;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.dash-wrap { width: 100%; font-family: var(--font-sans); }
+.dash-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-bottom: 0.5px solid var(--border);
+  margin-bottom: 16px;
+}
+.dash-logo { font-size: 15px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.logo-badge { width: 26px; height: 26px; background: #3B8BD4; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.logo-badge svg { width: 14px; height: 14px; fill: white; }
+.dash-nav { display: flex; gap: 4px; }
+.nav-pill {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px;
+  color: var(--text-2); cursor: pointer; border: 0.5px solid transparent;
+  transition: all 0.15s;
+}
+.nav-pill.active { background: var(--accent-soft); color: var(--accent); border-color: var(--border-acc); }
+.nav-pill:hover:not(.active) { background: var(--bg-card); }
+.date-range { font-size: 11px; color: var(--text-2); background: var(--bg-card); padding: 4px 10px; border-radius: 6px; border: 0.5px solid var(--border); }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 16px; padding: 0 16px; }
+.kpi-card {
+  background: var(--bg-card); border-radius: 10px;
+  padding: 12px 14px; position: relative; overflow: hidden;
+}
+.kpi-label { font-size: 11px; color: var(--text-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-value { font-size: 22px; font-weight: 500; color: var(--text); line-height: 1; }
+.kpi-sub { font-size: 11px; margin-top: 4px; }
+.kpi-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; }
+.badge-up { background: #EAF3DE; color: #3B6D11; }
+.badge-down { background: #FCEBEB; color: #A32D2D; }
+.badge-neu { background: #E6F1FB; color: #185FA5; }
+.kpi-bar { height: 3px; border-radius: 2px; margin-top: 8px; background: var(--border); position: relative; overflow: hidden; }
+.kpi-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+.kpi-accent { position: absolute; top: 0; right: 0; width: 3px; height: 100%; border-radius: 0 10px 10px 0; }
+
+.charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 16px; padding: 0 16px; }
+.chart-card {
+  background: var(--bg); border: 0.5px solid var(--border);
+  border-radius: 10px; padding: 14px;
+}
+.chart-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.chart-sub { font-size: 11px; color: var(--text-2); margin-bottom: 12px; }
+.mini-legend { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.mini-legend span { font-size: 11px; color: var(--text-2); display: flex; align-items: center; gap: 4px; }
+.leg-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+.bottom-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 16px 16px; }
+.segment-card {
+  background: var(--bg); border: 0.5px solid var(--border);
+  border-radius: 10px; padding: 14px;
+}
+.segment-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.seg-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex-shrink: 0; }
+.seg-info { flex: 1; min-width: 0; }
+.seg-name { font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg-detail { font-size: 10px; color: var(--text-2); }
+.seg-score { font-size: 12px; font-weight: 500; }
+.heatmap-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 8px; }
+.heat-cell { height: 20px; border-radius: 3px; }
+.heat-label-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.heat-label { font-size: 9px; color: var(--text-2); text-align: center; }
+.device-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.device-icon { width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+.device-bar-wrap { flex: 1; }
+.device-label { font-size: 11px; color: var(--text); margin-bottom: 3px; display: flex; justify-content: space-between; }
+.device-bar { height: 5px; border-radius: 3px; }
+
+.section-label { font-size: 10px; color: var(--text-4); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
 </style>
 </head>
 <body>
@@ -1243,835 +1319,251 @@ body {
      OVERVIEW TAB
 ═══════════════════════════════════════════ -->
 <main class="main">
-<div id="tab-overview" class="tab-content active">
-
-  <!-- AI Insight Banner -->
-  <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:linear-gradient(135deg,rgba(0,207,255,0.06),rgba(168,85,247,0.06));border:1px solid rgba(0,207,255,0.14);border-radius:var(--radius);margin-bottom:16px;animation:cardEnter 0.4s both;">
-    <span style="font-size:16px;">✦</span>
-    <div style="flex:1;">
-      <span style="font-size:11px;font-weight:600;color:var(--accent);">Insight de IA · </span>
-      <span style="font-size:11px;color:var(--text-2);">Tu campaña está en el <strong style="color:var(--green);">top 18%</strong> del sector Moda & Retail. El pico de escaneos ocurre entre 12–14h con un 43% del tráfico diario. Activar amplificación en TikTok podría incrementar el CTR un <strong style="color:var(--accent);">~31%</strong> según benchmarks del segmento.</span>
-    </div>
-    <button style="padding:4px 10px;border:1px solid var(--border-acc);border-radius:6px;background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;">Ver análisis ↗</button>
-  </div>
-
-  <!-- KPI ROW 1 — Core Metrics -->
-  <div class="section-header">
-    <span class="section-title">Métricas de Rendimiento</span>
-    <span class="section-hint">Actualizado hace 3 min ·  📊 23 días de campaña activa</span>
-  </div>
-  <div class="kpi-grid" style="margin-bottom:10px;">
-
-    <div class="kpi-card featured" style="--card-accent:#00CFFF;--card-glow:rgba(0,207,255,0.08);">
-      <div class="kpi-label"><span class="kpi-label-icon">⊞</span> Escaneos Totales</div>
-      <div class="kpi-value" id="kpi-total">0<span class="unit">scans</span></div>
-      <div class="kpi-footer">
-        <span class="kpi-delta up">▲ 18.4%</span>
-        <span class="kpi-compare">vs. período anterior</span>
-        <canvas class="kpi-sparkline" id="spark-total"></canvas>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="73" style="background:#00CFFF;"></div></div>
-    </div>
-
-    <div class="kpi-card" style="--card-accent:#00E5A0;--card-glow:rgba(0,229,160,0.05);grid-column:span 1;">
-      <div class="kpi-label"><span class="kpi-label-icon">◎</span> Visitantes Únicos
-        <span style="margin-left:auto;font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,229,160,0.12);color:var(--green);border:1px solid rgba(0,229,160,0.2);">desglose</span>
-      </div>
-      <div class="kpi-value" id="kpi-unique">0<span class="unit">únicos</span></div>
-
-      <!-- Breakdown: 1-click vs multi-click -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0 6px;">
-        <div style="padding:6px 8px;border-radius:6px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.12);">
-          <div style="font-size:9px;color:rgba(0,229,160,0.6);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Solo 1 scan</div>
-          <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:#00E5A0;line-height:1;" id="kpi-single">0</div>
-          <div style="font-size:9px;color:var(--text-3);margin-top:2px;" id="kpi-single-pct">0% del total únic.</div>
-        </div>
-        <div style="padding:6px 8px;border-radius:6px;background:rgba(0,207,255,0.06);border:1px solid rgba(0,207,255,0.12);">
-          <div style="font-size:9px;color:rgba(0,207,255,0.6);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Multi-scan</div>
-          <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--accent);line-height:1;" id="kpi-multi">0</div>
-          <div style="font-size:9px;color:var(--text-3);margin-top:2px;" id="kpi-multi-pct">0% · retornaron</div>
-        </div>
-      </div>
-
-      <!-- Avg scans per returner with benchmark -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:5px;background:rgba(255,255,255,0.03);border:1px solid var(--border);margin-bottom:6px;">
-        <div>
-          <div style="font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;">Avg scans · retornantes</div>
-          <div style="display:flex;align-items:baseline;gap:5px;margin-top:1px;">
-            <span style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--accent);" id="kpi-avg-multi">0</span>
-            <span style="font-size:10px;color:var(--text-3);">scans/user</span>
-          </div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:9px;color:var(--text-3);">benchmark sector</div>
-          <div style="font-family:var(--mono);font-size:12px;color:rgba(255,173,51,0.8);font-weight:600;">3.8x</div>
-        </div>
-        <span class="kpi-delta up" id="kpi-avg-delta" style="margin-left:6px;">▲ 0%</span>
-      </div>
-
-      <div class="kpi-footer">
-        <span class="kpi-delta up">▲ 12.1%</span>
-        <span class="kpi-compare">73.6% del total scans</span>
-        <canvas class="kpi-sparkline" id="spark-unique"></canvas>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="74" style="background:#00E5A0;"></div></div>
-    </div>
-
-    <div class="kpi-card" style="--card-accent:#FFAD33;--card-glow:rgba(255,173,51,0.05);">
-      <div class="kpi-label"><span class="kpi-label-icon">⟳</span> Tasa Conversión QR</div>
-      <div class="kpi-value" id="kpi-ctr">0<span class="unit">%</span></div>
-      <div class="kpi-footer">
-        <span class="kpi-delta down">▼ 0.3 pts</span>
-        <span class="kpi-compare">benchmark: 3.5%</span>
-        <canvas class="kpi-sparkline" id="spark-ctr"></canvas>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="79" style="background:#FFAD33;"></div></div>
-    </div>
-
-    <div class="kpi-card" style="--card-accent:#A855F7;--card-glow:rgba(168,85,247,0.05);">
-      <div class="kpi-label"><span class="kpi-label-icon">⏱</span> Avg. Engagement</div>
-      <div class="kpi-value" id="kpi-dur">0<span class="unit">seg</span></div>
-      <div class="kpi-footer">
-        <span class="kpi-delta up">▲ 8s más</span>
-        <span class="kpi-compare">sector: 50s</span>
-        <canvas class="kpi-sparkline" id="spark-dur"></canvas>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="62" style="background:#A855F7;"></div></div>
-    </div>
-
-  </div>
-
-  <!-- KPI ROW 2 — Intelligence Metrics -->
+<div id="tab-overview" class="tab-content active" style="padding-top:10px;">
+<div class="dash-wrap" style="width: 100%; font-family: var(--sans);">
+  <!-- KPI row 1: Core metrics -->
   <div class="kpi-grid">
-
-    <div class="kpi-card" style="--card-accent:#00CFFF;">
-      <div class="kpi-label"><span class="kpi-label-icon">◈</span> Índice Audiencia Premium</div>
-      <div class="kpi-value" id="kpi-iap">0<span class="unit">/100</span></div>
-      <div class="kpi-footer">
-        <span class="kpi-delta up">Alto NSE</span>
-        <span class="kpi-compare">A+B estimado: 67%</span>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="74" style="background:#00CFFF;"></div></div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#3B8BD4"></div>
+      <div class="kpi-label">Escaneos totales</div>
+      <div class="kpi-value" id="val-total">24,731</div>
+      <div class="kpi-sub"><span class="kpi-badge badge-up">▲ 18.4%</span> vs periodo anterior</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:73%;background:#3B8BD4"></div></div>
     </div>
-
-    <div class="kpi-card" style="--card-accent:#00E5A0;">
-      <div class="kpi-label"><span class="kpi-label-icon">↺</span> Tasa de Recurrencia</div>
-      <div class="kpi-value" id="kpi-rec">0<span class="unit">x</span></div>
-      <div class="kpi-footer">
-        <span class="kpi-delta up">▲ 1.1x</span>
-        <span class="kpi-compare">scans / usuario único</span>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="58" style="background:#00E5A0;"></div></div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#1D9E75"></div>
+      <div class="kpi-label">Visitantes únicos</div>
+      <div class="kpi-value" id="val-unique">18,209</div>
+      <div class="kpi-sub"><span class="kpi-badge badge-up">▲ 12.1%</span> <span style="font-size:10px;color:var(--text-2)">73.6% del total</span></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:74%;background:#1D9E75"></div></div>
     </div>
-
-    <div class="kpi-card" style="--card-accent:#FFAD33;">
-      <div class="kpi-label"><span class="kpi-label-icon">⊡</span> Reach DOOH Estimado</div>
-      <div class="kpi-value" id="kpi-reach">0<span class="unit">K</span></div>
-      <div class="kpi-footer">
-        <span class="kpi-delta neu">1.74% CTR</span>
-        <span class="kpi-compare">est. impresiones</span>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="60" style="background:#FFAD33;"></div></div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#BA7517"></div>
+      <div class="kpi-label">Tasa de conversión QR</div>
+      <div class="kpi-value" id="val-conv">3.8%</div>
+      <div class="kpi-sub"><span class="kpi-badge badge-down">▼ 0.3pts</span> <span style="font-size:10px;color:var(--text-2)">benchmark: 4.2%</span></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:38%;background:#BA7517"></div></div>
     </div>
-
-    <div class="kpi-card" style="--card-accent:#A855F7;">
-      <div class="kpi-label"><span class="kpi-label-icon">✦</span> Audience Intelligence</div>
-      <div class="kpi-value" id="kpi-ais">0<span class="unit">/100</span></div>
-      <div class="kpi-footer">
-        <span class="kpi-delta up">Perfil Rico</span>
-        <span class="kpi-compare">completitud huella</span>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="87" style="background:#A855F7;"></div></div>
+    <div class="kpi-card">
+      <div class="kpi-accent" style="background:#7F77DD"></div>
+      <div class="kpi-label">Avg. scan duration</div>
+      <div class="kpi-value" id="val-dur">1m 47s</div>
+      <div class="kpi-sub"><span class="kpi-badge badge-up">▲ 8s</span> <span style="font-size:10px;color:var(--text-2)">engagement</span></div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:55%;background:#7F77DD"></div></div>
     </div>
-
   </div>
 
-  <!-- CHARTS ROW -->
-  <div class="charts-grid">
+  <!-- KPI row 2: Advanced audience metrics -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Índice de Audiencia Premium</div>
+      <div class="kpi-value" style="font-size:20px">IAP 74/100</div>
+      <div class="kpi-sub" style="margin-top:6px">
+        <div style="display:flex;gap:4px;margin-top:4px">
+          <div style="flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,#1D9E75 74%,var(--border) 74%)"></div>
+        </div>
+      </div>
+      <div class="kpi-sub" style="margin-top:4px"><span class="kpi-badge badge-up">Alto poder adquisitivo</span></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Recurrencia</div>
+      <div class="kpi-value" style="font-size:20px">4.2x</div>
+      <div class="kpi-sub" style="margin-top:4px"><span class="kpi-badge badge-up">▲ 1.1x</span> usuarios recurrentes</div>
+      <div class="kpi-sub" style="margin-top:4px;font-size:10px;color:var(--text-2)">Avg escaneos por usuario único</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Reach Efectivo DOOH</div>
+      <div class="kpi-value" style="font-size:20px">142K</div>
+      <div class="kpi-sub" style="margin-top:4px"><span class="kpi-badge badge-neu">est. impresiones</span></div>
+      <div class="kpi-sub" style="margin-top:4px;font-size:10px;color:var(--text-2)">Ratio scan/impression: 1.74%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Score Audience Intelligence</div>
+      <div class="kpi-value" style="font-size:20px">87/100</div>
+      <div class="kpi-sub" style="margin-top:4px"><span class="kpi-badge badge-up">Perfil rico</span></div>
+      <div class="kpi-sub" style="margin-top:4px;font-size:10px;color:var(--text-2)">Completitud de huella digital</div>
+    </div>
+  </div>
 
-    <!-- LINE CHART — Temporal -->
+  <!-- Charts row -->
+  <div class="charts-row">
+    <!-- Line chart mockup -->
     <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Comportamiento temporal de escaneos</div>
-          <div class="chart-subtitle">Identifica picos de alta intención y ventanas óptimas de audiencia</div>
-        </div>
-        <div class="chart-controls">
-          <button class="chart-btn" onclick="setRange(this,'1d')">1D</button>
-          <button class="chart-btn active" onclick="setRange(this,'7d')">7D</button>
-          <button class="chart-btn" onclick="setRange(this,'30d')">30D</button>
-          <button class="chart-btn" onclick="setRange(this,'all')">Todo</button>
-        </div>
+      <div class="chart-title">Escaneos por hora — distribución temporal de comportamiento</div>
+      <div class="chart-sub">Identifica ventanas de alta intención y picos de audiencia por día</div>
+      <div class="mini-legend">
+        <span><span class="leg-dot" style="background:#3B8BD4"></span>Escaneos</span>
+        <span><span class="leg-dot" style="background:#1D9E75"></span>Únicos</span>
+        <span><span class="leg-dot" style="background:#BA7517;opacity:.5"></span>Benchmark</span>
       </div>
-      <div class="legend-row">
-        <div class="legend-item"><div class="legend-line" style="background:#00CFFF;"></div>Escaneos totales</div>
-        <div class="legend-item"><div class="legend-line" style="background:#00E5A0;"></div>Únicos</div>
-        <div class="legend-item"><div class="legend-dashed" style="border-color:rgba(255,173,51,0.6);"></div>Benchmark sector</div>
-        <div class="legend-item"><div class="legend-dot" style="background:rgba(168,85,247,0.7);border-radius:2px;width:10px;height:8px;"></div>Avg multi-scan (eje izq.)</div>
-      </div>
-      <div style="position:relative;height:200px;">
-        <canvas id="mainChart"></canvas>
-      </div>
+      <svg width="100%" viewBox="0 0 460 120" style="overflow:visible">
+        <!-- Grid lines -->
+        <line x1="0" y1="20" x2="460" y2="20" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>
+        <line x1="0" y1="50" x2="460" y2="50" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>
+        <line x1="0" y1="80" x2="460" y2="80" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>
+        <!-- Benchmark zone -->
+        <rect x="0" y="45" width="460" height="15" fill="#BA7517" opacity="0.06" rx="2"/>
+        <!-- Area fill -->
+        <path d="M0,100 L0,85 C30,80 50,70 80,60 C110,50 130,30 160,25 C190,20 210,40 240,35 C270,30 290,20 320,15 C350,10 380,30 410,40 C430,45 450,50 460,55 L460,100 Z" fill="#3B8BD4" opacity="0.12"/>
+        <!-- Main line -->
+        <path d="M0,85 C30,80 50,70 80,60 C110,50 130,30 160,25 C190,20 210,40 240,35 C270,30 290,20 320,15 C350,10 380,30 410,40 C430,45 450,50 460,55" fill="none" stroke="#3B8BD4" stroke-width="2" stroke-linecap="round"/>
+        <!-- Unique visitors line -->
+        <path d="M0,92 C30,88 50,80 80,72 C110,64 130,45 160,38 C190,31 210,50 240,46 C270,42 290,32 320,28 C350,23 380,40 410,50 C430,55 450,60 460,64" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4,2"/>
+        <!-- Peak dot + label -->
+        <circle cx="320" cy="15" r="4" fill="#3B8BD4"/>
+        <rect x="300" y="0" width="42" height="12" rx="3" fill="#3B8BD4"/>
+        <text x="321" y="9" text-anchor="middle" font-size="9" fill="white" font-family="var(--font-sans)">PICO 12-14h</text>
+        <!-- Hour labels -->
+        <text x="0" y="115" font-size="9" fill="var(--text-2)" font-family="var(--font-sans)">00h</text>
+        <text x="75" y="115" font-size="9" fill="var(--text-2)" font-family="var(--font-sans)">06h</text>
+        <text x="152" y="115" font-size="9" fill="var(--text-2)" font-family="var(--font-sans)">09h</text>
+        <text x="228" y="115" font-size="9" fill="var(--text-2)" font-family="var(--font-sans)">12h</text>
+        <text x="305" y="115" font-size="9" fill="var(--text-2)" font-family="var(--font-sans)">15h</text>
+        <text x="382" y="115" font-size="9" fill="var(--text-2)" font-family="var(--font-sans)">18h</text>
+        <text x="440" y="115" font-size="9" fill="var(--text-2)" font-family="var(--font-sans)">21h</text>
+      </svg>
     </div>
 
-    <!-- DONUT — Device Breakdown -->
-    <div class="chart-card donut-section">
-      <div class="chart-header">
-        <div>
-          <div class="chart-title">Perfil de dispositivos</div>
-          <div class="chart-subtitle">Inferencia NSE por OS y hardware</div>
+    <!-- Donut chart mockup -->
+    <div class="chart-card">
+      <div class="chart-title">Perfil de dispositivos</div>
+      <div class="chart-sub">Inferencia de nivel socioeconómico</div>
+      <svg width="100%" viewBox="0 0 200 130">
+        <!-- Donut -->
+        <circle cx="100" cy="68" r="44" fill="none" stroke="var(--border)" stroke-width="16"/>
+        <!-- iOS Premium segment -->
+        <circle cx="100" cy="68" r="44" fill="none" stroke="#3B8BD4" stroke-width="16" stroke-dasharray="124 152" stroke-dashoffset="0" stroke-linecap="round"/>
+        <!-- Android mid segment -->
+        <circle cx="100" cy="68" r="44" fill="none" stroke="#1D9E75" stroke-width="16" stroke-dasharray="69 207" stroke-dashoffset="-128" stroke-linecap="round"/>
+        <!-- Other -->
+        <circle cx="100" cy="68" r="44" fill="none" stroke="#D3D1C7" stroke-width="16" stroke-dasharray="35 241" stroke-dashoffset="-200" stroke-linecap="round"/>
+        <!-- Center label -->
+        <text x="100" y="64" text-anchor="middle" font-size="18" font-weight="500" fill="var(--text)" font-family="var(--font-sans)">73%</text>
+        <text x="100" y="76" text-anchor="middle" font-size="9" fill="var(--text-2)" font-family="var(--font-sans)">smartphone</text>
+      </svg>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:-8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="display:flex;align-items:center;gap:4px"><span class="leg-dot" style="background:#3B8BD4"></span>iOS Premium</span>
+          <span style="font-weight:500;color:var(--text)">44%</span>
         </div>
-      </div>
-      <div class="donut-wrapper">
-        <canvas id="donutChart" width="140" height="140"></canvas>
-        <div class="donut-center">
-          <div class="donut-center-num" id="donut-center">73%</div>
-          <div class="donut-center-label">smartphone</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="display:flex;align-items:center;gap:4px"><span class="leg-dot" style="background:#1D9E75"></span>Android mid-high</span>
+          <span style="font-weight:500;color:var(--text)">29%</span>
         </div>
-      </div>
-      <div class="donut-legend">
-        <div class="donut-legend-item">
-          <div class="donut-legend-color" style="background:#00CFFF;"></div>
-          <span class="donut-legend-name">iOS Premium</span>
-          <span class="donut-legend-pct">44%</span>
-          <span class="donut-legend-tag" style="background:rgba(0,207,255,0.1);color:var(--accent);">NSE A-B</span>
-        </div>
-        <div class="donut-legend-item">
-          <div class="donut-legend-color" style="background:#00E5A0;"></div>
-          <span class="donut-legend-name">Android Flagship</span>
-          <span class="donut-legend-pct">29%</span>
-          <span class="donut-legend-tag" style="background:rgba(0,229,160,0.1);color:var(--green);">NSE B</span>
-        </div>
-        <div class="donut-legend-item">
-          <div class="donut-legend-color" style="background:rgba(255,255,255,0.2);"></div>
-          <span class="donut-legend-name">Otros</span>
-          <span class="donut-legend-pct">27%</span>
-          <span class="donut-legend-tag" style="background:rgba(255,255,255,0.06);color:var(--text-3);">Mix</span>
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span style="display:flex;align-items:center;gap:4px"><span class="leg-dot" style="background:#D3D1C7"></span>Otros</span>
+          <span style="font-weight:500;color:var(--text)">27%</span>
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- GOAL GAUGES -->
-  <div class="section-header">
-    <span class="section-title">Progreso hacia metas</span>
-    <span class="section-hint">23 de 60 días · 38.3% del período transcurrido</span>
-  </div>
-  <div class="gauges-row">
-
-    <div class="gauge-card">
-      <div class="gauge-svg-wrap">
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(0,207,255,0.08)" stroke-width="6"/>
-          <circle id="gauge1-arc" cx="36" cy="36" r="28" fill="none" stroke="#00CFFF" stroke-width="6"
-            stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="175.9"
-            transform="rotate(-90 36 36)" style="transition:stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1);"/>
-        </svg>
-        <div class="gauge-center-text">
-          <span class="gauge-pct" id="gauge1-pct" style="color:#00CFFF;">0%</span>
+  <!-- Bottom row -->
+  <div class="bottom-row">
+    <!-- Audience segments -->
+    <div class="segment-card">
+      <div class="section-label">Segmentos de audiencia inferidos</div>
+      <div class="segment-row">
+        <div class="seg-avatar" style="background:#E6F1FB;color:#185FA5">A1</div>
+        <div class="seg-info">
+          <div class="seg-name">Ejecutivo ABC1</div>
+          <div class="seg-detail">iOS, WiFi, 4K display · alta conversión</div>
         </div>
+        <div class="seg-score" style="color:#1D9E75">38%</div>
       </div>
-      <div class="gauge-info">
-        <div class="gauge-name">Escaneos</div>
-        <div class="gauge-sub">Meta de la campaña</div>
-        <div class="gauge-current" id="gauge1-val">0</div>
-        <div class="gauge-target">de 15,000 objetivo</div>
+      <div class="segment-row">
+        <div class="seg-avatar" style="background:#EEEDFE;color:#534AB7">B2</div>
+        <div class="seg-info">
+          <div class="seg-name">Millennials digital</div>
+          <div class="seg-detail">Android hi-spec, 5G, alta recurrencia</div>
+        </div>
+        <div class="seg-score" style="color:#7F77DD">24%</div>
+      </div>
+      <div class="segment-row">
+        <div class="seg-avatar" style="background:#EAF3DE;color:#27500A">C3</div>
+        <div class="seg-info">
+          <div class="seg-name">Exploradores activos</div>
+          <div class="seg-detail">Multi-device, alta duración de sesión</div>
+        </div>
+        <div class="seg-score" style="color:#3B6D11">21%</div>
+      </div>
+      <div class="segment-row">
+        <div class="seg-avatar" style="background:#FAECE7;color:#993C1D">D4</div>
+        <div class="seg-info">
+          <div class="seg-name">Audience genérica</div>
+          <div class="seg-detail">Mix devices, baja recurrencia</div>
+        </div>
+        <div class="seg-score" style="color:#D85A30">17%</div>
       </div>
     </div>
 
-    <div class="gauge-card">
-      <div class="gauge-svg-wrap">
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(0,229,160,0.08)" stroke-width="6"/>
-          <circle id="gauge2-arc" cx="36" cy="36" r="28" fill="none" stroke="#00E5A0" stroke-width="6"
-            stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="175.9"
-            transform="rotate(-90 36 36)" style="transition:stroke-dashoffset 1.5s 0.3s cubic-bezier(0.4,0,0.2,1);"/>
-        </svg>
-        <div class="gauge-center-text">
-          <span class="gauge-pct" id="gauge2-pct" style="color:#00E5A0;">0%</span>
-        </div>
+    <!-- Heatmap by day/hour -->
+    <div class="segment-card">
+      <div class="section-label">Heatmap de actividad — semana</div>
+      <div class="heat-label-row" style="margin-bottom:4px">
+        <div class="heat-label">L</div><div class="heat-label">M</div><div class="heat-label">X</div>
+        <div class="heat-label">J</div><div class="heat-label">V</div><div class="heat-label">S</div><div class="heat-label">D</div>
       </div>
-      <div class="gauge-info">
-        <div class="gauge-name">Visitantes Únicos</div>
-        <div class="gauge-sub">Meta de alcance</div>
-        <div class="gauge-current" id="gauge2-val">0</div>
-        <div class="gauge-target">de 10,000 objetivo</div>
-      </div>
-    </div>
-
-    <div class="gauge-card">
-      <div class="gauge-svg-wrap">
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255,173,51,0.08)" stroke-width="6"/>
-          <circle id="gauge3-arc" cx="36" cy="36" r="28" fill="none" stroke="#FFAD33" stroke-width="6"
-            stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="175.9"
-            transform="rotate(-90 36 36)" style="transition:stroke-dashoffset 1.5s 0.6s cubic-bezier(0.4,0,0.2,1);"/>
-        </svg>
-        <div class="gauge-center-text">
-          <span class="gauge-pct" id="gauge3-pct" style="color:#FFAD33;">0%</span>
-        </div>
-      </div>
-      <div class="gauge-info">
-        <div class="gauge-name">CTR Objetivo</div>
-        <div class="gauge-sub">vs. 3.5% meta</div>
-        <div class="gauge-current" id="gauge3-val">0%</div>
-        <div class="gauge-target">benchmark sector: 3.5%</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- BOTTOM ROW -->
-  <div class="bottom-grid">
-
-    <!-- HEATMAP -->
-    <div class="panel-card">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Heatmap de actividad semanal</div>
-          <div class="panel-subtitle">Franja horaria × día de semana</div>
-        </div>
-        <span style="font-size:10px;color:var(--text-3);font-family:var(--mono);">↓ escaneos/hora</span>
-      </div>
-      <div id="heatmapContainer"></div>
-      <div class="hm-legend">
+      <div id="heatmap"></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;color:var(--text-2)">
         <span>Bajo</span>
-        <div class="hm-legend-track"></div>
+        <div style="display:flex;gap:2px">
+          <div style="width:10px;height:10px;border-radius:2px;background:#E6F1FB"></div>
+          <div style="width:10px;height:10px;border-radius:2px;background:#85B7EB"></div>
+          <div style="width:10px;height:10px;border-radius:2px;background:#378ADD"></div>
+          <div style="width:10px;height:10px;border-radius:2px;background:#185FA5"></div>
+        </div>
         <span>Alto</span>
       </div>
     </div>
 
-    <!-- AUDIENCE SEGMENTS -->
-    <div class="panel-card">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Segmentos de audiencia inferidos</div>
-          <div class="panel-subtitle">Basado en huella digital del dispositivo</div>
+    <!-- Connection & geo signals -->
+    <div class="segment-card">
+      <div class="section-label">Señales de contexto de consumo</div>
+      <div class="device-row">
+        <div class="device-icon" style="background:#E6F1FB">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="#185FA5"><path d="M1 9h10V3H1v6zm1-5h8v4H2V4zm3 5h2v1H5v-1z"/></svg>
         </div>
-        <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-weight:600;">4 perfiles</span>
-      </div>
-      <div class="segment-list">
-        <div class="segment-item" style="--seg-color:#00CFFF;--seg-bg:rgba(0,207,255,0.08);">
-          <div class="segment-avatar">A1</div>
-          <div class="segment-info">
-            <div class="segment-name">Ejecutivo ABC1</div>
-            <div class="segment-detail">iOS · WiFi premium · DPR≥3 · alta conversión</div>
-          </div>
-          <div class="segment-pct" id="seg1-pct">0%</div>
-        </div>
-        <div class="segment-item" style="--seg-color:#A855F7;--seg-bg:rgba(168,85,247,0.08);">
-          <div class="segment-avatar">B2</div>
-          <div class="segment-info">
-            <div class="segment-name">Millennial Digital-First</div>
-            <div class="segment-detail">Android flagship · 5G · alta recurrencia</div>
-          </div>
-          <div class="segment-pct" id="seg2-pct">0%</div>
-        </div>
-        <div class="segment-item" style="--seg-color:#00E5A0;--seg-bg:rgba(0,229,160,0.08);">
-          <div class="segment-avatar">C3</div>
-          <div class="segment-info">
-            <div class="segment-name">Explorador Activo C1</div>
-            <div class="segment-detail">Android mid · 4G · sesión larga</div>
-          </div>
-          <div class="segment-pct" id="seg3-pct">0%</div>
-        </div>
-        <div class="segment-item" style="--seg-color:#6B7280;--seg-bg:rgba(107,114,128,0.08);">
-          <div class="segment-avatar">D4</div>
-          <div class="segment-info">
-            <div class="segment-name">Audiencia Genérica</div>
-            <div class="segment-detail">Mix devices · señal baja</div>
-          </div>
-          <div class="segment-pct" id="seg4-pct">0%</div>
+        <div class="device-bar-wrap">
+          <div class="device-label"><span>WiFi (premium venue)</span><span style="color:var(--text);font-weight:500">61%</span></div>
+          <div class="device-bar" style="width:61%;background:#3B8BD4"></div>
         </div>
       </div>
-    </div>
-
-    <!-- DEVICE SIGNALS -->
-    <div class="panel-card">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Señales de contexto de consumo</div>
-          <div class="panel-subtitle">Huella digital → capacidad de compra inferida</div>
+      <div class="device-row">
+        <div class="device-icon" style="background:#E1F5EE">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="#0F6E56"><circle cx="6" cy="6" r="3"/><path d="M6 1v2M6 9v2M1 6h2M9 6h2"/></svg>
+        </div>
+        <div class="device-bar-wrap">
+          <div class="device-label"><span>5G / LTE</span><span style="color:var(--text);font-weight:500">29%</span></div>
+          <div class="device-bar" style="width:29%;background:#1D9E75"></div>
         </div>
       </div>
-      <div class="signal-list">
-        <div class="signal-row">
-          <div class="signal-icon" style="--sig-bg:rgba(0,207,255,0.08);">📱</div>
-          <div class="signal-meta">
-            <div class="signal-name">iOS — indicador NSE A-B</div>
-            <div class="signal-bar-wrap">
-              <div class="signal-bar-bg"><div class="signal-bar-fill" data-pct="63" style="--sig-color:#00CFFF;"></div></div>
-              <div class="signal-val" id="sig1">0%</div>
-            </div>
-          </div>
-          <span class="signal-badge" style="background:rgba(0,207,255,0.1);color:var(--accent);">NSE A-B</span>
+      <div class="device-row">
+        <div class="device-icon" style="background:#FAEEDA">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="#854F0B"><path d="M2 4l4-3 4 3v6H8V7H4v3H2V4z"/></svg>
         </div>
-        <div class="signal-row">
-          <div class="signal-icon" style="--sig-bg:rgba(168,85,247,0.08);">⊞</div>
-          <div class="signal-meta">
-            <div class="signal-name">Device Pixel Ratio ≥ 3 — Flagship</div>
-            <div class="signal-bar-wrap">
-              <div class="signal-bar-bg"><div class="signal-bar-fill" data-pct="52" style="--sig-color:#A855F7;"></div></div>
-              <div class="signal-val" id="sig2">0%</div>
-            </div>
-          </div>
-          <span class="signal-badge" style="background:rgba(168,85,247,0.1);color:var(--purple);">Premium</span>
-        </div>
-        <div class="signal-row">
-          <div class="signal-icon" style="--sig-bg:rgba(0,229,160,0.08);">⚡</div>
-          <div class="signal-meta">
-            <div class="signal-name">CPU ≥ 6 cores — High-end</div>
-            <div class="signal-bar-wrap">
-              <div class="signal-bar-bg"><div class="signal-bar-fill" data-pct="48" style="--sig-color:#00E5A0;"></div></div>
-              <div class="signal-val" id="sig3">0%</div>
-            </div>
-          </div>
-          <span class="signal-badge" style="background:rgba(0,229,160,0.1);color:var(--green);">High-end</span>
-        </div>
-        <div class="signal-row">
-          <div class="signal-icon" style="--sig-bg:rgba(255,173,51,0.08);">📶</div>
-          <div class="signal-meta">
-            <div class="signal-name">WiFi Premium (venue de calidad)</div>
-            <div class="signal-bar-wrap">
-              <div class="signal-bar-bg"><div class="signal-bar-fill" data-pct="61" style="--sig-color:#FFAD33;"></div></div>
-              <div class="signal-val" id="sig4">0%</div>
-            </div>
-          </div>
-          <span class="signal-badge" style="background:rgba(255,173,51,0.1);color:var(--amber);">Venue+</span>
-        </div>
-        <div class="signal-row">
-          <div class="signal-icon" style="--sig-bg:rgba(0,207,255,0.08);">5G</div>
-          <div class="signal-meta">
-            <div class="signal-name">Conexión 5G / LTE</div>
-            <div class="signal-bar-wrap">
-              <div class="signal-bar-bg"><div class="signal-bar-fill" data-pct="29" style="--sig-color:#00CFFF;"></div></div>
-              <div class="signal-val" id="sig5">0%</div>
-            </div>
-          </div>
-          <span class="signal-badge" style="background:rgba(0,207,255,0.1);color:var(--accent);">Early</span>
+        <div class="device-bar-wrap">
+          <div class="device-label"><span>Device Pixel Ratio ≥3</span><span style="color:var(--text);font-weight:500">52%</span></div>
+          <div class="device-bar" style="width:52%;background:#BA7517"></div>
         </div>
       </div>
-      <div class="nse-summary">
-        <div class="nse-label">🎯 NSE inferido de la audiencia total</div>
-        <div class="nse-value">NSE A+B estimado · <span id="nse-pct">0</span>% de audiencia</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- AI INSIGHT CARDS -->
-  <div class="section-header" style="margin-top:4px;">
-    <span class="section-title">✦ Insights automáticos</span>
-    <span class="section-hint">Actualizados en tiempo real</span>
-  </div>
-  <div class="insights-row">
-    <div class="insight-card" style="border-color:rgba(0,229,160,0.15);">
-      <div class="insight-icon" style="background:rgba(0,229,160,0.08);">📈</div>
-      <div class="insight-content">
-        <div class="insight-type" style="color:var(--green);">Oportunidad detectada</div>
-        <div class="insight-text">Viernes 18–20h muestra <strong style="color:var(--text);">+67% más escaneos</strong> que el promedio semanal. Considera aumentar la frecuencia de cambio creativo en ese horario.</div>
-        <div class="insight-action">Explorar datos ↗</div>
-      </div>
-    </div>
-    <div class="insight-card" style="border-color:rgba(255,173,51,0.15);">
-      <div class="insight-icon" style="background:rgba(255,173,51,0.08);">⚠</div>
-      <div class="insight-content">
-        <div class="insight-type" style="color:var(--amber);">Alerta de rendimiento</div>
-        <div class="insight-text">CTR de <strong style="color:var(--text);">2.76%</strong> está 0.74 puntos por debajo del benchmark de tu sector. Las campañas top-10% del mismo grupo tienen <strong style="color:var(--text);">amplificación en RRSS activa.</strong></div>
-        <div class="insight-action" style="color:var(--amber);">Ver diagnóstico ↗</div>
-      </div>
-    </div>
-    <div class="insight-card" style="border-color:rgba(0,207,255,0.15);">
-      <div class="insight-icon" style="background:rgba(0,207,255,0.08);">◎</div>
-      <div class="insight-content">
-        <div class="insight-type" style="color:var(--accent);">Perfil de audiencia</div>
-        <div class="insight-text">El <strong style="color:var(--text);">67% de la audiencia</strong> es NSE A+B. Este perfil tiene 2.8x mayor propensión de compra en retail premium vs. audiencia masiva.</div>
-        <div class="insight-action">Ver perfilamiento ↗</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- BENCHMARK HEAT RANGES -->
-  <div class="section-header">
-    <span class="section-title">Posición en benchmarks — Moda & Retail · LATAM</span>
-    <span class="section-hint" style="color:var(--accent);">⊕ Ver tabla completa ↗</span>
-  </div>
-  <div class="panel-card" style="margin-bottom:12px;">
-    <div style="margin-bottom:10px;font-size:11px;color:var(--text-3);">Posición de tus KPIs en el espectro del sector. Aguja blanca = tu campaña actual.</div>
-
-    <div class="benchmark-row">
-      <span class="bm-metric">CTR (%)</span>
-      <div class="bm-scale">
-        <div class="bm-track">
-          <div class="bm-needle" id="bm1-needle" style="left:0%;"></div>
+      <div class="device-row">
+        <div class="device-icon" style="background:#EEEDFE">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="#534AB7"><rect x="1" y="2" width="10" height="8" rx="1" fill="none" stroke="#534AB7" stroke-width="1"/><rect x="3" y="4" width="6" height="1"/><rect x="3" y="6" width="4" height="1"/></svg>
         </div>
-        <div class="bm-labels"><span>0.5%</span><span>1.5%</span><span>2.5%</span><span>3.5%</span><span>4.5%+</span></div>
-      </div>
-      <span class="bm-val" id="bm1-val" style="color:var(--amber);">0%</span>
-      <div class="bm-status" style="background:var(--amber);"></div>
-    </div>
-
-    <div class="benchmark-row">
-      <span class="bm-metric">Duración (seg)</span>
-      <div class="bm-scale">
-        <div class="bm-track">
-          <div class="bm-needle" id="bm2-needle" style="left:0%;"></div>
-        </div>
-        <div class="bm-labels"><span>15s</span><span>30s</span><span>50s</span><span>75s</span><span>100s+</span></div>
-      </div>
-      <span class="bm-val" id="bm2-val" style="color:var(--green);">0s</span>
-      <div class="bm-status" style="background:var(--green);"></div>
-    </div>
-
-    <div class="benchmark-row">
-      <span class="bm-metric">% Únicos</span>
-      <div class="bm-scale">
-        <div class="bm-track">
-          <div class="bm-needle" id="bm3-needle" style="left:0%;"></div>
-        </div>
-        <div class="bm-labels"><span>40%</span><span>55%</span><span>65%</span><span>75%</span><span>90%+</span></div>
-      </div>
-      <span class="bm-val" id="bm3-val" style="color:var(--green);">0%</span>
-      <div class="bm-status" style="background:var(--green);"></div>
-    </div>
-
-    <div class="benchmark-row">
-      <span class="bm-metric">Recurrencia</span>
-      <div class="bm-scale">
-        <div class="bm-track">
-          <div class="bm-needle" id="bm4-needle" style="left:0%;"></div>
-        </div>
-        <div class="bm-labels"><span>1x</span><span>2x</span><span>3x</span><span>4x</span><span>6x+</span></div>
-      </div>
-      <span class="bm-val" id="bm4-val" style="color:var(--accent);">0x</span>
-      <div class="bm-status" style="background:var(--accent);"></div>
-    </div>
-
-  </div>
-
-</div> <!-- /tab-overview -->
-
-<!-- ═══════════════════════════════════════════
-     COMPARE TAB
-═══════════════════════════════════════════ -->
-<div id="tab-compare" class="tab-content">
-  <div class="compare-card">
-    <div class="chart-header" style="margin-bottom:14px;">
-      <div>
-        <div class="chart-title">Módulo de Comparación de Campañas</div>
-        <div class="chart-subtitle">Selecciona el modo de comparación que deseas aplicar</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3);">
-        <span>Campaña actual:</span>
-        <span style="font-family:var(--mono);color:var(--accent);font-weight:600;">NIKE_VERANO_2026</span>
-      </div>
-    </div>
-
-    <div class="compare-modes">
-      <button class="compare-mode-btn active" onclick="setCompareMode('prev',this)">
-        ⟵ vs. Campaña Anterior
-      </button>
-      <button class="compare-mode-btn" onclick="setCompareMode('bench',this)">
-        ⊕ vs. Mejor del Sector (anónimo)
-      </button>
-      <button class="compare-mode-btn" onclick="setCompareMode('select',this)">
-        ⇄ vs. Campaña Seleccionada
-      </button>
-    </div>
-
-    <!-- Mode: vs Previous -->
-    <div id="cmp-prev" class="compare-grid">
-      <div>
-        <div class="compare-side-label" style="color:var(--accent);">
-          ◈ Campaña actual — NIKE_VERANO_2026
-        </div>
-        <div class="compare-kpi-row">
-          <div class="compare-kpi-name"><span>Escaneos Totales</span><span class="compare-delta-badge delta-pos">+22.1%</span></div>
-          <div class="compare-bar-bg"><div class="compare-bar-fill" data-pct="88" style="--bar-color:#00CFFF;"></div></div>
-          <div class="compare-val-row"><span class="compare-val-a">24,731</span><span class="compare-val-b">prev: 20,248</span></div>
-        </div>
-        <div class="compare-kpi-row">
-          <div class="compare-kpi-name"><span>Visitantes Únicos</span><span class="compare-delta-badge delta-pos">+18.4%</span></div>
-          <div class="compare-bar-bg"><div class="compare-bar-fill" data-pct="84" style="--bar-color:#00E5A0;"></div></div>
-          <div class="compare-val-row"><span class="compare-val-a">18,209</span><span class="compare-val-b">prev: 15,381</span></div>
-        </div>
-        <div class="compare-kpi-row">
-          <div class="compare-kpi-name"><span>CTR (%)</span><span class="compare-delta-badge delta-neg">-0.3pts</span></div>
-          <div class="compare-bar-bg"><div class="compare-bar-fill" data-pct="69" style="--bar-color:#FFAD33;"></div></div>
-          <div class="compare-val-row"><span class="compare-val-a">2.76%</span><span class="compare-val-b">prev: 3.06%</span></div>
-        </div>
-        <div class="compare-kpi-row">
-          <div class="compare-kpi-name"><span>Avg. Duración</span><span class="compare-delta-badge delta-pos">+15.3%</span></div>
-          <div class="compare-bar-bg"><div class="compare-bar-fill" data-pct="77" style="--bar-color:#A855F7;"></div></div>
-          <div class="compare-val-row"><span class="compare-val-a">62s</span><span class="compare-val-b">prev: 53s</span></div>
+        <div class="device-bar-wrap">
+          <div class="device-label"><span>CPU ≥6 cores</span><span style="color:var(--text);font-weight:500">48%</span></div>
+          <div class="device-bar" style="width:48%;background:#7F77DD"></div>
         </div>
       </div>
-      <div>
-        <div class="compare-side-label" style="color:var(--text-3);">
-          ⟵ Campaña anterior — NIKE_INVIERNO_2025
-        </div>
-        <div style="padding:16px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);border:1px solid var(--border);">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px;">
-            <span style="color:var(--text-3);">Período</span>
-            <span style="font-family:var(--mono);color:var(--text-2);">Jun–Aug 2025 · 65 días</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px;">
-            <span style="color:var(--text-3);">Industria</span>
-            <span style="color:var(--text-2);">Moda & Retail · Running</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px;">
-            <span style="color:var(--text-3);">Tipo</span>
-            <span style="color:var(--text-2);">Lanzamiento · Awareness</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:11px;">
-            <span style="color:var(--text-3);">RRSS</span>
-            <span style="color:var(--text-3);">Sin amplificación</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;">
-            <span style="color:var(--text-3);">Venue</span>
-            <span style="color:var(--text-2);">Mall + Vía Pública</span>
-          </div>
-        </div>
-        <div class="percentile-badge percentile-above" style="margin-top:14px;">
-          📈 Tu campaña actual supera a la anterior en 3 de 4 KPIs
-        </div>
-      </div>
-    </div>
-
-    <!-- Mode: vs Benchmark -->
-    <div id="cmp-bench" style="display:none;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div>
-          <div class="compare-side-label" style="color:var(--accent);">◈ Tu campaña</div>
-          <div class="compare-kpi-row">
-            <div class="compare-kpi-name"><span>CTR</span></div>
-            <div class="compare-bar-bg"><div class="compare-bar-fill" data-pct="69" style="--bar-color:#00CFFF;"></div></div>
-            <div class="compare-val-row"><span class="compare-val-a">2.76%</span><span class="compare-val-b">vs mejor: 4.3%</span></div>
-          </div>
-          <div class="compare-kpi-row">
-            <div class="compare-kpi-name"><span>Duración</span></div>
-            <div class="compare-bar-bg"><div class="compare-bar-fill" data-pct="88" style="--bar-color:#00E5A0;"></div></div>
-            <div class="compare-val-row"><span class="compare-val-a">62s</span><span class="compare-val-b">vs mejor: 70s</span></div>
-          </div>
-          <div class="compare-kpi-row">
-            <div class="compare-kpi-name"><span>% Únicos</span></div>
-            <div class="compare-bar-bg"><div class="compare-bar-fill" data-pct="82" style="--bar-color:#A855F7;"></div></div>
-            <div class="compare-val-row"><span class="compare-val-a">73.6%</span><span class="compare-val-b">vs mejor: 89.2%</span></div>
-          </div>
-        </div>
-        <div>
-          <div class="compare-side-label" style="color:var(--text-3);">
-            ⊕ Mejor campaña del sector
-            <span class="compare-anon-badge">🔒 Anónimo</span>
-          </div>
-          <div style="padding:14px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);border:1px solid var(--border);">
-            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Grupo: <span style="font-family:var(--mono);color:var(--accent);">BG_RETAIL_MALL_BRAND</span></div>
-            <div style="font-size:11px;color:var(--text-3);">Características diferenciadoras:</div>
-            <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px;">
-                <span style="color:var(--green);">✓</span>
-                <span style="color:var(--text-2);">Amplificación en Instagram + TikTok</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px;">
-                <span style="color:var(--green);">✓</span>
-                <span style="color:var(--text-2);">Creatividad tipo Video (vs. imagen estática)</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px;">
-                <span style="color:var(--green);">✓</span>
-                <span style="color:var(--text-2);">Venue: Centro Comercial premium</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;font-size:11px;">
-                <span style="color:var(--amber);">◆</span>
-                <span style="color:var(--text-2);">Duración de campaña: 45 días</span>
-              </div>
-            </div>
-          </div>
-          <div class="percentile-badge percentile-above" style="margin-top:12px;">
-            📊 Percentil 82 — Top 18% del segmento
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mode: vs Selected -->
-    <div id="cmp-select" style="display:none;">
-      <div style="margin-bottom:14px;">
-        <label style="font-size:11px;color:var(--text-3);display:block;margin-bottom:6px;">Seleccionar campaña para comparar:</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <select style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-elevated);color:var(--text);font-size:12px;font-family:var(--sans);">
-            <optgroup label="Tus campañas anteriores">
-              <option>NIKE_INVIERNO_2025 (Jun–Ago 2025)</option>
-              <option>NIKE_PRIMAVERA_2025 (Mar–May 2025)</option>
-              <option>NIKE_VERANO_2024 (Ene–Feb 2024)</option>
-            </optgroup>
-            <optgroup label="Campañas del sector — Anónimas">
-              <option>Campaña anónima · Moda & Retail · Mall · Branding</option>
-              <option>Campaña anónima · Moda & Retail · Outdoor · Lanzamiento</option>
-              <option>Campaña anónima · Deportes & Fitness · Mall · Promo</option>
-            </optgroup>
-          </select>
-          <button style="padding:7px 16px;border-radius:var(--radius-sm);background:var(--accent);color:#07090F;font-weight:600;font-size:12px;border:none;cursor:pointer;">Comparar</button>
-        </div>
-      </div>
-      <div style="text-align:center;padding:40px;color:var(--text-3);font-size:12px;">
-        ⇄ Selecciona una campaña de la lista y presiona "Comparar" para ver el análisis lado a lado
-      </div>
-    </div>
-
-  </div>
-</div> <!-- /tab-compare -->
-
-<!-- ═══════════════════════════════════════════
-     BENCHMARKS TAB
-═══════════════════════════════════════════ -->
-<div id="tab-benchmarks" class="tab-content">
-  <div class="chart-card">
-    <div class="chart-header">
-      <div>
-        <div class="chart-title">Referencia de Benchmarks — Fuentes IAB / OAAA / Bitly 2024–2025</div>
-        <div class="chart-subtitle">Valores globales · Ajuste LATAM · Documentación teórica</div>
-      </div>
-      <div class="chart-controls">
-        <button class="chart-btn active" onclick="setBenchTab('global',this)">🌍 Global</button>
-        <button class="chart-btn" onclick="setBenchTab('latam',this)">🌎 LATAM</button>
-        <button class="chart-btn" onclick="setBenchTab('docs',this)">📚 Teoría</button>
-      </div>
-    </div>
-
-    <div id="bench-global">
-      <div style="margin-bottom:12px;font-size:11px;color:var(--text-3);">Benchmarks globales por sector · Fuente: <span style="color:var(--accent);">IAB Content Taxonomy 3.0 + OAAA/Harris Poll 2024 + Uniqode State of QR 2024</span></div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-        <div style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.01);">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Restaurantes / F&B</div>
-          <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--green);">4.2%</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:2px;">CTR promedio · el más alto</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:6px;">Duración: 38s · Scan rate: 2.8%</div>
-        </div>
-        <div style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border-acc);background:var(--accent-soft);">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:8px;">Moda & Retail ← tú</div>
-          <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);">3.5%</div>
-          <div style="font-size:10px;color:var(--accent);margin-top:2px;">CTR promedio del sector</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:6px;">Duración: 50s · Scan rate: 2.3%</div>
-        </div>
-        <div style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.01);">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Entretenimiento</div>
-          <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--purple);">3.8%</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:2px;">CTR promedio</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:6px;">Duración: 48s · Scan rate: 2.5%</div>
-        </div>
-        <div style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.01);">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Automotriz</div>
-          <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text-2);">1.9%</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:2px;">CTR · considera proceso largo</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:6px;">Duración: 72s · Scan rate: 1.2%</div>
-        </div>
-        <div style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.01);">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Banca & Finanzas</div>
-          <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text-2);">1.5%</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:2px;">CTR · alta duración</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:6px;">Duración: 85s · Scan rate: 0.9%</div>
-        </div>
-        <div style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.01);">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);margin-bottom:8px;">Farmacia & Salud</div>
-          <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text-2);">2.0%</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:2px;">CTR · alta intención</div>
-          <div style="font-size:10px;color:var(--text-3);margin-top:6px;">Duración: 88s · Scan rate: 1.3%</div>
-        </div>
-      </div>
-      <div style="margin-top:12px;padding:10px 14px;border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);border:1px solid var(--border);font-size:11px;color:var(--text-3);">
-        📖 Fuentes: Uniqode State of QR Code Report 2024 · OAAA/Harris Poll 2024 (n=1,000 US adults) · Bitly State of QR Codes 2024 · IAB DOOH Measurement Standards 2024
-      </div>
-    </div>
-
-    <div id="bench-latam" style="display:none;">
-      <div style="margin-bottom:12px;padding:10px 14px;border-radius:var(--radius-sm);background:var(--amber-soft);border:1px solid rgba(255,173,51,0.2);font-size:11px;color:var(--amber);">
-        ⚠ Los benchmarks LATAM se ajustan a la baja respecto a los globales por: menor penetración de QR codes (65% vs 78% EE.UU.), menor dwell time en medios exteriores, y diferencias en comportamiento de escaneo por dispositivo.
-      </div>
-      <div style="display:grid;grid-template-columns:3fr 1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
-        <div style="padding:8px 12px;background:var(--bg-elevated);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);border-bottom:1px solid var(--border);">Sector</div>
-        <div style="padding:8px 12px;background:var(--bg-elevated);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);border-bottom:1px solid var(--border);text-align:center;">Global</div>
-        <div style="padding:8px 12px;background:var(--bg-elevated);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--amber);border-bottom:1px solid var(--border);text-align:center;">LATAM adj.</div>
-        <div style="padding:8px 12px;background:var(--bg-elevated);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-3);border-bottom:1px solid var(--border);text-align:center;">Factor</div>
-
-        <div style="padding:8px 12px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);background:var(--accent-soft);">Moda & Retail ← tu sector</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center;background:var(--accent-soft);">3.5%</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--accent);border-bottom:1px solid var(--border);text-align:center;background:var(--accent-soft);font-weight:600;">2.6%</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text-3);border-bottom:1px solid var(--border);text-align:center;background:var(--accent-soft);">× 0.74</div>
-
-        <div style="padding:8px 12px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);">Restaurantes / F&B</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center;">4.2%</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--amber);border-bottom:1px solid var(--border);text-align:center;font-weight:600;">3.2%</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text-3);border-bottom:1px solid var(--border);text-align:center;">× 0.76</div>
-
-        <div style="padding:8px 12px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);">Entretenimiento</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center;">3.8%</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--amber);border-bottom:1px solid var(--border);text-align:center;font-weight:600;">2.9%</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text-3);border-bottom:1px solid var(--border);text-align:center;">× 0.76</div>
-
-        <div style="padding:8px 12px;font-size:12px;color:var(--text);">Automotriz</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text-2);text-align:center;">1.9%</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--amber);text-align:center;font-weight:600;">1.3%</div>
-        <div style="padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--text-3);text-align:center;">× 0.68</div>
-      </div>
-      <div style="margin-top:12px;font-size:11px;color:var(--text-3);">
-        Justificación del ajuste: Datos OAAA LATAM Report 2023 + análisis propio de la plataforma Antigravity (N=142 campañas, 2023–2025). El factor promedio regional es <strong style="color:var(--amber);">× 0.72</strong>, con variación por país: BR × 0.78 · CO × 0.71 · MX × 0.74 · AR × 0.68 · VE × 0.65.
-      </div>
-    </div>
-
-    <div id="bench-docs" style="display:none;">
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div style="padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.01);">
-          <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px;">📐 CTR (Click-Through Rate de QR)</div>
-          <div style="font-size:11px;color:var(--text-2);line-height:1.7;">
-            <strong>Definición:</strong> (Escaneos totales / Impresiones estimadas) × 100. Mide la efectividad del QR para convertir exposición en acción.<br>
-            <strong>Rangos LATAM:</strong> 🔴 &lt;1.0% Crítico · 🟡 1.0–2.0% Aceptable · 🟢 2.0–3.2% Bueno · 💎 &gt;3.2% Excelente<br>
-            <strong>Factores clave:</strong> Prominencia del QR en el creativo, CTA claro, incentivo para escanear, tamaño mínimo 2cm×2cm a 3m de distancia.
-          </div>
-        </div>
-        <div style="padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.01);">
-          <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px;">⏱ Avg. Engagement Duration</div>
-          <div style="font-size:11px;color:var(--text-2);line-height:1.7;">
-            <strong>Definición:</strong> Tiempo promedio desde el escaneo hasta el abandono de la landing page. Proxy de calidad del contenido post-scan.<br>
-            <strong>Rangos:</strong> 🔴 &lt;20s · 🟡 20–40s · 🟢 40–70s · 💎 &gt;70s<br>
-            <strong>Fuente:</strong> Uniqode State of QR Code Report Q2 2024 — media global: 47.3s para campañas DOOH.
-          </div>
-        </div>
-        <div style="padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,0.01);">
-          <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:6px;">◎ Audience Intelligence Score (AIS)</div>
-          <div style="font-size:11px;color:var(--text-2);line-height:1.7;">
-            <strong>Definición:</strong> Score compuesto (0–100) que mide la riqueza y completitud del perfil de audiencia capturado. Componentes: OS (20%), DPR (20%), CPU (15%), Conexión (20%), Idioma (10%), Timezone (15%).<br>
-            <strong>Valor práctico:</strong> AIS &gt;80 permite segmentación NSE con 73%+ de precisión. Fuente: metodología propia Antigravity basada en Liu et al. (2024) device fingerprinting research.
-          </div>
-        </div>
+      <div style="margin-top:10px;padding:8px;background:var(--bg-card);border-radius:6px">
+        <div style="font-size:10px;color:var(--text-2);margin-bottom:3px">Señal NSE inferido</div>
+        <div style="font-size:12px;font-weight:500;color:var(--text)">NSE A+B estimado: 67% de audiencia</div>
       </div>
     </div>
   </div>
 </div>
-
-<!-- Placeholder tabs -->
-<div id="tab-campaigns" class="tab-content">
-  <div style="text-align:center;padding:80px 20px;color:var(--text-3);">
-    <div style="font-size:32px;margin-bottom:12px;">◈</div>
-    <div style="font-size:15px;font-weight:600;color:var(--text-2);margin-bottom:6px;">Gestión de Campañas</div>
-    <div style="font-size:12px;">Vista de administración · Fase 2 del plan de ingeniería</div>
-  </div>
 </div>
-<div id="tab-audience" class="tab-content">
-  <div style="text-align:center;padding:80px 20px;color:var(--text-3);">
-    <div style="font-size:32px;margin-bottom:12px;">◎</div>
-    <div style="font-size:15px;font-weight:600;color:var(--text-2);margin-bottom:6px;">Módulo de Audiencias</div>
-    <div style="font-size:12px;">Audience Intelligence completo · Fase 4 del plan de ingeniería</div>
-  </div>
-</div>
-<div id="tab-devices" class="tab-content">
-  <div style="text-align:center;padding:80px 20px;color:var(--text-3);">
-    <div style="font-size:32px;margin-bottom:12px;">⊡</div>
-    <div style="font-size:15px;font-weight:600;color:var(--text-2);margin-bottom:6px;">Dispositivos DOOH</div>
-    <div style="font-size:12px;">Gestión de pantallas físicas · Estadísticas por venue</div>
-  </div>
-</div>
-
 </main>
 </div> <!-- /shell -->
 <script>
@@ -2663,6 +2155,50 @@ document.addEventListener('DOMContentLoaded', () => {
   // Benchmarks
   animateBenchmarks();
 });
+</script>
+const intensities = [
+  [0.2,0.4,0.3,0.5,0.7,0.9,0.6],
+  [0.3,0.6,0.5,0.8,0.9,0.7,0.4],
+  [0.5,0.8,0.7,1.0,0.8,0.5,0.3],
+  [0.4,0.7,0.6,0.9,0.7,0.4,0.2],
+  [0.3,0.5,0.6,0.7,0.8,0.6,0.3],
+  [0.2,0.3,0.4,0.5,0.6,0.9,0.7]
+];
+const labels = ['00-04h','06-08h','09-12h','12-15h','15-18h','18-22h'];
+const hm = document.getElementById('heatmap');
+const colors = ['#E6F1FB','#85B7EB','#378ADD','#185FA5'];
+intensities.forEach((row,ri) => {
+  const rowEl = document.createElement('div');
+  rowEl.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px';
+  row.forEach(v => {
+    const c = document.createElement('div');
+    const idx = Math.min(3, Math.floor(v * 4));
+    c.style.cssText = `height:18px;border-radius:3px;background:${colors[idx]}`;
+    c.title = `${Math.round(v*100)}% actividad`;
+    rowEl.appendChild(c);
+  });
+  hm.appendChild(rowEl);
+});
+
+async function loadAnalytics() {
+    try {
+        const res = await fetch('/api/analytics/scan-breakdown/CENTAURO_Q1_2026');
+        const data = await res.json();
+        
+        if(data && data.total_visitors !== undefined) {
+            document.getElementById('val-total').textContent = data.total_visitors.toLocaleString();
+            document.getElementById('val-unique').textContent = data.single_scan_visitors.toLocaleString();
+            
+            // Just some derived metrics for the mockup completeness
+            const conv = ((data.total_visitors / 5000) * 100).toFixed(1);
+            document.getElementById('val-conv').textContent = conv + '%';
+        }
+    } catch(err) {
+        console.error('Error loading analytics:', err);
+    }
+}
+loadAnalytics();
+
 </script>
 </body>
 </html>
