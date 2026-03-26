@@ -1,26 +1,35 @@
 import paramiko
+import os
 
-def trigger_deploy():
+def hot_reload_backend():
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
-        print("Conectando al servidor por SSH...")
-        client.connect('137.184.2.148', username='root', password='MERcenta2026!.ds')
+        client.connect('167.172.217.151', username='root', password='MERcenta2026!.ds', timeout=10)
         
-        print("Disparando pipeline de despliegue en EasyPanel...")
-        stdin, stdout, stderr = client.exec_command('docker exec easypanel easypanel deploy qr-tracking')
+        stdin, stdout, stderr = client.exec_command("docker ps --format '{{.Names}}' | grep qr-tracking")
+        container_name = stdout.read().decode().strip().split('\n')[0]
         
-        # Read the stream in real time until EOF
-        print(stdout.read().decode())
-        
-        err = stderr.read().decode()
-        if err:
-            print(f"Errores (si aplica): {err}")
+        if container_name:
+            sftp = client.open_sftp()
+            sftp.put(r'C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\app.py', '/tmp/app.py')
+            sftp.put(r'C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\database.py', '/tmp/database.py')
+            sftp.close()
             
-    except Exception as e:
-        print(f"Falló la conexión o ejecución: {e}")
+            # Copy into container
+            client.exec_command(f"docker cp /tmp/app.py {container_name}:/app/app.py")
+            client.exec_command(f"docker cp /tmp/database.py {container_name}:/app/database.py")
+            
+            # Restart container
+            print("Restarting container...")
+            client.exec_command(f"docker restart {container_name}")
+            
+            print("Backend hot-reloaded successfully!")
+        else:
+            print("NO CONTAINER FOUND")
+            
     finally:
         client.close()
 
 if __name__ == '__main__':
-    trigger_deploy()
+    hot_reload_backend()

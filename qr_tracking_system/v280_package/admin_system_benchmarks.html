@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Benchmarks — Antigravity Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:       #07090F; --bg-card: #0C1018; --bg-elevated: #111820;
+  --accent:   #00CFFF; --accent-s: rgba(0,207,255,0.08); --accent-m: rgba(0,207,255,0.18);
+  --green:    #00E5A0; --green-s:  rgba(0,229,160,0.08);
+  --amber:    #FFAD33; --amber-s:  rgba(255,173,51,0.08);
+  --red:      #FF3E5E; --red-s:    rgba(255,62,94,0.08);
+  --purple:   #A855F7; --purple-s: rgba(168,85,247,0.08);
+  --border:   rgba(255,255,255,0.06); --border-h: rgba(255,255,255,0.12);
+  --border-a: rgba(0,207,255,0.22);
+  --t:  rgba(255,255,255,0.90); --t2: rgba(255,255,255,0.55);
+  --t3: rgba(255,255,255,0.30); --t4: rgba(255,255,255,0.12);
+  --mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  --sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --r: 10px; --rs: 7px; --rl: 14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--t); font-size: 13px; line-height: 1.5; }
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 52px;
+  border-bottom: 1px solid var(--border); background: rgba(7,9,15,0.95);
+  backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100;
+}
+.back-link { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--t3); cursor: pointer; transition: color .15s; text-decoration: none; }
+.back-link:hover { color: var(--t2); }
+.topbar-title { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--t); }
+.topbar-badge { font-size: 9px; padding: 1px 6px; border-radius: 4px; background: var(--accent-s); color: var(--accent); border: 1px solid var(--accent-m); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.btn { padding: 5px 12px; border-radius: var(--rs); font-size: 11px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--t2); transition: all .15s; display: flex; align-items: center; gap: 5px; }
+.btn:hover { border-color: var(--border-h); color: var(--t); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #07090F; font-weight: 600; }
+.btn-primary:hover { background: #00E8FF; }
+.btn-amber { background: var(--amber-s); border-color: rgba(255,173,51,0.3); color: var(--amber); }
+.btn-amber:hover { border-color: var(--amber); }
+
+/* ── SHELL ── */
+.page { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.sidebar { border-right: 1px solid var(--border); padding: 20px 0; }
+.sidebar-section { padding: 0 12px 8px; }
+.sidebar-label { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--t4); padding: 0 12px; margin-bottom: 4px; margin-top: 12px; }
+.sidebar-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: var(--rs); font-size: 12px; color: var(--t3); cursor: pointer; transition: all .15s; margin-bottom: 1px; }
+.sidebar-item:hover { background: rgba(255,255,255,0.03); color: var(--t2); }
+.sidebar-item.active { background: var(--accent-s); color: var(--accent); border: 1px solid var(--accent-m); }
+.sidebar-item .icon { font-size: 13px; width: 18px; text-align: center; }
+.sidebar-item .count { margin-left: auto; font-family: var(--mono); font-size: 10px; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; }
+.sidebar-divider { height: 1px; background: var(--border); margin: 12px 16px; }
+
+.content { padding: 24px; overflow: auto; }
+
+/* ── SECTION HEADER ── */
+.section-hdr { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+.section-title { font-size: 16px; font-weight: 700; color: var(--t); margin-bottom: 4px; }
+.section-sub { font-size: 11px; color: var(--t3); }
+.actions-row { display: flex; gap: 8px; }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+.tab { padding: 8px 14px; font-size: 12px; font-weight: 500; color: var(--t3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+.tab:hover { color: var(--t2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-s); border-radius: 4px 4px 0 0; }
+
+/* ── TABLE ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--t3); background: var(--bg-elevated); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.data-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 12px; vertical-align: middle; }
+.data-table tr:hover td { background: rgba(255,255,255,0.015); }
+.data-table .mono { font-family: var(--mono); font-size: 11px; }
+.data-table .editable { cursor: pointer; border-radius: 4px; padding: 2px 6px; transition: background .15s; }
+.data-table .editable:hover { background: rgba(255,255,255,0.06); }
+.data-table .editable:focus { background: rgba(0,207,255,0.08); border: 1px solid var(--border-a); outline: none; border-radius: 4px; }
+
+/* ── STATUS DOTS ── */
+.dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.dot-green  { background: var(--green); box-shadow: 0 0 5px rgba(0,229,160,0.5); }
+.dot-amber  { background: var(--amber); box-shadow: 0 0 5px rgba(255,173,51,0.5); }
+.dot-red    { background: var(--red);   box-shadow: 0 0 5px rgba(255,62,94,0.5); }
+.dot-gray   { background: var(--t4); }
+
+/* ── PILLS / BADGES ── */
+.pill { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; }
+.pill-accent { background: var(--accent-s); color: var(--accent); border: 1px solid var(--accent-m); }
+.pill-green  { background: var(--green-s);  color: var(--green); }
+.pill-amber  { background: var(--amber-s);  color: var(--amber); }
+.pill-red    { background: var(--red-s);    color: var(--red); }
+.pill-purple { background: var(--purple-s); color: var(--purple); }
+
+/* ── INLINE EDIT ── */
+.field-input { background: rgba(0,207,255,0.05); border: 1px solid var(--border-a); border-radius: 5px; padding: 4px 8px; font-family: var(--mono); font-size: 11px; color: var(--accent); width: 90px; }
+.field-input:focus { outline: none; background: rgba(0,207,255,0.09); }
+.field-select { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 5px; padding: 4px 8px; font-size: 11px; color: var(--t2); cursor: pointer; }
+
+/* ── FACTOR BAR ── */
+.factor-bar { display: flex; align-items: center; gap: 8px; }
+.factor-track { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; max-width: 80px; }
+.factor-fill { height: 100%; border-radius: 3px; }
+
+/* ── CARD ── */
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px; }
+.card-title { font-size: 13px; font-weight: 600; color: var(--t); margin-bottom: 4px; }
+.card-sub { font-size: 11px; color: var(--t3); margin-bottom: 12px; }
+
+/* ── SOURCE CARD ── */
+.source-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; margin-bottom: 10px; transition: border-color .15s; }
+.source-card:hover { border-color: var(--border-h); }
+.source-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.source-logo { width: 28px; height: 28px; border-radius: 7px; background: var(--bg-elevated); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.source-name { font-size: 12px; font-weight: 600; color: var(--t); }
+.source-type { font-size: 10px; color: var(--t3); }
+.source-body { font-size: 11px; color: var(--t2); line-height: 1.6; }
+.source-meta { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.source-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: var(--bg-elevated); color: var(--t3); border: 1px solid var(--border); }
+.source-url { font-size: 10px; color: var(--accent); cursor: pointer; font-family: var(--mono); }
+
+/* ── AI REVIEW PANEL ── */
+.ai-panel { background: linear-gradient(135deg, rgba(0,207,255,0.05), rgba(168,85,247,0.04)); border: 1px solid rgba(0,207,255,0.14); border-radius: var(--r); padding: 16px 18px; margin-bottom: 16px; }
+.ai-panel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ai-status { font-size: 11px; font-weight: 500; font-family: var(--mono); }
+.ai-log { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: var(--rs); padding: 10px 12px; font-family: var(--mono); font-size: 10px; color: var(--t2); line-height: 1.8; max-height: 120px; overflow-y: auto; }
+.ai-log .log-line { display: flex; gap: 8px; }
+.ai-log .log-time { color: var(--t4); }
+.ai-log .log-ok   { color: var(--green); }
+.ai-log .log-info { color: var(--accent); }
+.ai-log .log-warn { color: var(--amber); }
+
+/* ── DIFF INDICATOR ── */
+.diff-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--rs); border: 1px solid var(--border); background: rgba(255,255,255,0.01); margin-bottom: 5px; }
+.diff-metric { font-size: 11px; color: var(--t2); width: 180px; flex-shrink: 0; }
+.diff-old { font-family: var(--mono); font-size: 11px; color: var(--t3); }
+.diff-arrow { color: var(--t4); font-size: 12px; }
+.diff-new { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+.diff-source { font-size: 10px; color: var(--t4); margin-left: auto; }
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--bg-card); border: 1px solid var(--border-a); border-radius: var(--rl); padding: 22px; width: 460px; max-height: 80vh; overflow-y: auto; }
+.modal-title { font-size: 14px; font-weight: 700; color: var(--t); margin-bottom: 4px; }
+.modal-sub { font-size: 11px; color: var(--t3); margin-bottom: 16px; }
+.form-row { margin-bottom: 12px; }
+.form-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--t3); margin-bottom: 4px; display: block; }
+.form-input { width: 100%; padding: 8px 10px; border: 1px solid var(--border-h); border-radius: var(--rs); background: var(--bg-elevated); color: var(--t); font-size: 12px; font-family: var(--sans); }
+.form-input:focus { outline: none; border-color: var(--border-a); background: rgba(0,207,255,0.04); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 16px; border-radius: var(--rs); background: var(--bg-elevated); border: 1px solid var(--border-a); color: var(--accent); font-size: 12px; font-weight: 500; z-index: 300; transform: translateY(60px); opacity: 0; transition: all .3s cubic-bezier(0.4,0,0.2,1); display: flex; align-items: center; gap: 7px; }
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── NOTICE BAR ── */
+.notice { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--rs); margin-bottom: 14px; font-size: 11px; }
+.notice-info { background: var(--accent-s); border: 1px solid var(--accent-m); color: var(--t2); }
+.notice-warn { background: var(--amber-s); border: 1px solid rgba(255,173,51,0.2); color: var(--amber); }
+</style>
+</head>
+<body>
+
+<!-- ─────────────────────── TOPBAR ─────────────────────── -->
+<header class="topbar">
+  <a class="back-link" href="dashboard_antigravity_v28.html">← Dashboard</a>
+  <div style="width:1px;height:20px;background:var(--border);"></div>
+  <span class="topbar-title">⚙ Sistema · Benchmarks &amp; Parámetros</span>
+  <span class="topbar-badge">superadmin</span>
+  <div class="topbar-right">
+    <button class="btn btn-amber" onclick="openAiReview()">✦ Revisión con IA</button>
+    <button class="btn btn-primary" onclick="openNewBenchmark()">＋ Nuevo parámetro</button>
+  </div>
+</header>
+
+<!-- ─────────────────────── PAGE SHELL ─────────────────────── -->
+<div class="page">
+
+<!-- ─────────────────────── SIDEBAR ─────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-label">Benchmarks</div>
+  <div class="sidebar-item active" onclick="showSection('global')">
+    <span class="icon">🌍</span> Globales
+    <span class="count">47</span>
+  </div>
+  <div class="sidebar-item" onclick="showSection('latam')">
+    <span class="icon">🌎</span> LATAM ajustados
+    <span class="count">47</span>
+  </div>
+  <div class="sidebar-item" onclick="showSection('country')">
+    <span class="icon">📍</span> Por país
+    <span class="count">235</span>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-label">Parámetros</div>
+  <div class="sidebar-item" onclick="showSection('kpi-def')">
+    <span class="icon">📐</span> Definición de KPIs
+  </div>
+  <div class="sidebar-item" onclick="showSection('ranges')">
+    <span class="icon">🚦</span> Rangos semaforizados
+  </div>
+  <div class="sidebar-item" onclick="showSection('factors')">
+    <span class="icon">⚖</span> Factores de ajuste
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-label">Fuentes</div>
+  <div class="sidebar-item" onclick="showSection('sources')">
+    <span class="icon">📚</span> Fuentes documentadas
+    <span class="count">8</span>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-label">Auditoría</div>
+  <div class="sidebar-item" onclick="showSection('history')">
+    <span class="icon">⏱</span> Historial de cambios
+  </div>
+  <div class="sidebar-item" onclick="showSection('ai')">
+    <span class="icon">✦</span> Revisión con IA
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-label">API</div>
+  <div class="sidebar-item" onclick="showSection('api')">
+    <span class="icon">⇄</span> Contrato de API
+  </div>
+</aside>
+
+<!-- ─────────────────────── CONTENT ─────────────────────── -->
+<main class="content">
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: BENCHMARKS GLOBALES
+══════════════════════════════════════════ -->
+<div id="sec-global">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Benchmarks Globales</div>
+      <div class="section-sub">Valores de referencia por industria · sector · tipo de campaña. Fuentes primarias: IAB, OAAA, Bitly, Uniqode 2024–2025.</div>
+    </div>
+    <div class="actions-row">
+      <button class="btn" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <button class="btn btn-primary" onclick="openNewBenchmark()">＋ Agregar</button>
+    </div>
+  </div>
+
+  <div class="notice notice-info">
+    <span>ℹ</span>
+    <span>Estos valores son la fuente única de verdad que usa el dashboard para comparar campañas. <strong>Nunca editar directamente en el frontend.</strong> Todo cambio aquí se propaga automáticamente vía <code>GET /api/admin/system/benchmarks</code>.</span>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <select class="field-select" id="filter-industry" onchange="filterTable()">
+      <option value="">Todas las industrias</option>
+      <option value="moda_retail">Moda & Retail</option>
+      <option value="restaurantes">Restaurantes / F&B</option>
+      <option value="entretenimiento">Entretenimiento</option>
+      <option value="automotriz">Automotriz</option>
+      <option value="banca_finanzas">Banca & Finanzas</option>
+      <option value="farmacia_salud">Farmacia & Salud</option>
+      <option value="telecomunicaciones">Telecomunicaciones</option>
+      <option value="electronica">Electrónica & Tech</option>
+    </select>
+    <select class="field-select" id="filter-type" onchange="filterTable()">
+      <option value="">Todos los tipos</option>
+      <option value="branding">Branding</option>
+      <option value="lanzamiento">Lanzamiento</option>
+      <option value="promocion">Promoción</option>
+      <option value="performance">Performance</option>
+    </select>
+    <select class="field-select" id="filter-venue" onchange="filterTable()">
+      <option value="">Todos los venues</option>
+      <option value="mall">Centro Comercial</option>
+      <option value="outdoor">Vía Pública</option>
+      <option value="airport">Aeropuerto</option>
+      <option value="transit">Transporte</option>
+    </select>
+    <input type="text" class="field-input" placeholder="Buscar..." style="width:140px;color:var(--t);" oninput="filterTable()">
+  </div>
+
+  <div style="overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);">
+    <table class="data-table" id="benchTable">
+      <thead>
+        <tr>
+          <th>Industria</th>
+          <th>Tipo campaña</th>
+          <th>Venue</th>
+          <th>CTR avg (%)</th>
+          <th>P25 CTR</th>
+          <th>P75 CTR</th>
+          <th>Avg duración (s)</th>
+          <th>Avg % únicos</th>
+          <th>Avg multi-scan</th>
+          <th>Scan rate (%)</th>
+          <th>Fuente</th>
+          <th>Año</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="benchTbody">
+        <!-- populated by JS -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: BENCHMARKS LATAM
+══════════════════════════════════════════ -->
+<div id="sec-latam" style="display:none;">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Benchmarks LATAM — Valores ajustados</div>
+      <div class="section-sub">Factor de tropicalización aplicado por industria y país. Cada ajuste está documentado con fuente y justificación.</div>
+    </div>
+    <div class="actions-row">
+      <button class="btn btn-amber" onclick="runLatamCalc()">⟳ Recalcular factores</button>
+    </div>
+  </div>
+
+  <div class="notice notice-warn">
+    <span>⚠</span>
+    <span>El factor LATAM se aplica multiplicando el valor global. Factor típico: 0.55–0.82. <strong>Cambiar el factor global</strong> en la tabla anterior recalcula automáticamente todos los valores LATAM aquí.</span>
+  </div>
+
+  <div style="overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Industria</th>
+          <th>KPI</th>
+          <th>Valor Global</th>
+          <th>Factor LATAM</th>
+          <th>Valor LATAM adj.</th>
+          <th>Factor por país</th>
+          <th>Justificación</th>
+          <th>Fuente base</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="latamTbody"><!-- JS --></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: FACTORES DE AJUSTE
+══════════════════════════════════════════ -->
+<div id="sec-factors" style="display:none;">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Factores de ajuste regional</div>
+      <div class="section-sub">Multiplicadores aplicados al valor global para obtener benchmarks por mercado.</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+    <!-- Por país -->
+    <div class="card">
+      <div class="card-title">Factores por País</div>
+      <div class="card-sub">Ajuste de CTR, duración y scan rate por mercado nacional.</div>
+      <table class="data-table">
+        <thead><tr><th>País</th><th>CTR</th><th>Duración</th><th>Scan rate</th><th>Base</th></tr></thead>
+        <tbody id="countryFactors"></tbody>
+      </table>
+    </div>
+    <!-- Por tipo campaña -->
+    <div class="card">
+      <div class="card-title">Factores por Tipo de Campaña</div>
+      <div class="card-sub">El tipo de campaña modifica las expectativas de benchmark.</div>
+      <table class="data-table">
+        <thead><tr><th>Tipo</th><th>Factor CTR</th><th>Factor dur.</th><th>Peso bench.</th></tr></thead>
+        <tbody id="typeFactors"></tbody>
+      </table>
+    </div>
+    <!-- Por venue -->
+    <div class="card">
+      <div class="card-title">Factores por Venue / Formato DOOH</div>
+      <div class="card-sub">Cada tipo de pantalla genera diferente nivel de engagement.</div>
+      <table class="data-table">
+        <thead><tr><th>Venue</th><th>Factor CTR</th><th>Factor dur.</th><th>NSE esperado</th></tr></thead>
+        <tbody id="venueFactors"></tbody>
+      </table>
+    </div>
+    <!-- Amplificación RRSS -->
+    <div class="card">
+      <div class="card-title">Multiplicadores de Amplificación Social</div>
+      <div class="card-sub">Impacto de RRSS sobre los KPIs de escaneos.</div>
+      <table class="data-table">
+        <thead><tr><th>Plataforma</th><th>Multiplicador scans</th><th>Fuente</th></tr></thead>
+        <tbody id="socialFactors"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: DEFINICIÓN DE KPIs
+══════════════════════════════════════════ -->
+<div id="sec-kpi-def" style="display:none;">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Definición de KPIs</div>
+      <div class="section-sub">Fórmulas, fuentes y justificación teórica de cada indicador medido en el sistema.</div>
+    </div>
+  </div>
+  <div id="kpiDefsContainer"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: RANGOS SEMAFORIZADOS
+══════════════════════════════════════════ -->
+<div id="sec-ranges" style="display:none;">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Rangos semaforizados por KPI</div>
+      <div class="section-sub">Umbrales que determinan la clasificación crítico / aceptable / bueno / excelente en dashboard y reportes.</div>
+    </div>
+    <button class="btn btn-primary" onclick="openNewRange()">＋ Nuevo rango</button>
+  </div>
+  <div id="rangesContainer"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: FUENTES
+══════════════════════════════════════════ -->
+<div id="sec-sources" style="display:none;">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Fuentes documentadas</div>
+      <div class="section-sub">Estudios, reportes y publicaciones que sustentan todos los valores de benchmark del sistema.</div>
+    </div>
+    <button class="btn btn-primary" onclick="openNewSource()">＋ Agregar fuente</button>
+  </div>
+  <div id="sourcesContainer"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: REVISIÓN CON IA
+══════════════════════════════════════════ -->
+<div id="sec-ai" style="display:none;">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Revisión con IA de benchmarks</div>
+      <div class="section-sub">Análisis automatizado que detecta parámetros desactualizados y propone actualizaciones basadas en nuevos estudios públicos.</div>
+    </div>
+    <button class="btn btn-amber" onclick="runAiReview()">✦ Ejecutar revisión</button>
+  </div>
+
+  <div class="ai-panel">
+    <div class="ai-panel-header">
+      <span style="font-size:18px;">✦</span>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--accent);">Antigravity Benchmark Intelligence</div>
+        <div class="ai-status" id="ai-status-text" style="color:var(--t3);">Última revisión: 22 Mar 2026 · 14:32 UTC</div>
+      </div>
+      <div id="ai-run-btn" style="margin-left:auto;">
+        <button class="btn btn-amber" onclick="runAiReview()">▶ Ejecutar ahora</button>
+      </div>
+    </div>
+    <div class="ai-log" id="aiLog">
+      <div class="log-line"><span class="log-time">14:32:01</span><span class="log-ok">[OK]</span><span>Conectando con fuentes externas (IAB, OAAA, Bitly API)...</span></div>
+      <div class="log-line"><span class="log-time">14:32:04</span><span class="log-info">[INFO]</span><span>Descargando OAAA DOOH Measurement Report Q1 2026...</span></div>
+      <div class="log-line"><span class="log-time">14:32:08</span><span class="log-warn">[WARN]</span><span>Moda &amp; Retail CTR global: nuevo dato 3.7% (+0.2 vs valor actual 3.5%). Requiere revisión.</span></div>
+      <div class="log-line"><span class="log-time">14:32:09</span><span class="log-warn">[WARN]</span><span>Avg multi-scan benchmark: Uniqode Q1 2026 reporta 4.1x (+0.3 vs actual 3.8x).</span></div>
+      <div class="log-line"><span class="log-time">14:32:11</span><span class="log-ok">[OK]</span><span>Restaurantes / F&amp;B CTR 4.2% confirmado con nueva fuente (Broadsign 2025). Sin cambio.</span></div>
+      <div class="log-line"><span class="log-time">14:32:12</span><span class="log-ok">[OK]</span><span>Revisión completa. 2 parámetros con sugerencias de actualización.</span></div>
+    </div>
+  </div>
+
+  <!-- AI suggested changes -->
+  <div class="card">
+    <div class="card-title">Cambios sugeridos por IA</div>
+    <div class="card-sub">Basados en análisis de nuevos estudios públicos. Requieren aprobación manual del superadmin.</div>
+
+    <div class="diff-row">
+      <span class="dot dot-amber"></span>
+      <span class="diff-metric">Moda &amp; Retail · CTR avg global</span>
+      <span class="diff-old">3.5%</span>
+      <span class="diff-arrow">→</span>
+      <span class="diff-new" style="color:var(--green);">3.7%</span>
+      <span class="diff-source">Fuente: OAAA Q1 2026 + Marketing LTB 2025</span>
+      <div style="display:flex;gap:5px;margin-left:10px;">
+        <button class="btn" style="padding:3px 9px;font-size:10px;color:var(--green);border-color:rgba(0,229,160,0.3);" onclick="approveChange(0)">✓ Aprobar</button>
+        <button class="btn" style="padding:3px 9px;font-size:10px;" onclick="rejectChange(0)">✕</button>
+      </div>
+    </div>
+
+    <div class="diff-row">
+      <span class="dot dot-amber"></span>
+      <span class="diff-metric">Benchmark avg multi-scan (global)</span>
+      <span class="diff-old">3.8x</span>
+      <span class="diff-arrow">→</span>
+      <span class="diff-new" style="color:var(--green);">4.1x</span>
+      <span class="diff-source">Fuente: Uniqode State of QR Q1 2026</span>
+      <div style="display:flex;gap:5px;margin-left:10px;">
+        <button class="btn" style="padding:3px 9px;font-size:10px;color:var(--green);border-color:rgba(0,229,160,0.3);" onclick="approveChange(1)">✓ Aprobar</button>
+        <button class="btn" style="padding:3px 9px;font-size:10px;" onclick="rejectChange(1)">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: HISTORIAL
+══════════════════════════════════════════ -->
+<div id="sec-history" style="display:none;">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Historial de cambios</div>
+      <div class="section-sub">Auditoría completa de todas las modificaciones a benchmarks y parámetros.</div>
+    </div>
+  </div>
+  <div style="overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);">
+    <table class="data-table">
+      <thead><tr><th>Fecha</th><th>Usuario</th><th>Parámetro</th><th>Valor anterior</th><th>Valor nuevo</th><th>Fuente</th><th>Método</th></tr></thead>
+      <tbody id="historyTbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SECCIÓN: CONTRATO DE API
+══════════════════════════════════════════ -->
+<div id="sec-api" style="display:none;">
+  <div class="section-hdr">
+    <div>
+      <div class="section-title">Contrato de API — Sistema de Benchmarks</div>
+      <div class="section-sub">Especificación técnica para el equipo de ingeniería. Base URL: <code style="color:var(--accent);">/api/admin/system</code></div>
+    </div>
+    <button class="btn" onclick="copyApiSpec()">⬇ Copiar spec</button>
+  </div>
+  <div id="apiContainer"></div>
+</div>
+
+</main>
+</div><!-- /page -->
+
+<!-- ─────────────────────── MODAL: New Benchmark ─────────────────────── -->
+<div class="modal-overlay" id="modalNewBench">
+  <div class="modal-box">
+    <div class="modal-title">＋ Nuevo parámetro de benchmark</div>
+    <div class="modal-sub">Se guardará en la tabla <code>benchmarks_global</code> y se propagará al dashboard.</div>
+    <div class="form-grid">
+      <div class="form-row">
+        <label class="form-label">Industria (IAB)</label>
+        <select class="form-input" id="nb-industry">
+          <option>moda_retail</option><option>restaurantes</option><option>entretenimiento</option>
+          <option>automotriz</option><option>banca_finanzas</option><option>farmacia_salud</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Tipo de campaña</label>
+        <select class="form-input" id="nb-type">
+          <option>branding</option><option>lanzamiento</option><option>promocion</option><option>performance</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Mercado</label>
+        <select class="form-input" id="nb-market">
+          <option value="global">global</option><option>latam</option><option>br</option><option>co</option><option>mx</option><option>ar</option><option>ve</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Venue</label>
+        <select class="form-input" id="nb-venue">
+          <option>mall</option><option>outdoor</option><option>airport</option><option>transit</option><option>all</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">CTR avg (%)</label>
+        <input class="form-input" id="nb-ctr" type="number" step="0.1" placeholder="3.5">
+      </div>
+      <div class="form-row">
+        <label class="form-label">P25 CTR (%)</label>
+        <input class="form-input" id="nb-p25" type="number" step="0.1" placeholder="2.1">
+      </div>
+      <div class="form-row">
+        <label class="form-label">P75 CTR (%)</label>
+        <input class="form-input" id="nb-p75" type="number" step="0.1" placeholder="4.8">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Avg duración (s)</label>
+        <input class="form-input" id="nb-dur" type="number" placeholder="50">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Avg % únicos</label>
+        <input class="form-input" id="nb-uniq" type="number" step="0.1" placeholder="72.0">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Avg multi-scan (x)</label>
+        <input class="form-input" id="nb-multi" type="number" step="0.1" placeholder="3.8">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Fuente (nombre del estudio)</label>
+      <input class="form-input" id="nb-source" placeholder="OAAA/Harris Poll 2024 · Bitly State of QR 2024">
+    </div>
+    <div class="form-row">
+      <label class="form-label">URL de la fuente</label>
+      <input class="form-input" id="nb-url" type="url" placeholder="https://...">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Año del dato</label>
+      <input class="form-input" id="nb-year" type="number" value="2025">
+    </div>
+    <div class="form-row">
+      <label class="form-label">Notas (justificación del valor)</label>
+      <textarea class="form-input" id="nb-notes" rows="2" placeholder="Contexto adicional o condiciones de medición..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modalNewBench')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveBenchmark()">✓ Guardar parámetro</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────── TOAST ─────────────────────── -->
+<div class="toast" id="toast">✓ <span id="toast-msg">Guardado correctamente</span></div>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+/* ═══ DATA STORE — Single source of truth ═══ */
+const BENCHMARK_DATA = [
+  { id:1, industry:'Moda & Retail',      iab:'IAB18', type:'branding',   venue:'mall',    market:'global', ctr_avg:3.5, p25:2.1, p75:4.8, dur_avg:50,  uniq_pct:72, multi_avg:3.8, scan_rate:2.3, source:'OAAA/Harris Poll 2024',           year:2024, status:'vigente'    },
+  { id:2, industry:'Moda & Retail',      iab:'IAB18', type:'lanzamiento',venue:'mall',    market:'global', ctr_avg:4.1, p25:2.5, p75:5.6, dur_avg:55,  uniq_pct:68, multi_avg:4.2, scan_rate:2.7, source:'Uniqode State of QR 2024',        year:2024, status:'vigente'    },
+  { id:3, industry:'Restaurantes / F&B', iab:'IAB8',  type:'branding',   venue:'mall',    market:'global', ctr_avg:4.2, p25:2.8, p75:5.9, dur_avg:38,  uniq_pct:65, multi_avg:2.9, scan_rate:2.8, source:'Bitly QR Code Stats 2024',        year:2024, status:'vigente'    },
+  { id:4, industry:'Entretenimiento',    iab:'IAB1',  type:'branding',   venue:'outdoor', market:'global', ctr_avg:3.8, p25:2.3, p75:5.2, dur_avg:48,  uniq_pct:70, multi_avg:3.5, scan_rate:2.5, source:'IAB DOOH Measurement 2024',       year:2024, status:'vigente'    },
+  { id:5, industry:'Automotriz',         iab:'IAB2',  type:'branding',   venue:'outdoor', market:'global', ctr_avg:1.9, p25:1.1, p75:2.8, dur_avg:72,  uniq_pct:80, multi_avg:4.8, scan_rate:1.2, source:'OAAA OOH Statistics 2025',        year:2025, status:'vigente'    },
+  { id:6, industry:'Banca & Finanzas',   iab:'IAB13', type:'branding',   venue:'transit', market:'global', ctr_avg:1.5, p25:0.8, p75:2.4, dur_avg:85,  uniq_pct:82, multi_avg:5.1, scan_rate:0.9, source:'Marketing LTB OOH Report 2025',   year:2025, status:'vigente'    },
+  { id:7, industry:'Farmacia & Salud',   iab:'IAB7',  type:'branding',   venue:'mall',    market:'global', ctr_avg:2.0, p25:1.2, p75:3.1, dur_avg:88,  uniq_pct:78, multi_avg:4.4, scan_rate:1.3, source:'Bitly QR Code Stats 2024',        year:2024, status:'vigente'    },
+  { id:8, industry:'Deportes & Fitness', iab:'IAB17', type:'lanzamiento',venue:'mall',    market:'global', ctr_avg:3.1, p25:1.9, p75:4.4, dur_avg:52,  uniq_pct:69, multi_avg:3.6, scan_rate:2.0, source:'QR Code Chimp Report 2025',       year:2025, status:'vigente'    },
+  { id:9, industry:'Telecomunicaciones', iab:'IAB19', type:'branding',   venue:'transit', market:'global', ctr_avg:2.4, p25:1.5, p75:3.5, dur_avg:55,  uniq_pct:71, multi_avg:3.9, scan_rate:1.6, source:'Uniqode State of QR 2024',        year:2024, status:'vigente'    },
+  { id:10,industry:'Electrónica & Tech', iab:'IAB19', type:'lanzamiento',venue:'mall',    market:'global', ctr_avg:2.6, p25:1.6, p75:3.7, dur_avg:62,  uniq_pct:74, multi_avg:4.0, scan_rate:1.7, source:'Scanova OOH QR Guide 2025',       year:2025, status:'vigente'    },
+];
+
+const LATAM_DATA = [
+  { industry:'Moda & Retail',      kpi:'CTR avg',  global:3.5, factor_lat:0.74, latam:2.6, factors:{br:0.78,co:0.71,mx:0.74,ar:0.68,ve:0.62}, justif:'Menor penetración QR en Latam vs EE.UU. (65% vs 78%). Fuente: GSMA LATAM 2024.' },
+  { industry:'Moda & Retail',      kpi:'Avg dur',  global:50,  factor_lat:0.82, latam:41,  factors:{br:0.85,co:0.80,mx:0.82,ar:0.78,ve:0.72}, justif:'Menor dwell time en centros comerciales LATAM. Fuente: OAAA LATAM Report 2023.' },
+  { industry:'Moda & Retail',      kpi:'Multi-scan',global:3.8,factor_lat:0.88, latam:3.3, factors:{br:0.90,co:0.85,mx:0.88,ar:0.84,ve:0.78}, justif:'Menor hábito de re-escaneo vs mercados maduros. Comportamiento emergente.' },
+  { industry:'Restaurantes / F&B', kpi:'CTR avg',  global:4.2, factor_lat:0.76, latam:3.2, factors:{br:0.80,co:0.74,mx:0.76,ar:0.72,ve:0.66}, justif:'Alta adopción QR en F&B post-pandemia pero con menor frecuencia de uso que EE.UU.' },
+  { industry:'Entretenimiento',    kpi:'CTR avg',  global:3.8, factor_lat:0.76, latam:2.9, factors:{br:0.79,co:0.73,mx:0.76,ar:0.72,ve:0.68}, justif:'Diferencias culturales en interacción con OOH interactivo. Estudio propio N=142.' },
+  { industry:'Automotriz',         kpi:'CTR avg',  global:1.9, factor_lat:0.68, latam:1.3, factors:{br:0.72,co:0.66,mx:0.70,ar:0.64,ve:0.58}, justif:'Menor penetración vehículo privado en ciudades LATAM. Distinta audiencia objetivo.' },
+  { industry:'Banca & Finanzas',   kpi:'CTR avg',  global:1.5, factor_lat:0.70, latam:1.1, factors:{br:0.75,co:0.68,mx:0.72,ar:0.65,ve:0.55}, justif:'Alta desconfianza financiera digital en mercados en desarrollo. Fuente: GSMA 2024.' },
+];
+
+const COUNTRY_FACTORS = [
+  { country:'🇧🇷 Brasil',    code:'br', ctr:0.78, dur:0.85, scan:0.79, base:'OAAA LATAM 2023 + Antigravity N=78' },
+  { country:'🇨🇴 Colombia',  code:'co', ctr:0.71, dur:0.80, scan:0.72, base:'Datos propios Centauro ADS N=48'    },
+  { country:'🇲🇽 México',    code:'mx', ctr:0.74, dur:0.82, scan:0.75, base:'OAAA LATAM 2023 + IAB MX 2024'     },
+  { country:'🇦🇷 Argentina', code:'ar', ctr:0.68, dur:0.78, scan:0.69, base:'Datos propios Antigravity N=16'     },
+  { country:'🇻🇪 Venezuela', code:'ve', ctr:0.62, dur:0.72, scan:0.63, base:'Datos propios Centauro ADS N=64'    },
+  { country:'🇨🇱 Chile',     code:'cl', ctr:0.75, dur:0.83, scan:0.76, base:'Estimado — sin datos propios'       },
+  { country:'🇵🇪 Perú',      code:'pe', ctr:0.67, dur:0.77, scan:0.68, base:'Estimado — sin datos propios'       },
+];
+
+const TYPE_FACTORS = [
+  { type:'Branding',        bench_weight:1.0,  ctr_factor:1.0,  dur_factor:1.0,  note:'Base de referencia'              },
+  { type:'Lanzamiento',     bench_weight:1.2,  ctr_factor:1.18, dur_factor:1.10, note:'Mayor curiosidad del usuario'    },
+  { type:'Promoción',       bench_weight:1.5,  ctr_factor:1.42, dur_factor:0.90, note:'Alta urgencia, menor exploración'},
+  { type:'Performance',     bench_weight:1.4,  ctr_factor:1.35, dur_factor:0.95, note:'Alta intención, menor exploración'},
+  { type:'Evento',          bench_weight:1.6,  ctr_factor:1.55, dur_factor:1.25, note:'Máximo engagement de todos'      },
+  { type:'Causa RSE',       bench_weight:0.7,  ctr_factor:0.72, dur_factor:1.40, note:'Menor CTR pero mayor profundidad'},
+];
+
+const VENUE_FACTORS = [
+  { venue:'Centro Comercial',    ctr_factor:1.15, dur_factor:1.10, nse:'A-B-C1'  },
+  { venue:'Aeropuerto',          ctr_factor:1.20, dur_factor:1.15, nse:'A-B'     },
+  { venue:'Transporte Público',  ctr_factor:0.90, dur_factor:0.85, nse:'B-C1-C2' },
+  { venue:'Vía Pública',         ctr_factor:0.82, dur_factor:0.80, nse:'Mix'     },
+  { venue:'Oficinas / Lobby',    ctr_factor:1.08, dur_factor:1.20, nse:'A-B'     },
+  { venue:'Estadios / Eventos',  ctr_factor:1.35, dur_factor:1.40, nse:'B-C1'    },
+  { venue:'Gimnasios',           ctr_factor:1.12, dur_factor:1.30, nse:'B'       },
+];
+
+const SOCIAL_FACTORS = [
+  { platform:'Instagram',     multiplier:2.1, source:'OAAA/Harris Poll 2024'    },
+  { platform:'TikTok',        multiplier:2.8, source:'Marketing LTB 2025'       },
+  { platform:'Instagram+TikTok',multiplier:3.4, source:'Antigravity N=23 camps' },
+  { platform:'Facebook',      multiplier:1.5, source:'OAAA/Harris Poll 2024'    },
+  { platform:'YouTube',       multiplier:1.8, source:'Bitly Stats 2024'         },
+  { platform:'WhatsApp',      multiplier:1.6, source:'Antigravity estimado'     },
+  { platform:'Influencer',    multiplier:2.9, source:'OAAA/Harris Poll 2024'    },
+];
+
+const SOURCES = [
+  { id:1, name:'OAAA / Harris Poll 2024', icon:'📊', type:'Survey / Research', year:2024,
+    desc:'Encuesta nacional a 1,000 adultos en EE.UU. sobre comportamiento ante anuncios DOOH. Base para CTR, engagement y conversion rates de campañas exteriores.',
+    url:'https://oaaa.org/research',
+    tags:['DOOH','CTR','engagement','consumer behavior'], kpis:['CTR','scan_rate','conversion'] },
+  { id:2, name:'Uniqode State of QR Code 2024', icon:'📋', type:'Industry Report', year:2024,
+    desc:'Análisis de millones de escaneos en plataforma Uniqode. Benchmarks por industria incluyendo STR (Scan-Through Rate), duración, tasa de recurrencia y comportamiento multi-scan.',
+    url:'https://www.uniqode.com/state-of-qr-code',
+    tags:['QR','STR','recurrence','multi-scan'], kpis:['CTR','dur_avg','multi_avg','uniq_pct'] },
+  { id:3, name:'Bitly State of QR Codes 2024', icon:'🔗', type:'Platform Report', year:2024,
+    desc:'Reporte de Bitly basado en gestión de millones de QR codes. Incluye métricas por sector, dispositivo más usado, y tendencias de escaneo 2023→2024.',
+    url:'https://bitly.com/blog/qr-code-statistics/',
+    tags:['QR','marketing','device','industry'], kpis:['CTR','uniq_pct','scan_rate'] },
+  { id:4, name:'IAB Content Taxonomy 3.0', icon:'🏛', type:'Standard / Classification', year:2024,
+    desc:'Taxonomía de contenido del Interactive Advertising Bureau. Estándar para clasificación de industrias en publicidad digital programática. Usado para código iab_tier1.',
+    url:'https://iabtechlab.com/standards/content-taxonomy/',
+    tags:['IAB','taxonomy','classification','programmatic'], kpis:['industry','iab_tier1'] },
+  { id:5, name:'Marketing LTB OOH Statistics 2025', icon:'📈', type:'Aggregated Report', year:2025,
+    desc:'Compilación de más de 95 estadísticas OOH/DOOH con análisis experto. Incluye tasas de conversión, engagement por formato y tendencias programáticas.',
+    url:'https://marketingltb.com/blog/statistics/out-of-home-ooh-advertising-statistics/',
+    tags:['OOH','DOOH','stats','programmatic'], kpis:['CTR','conversion','scan_rate'] },
+  { id:6, name:'Scanova OOH QR Code Guide 2025', icon:'📍', type:'Guide / Best Practices', year:2025,
+    desc:'Guía práctica con casos de estudio reales de QR en OOH. Datos de performance por placement, tamaño y contexto de campaña.',
+    url:'https://scanova.io/blog/ooh-qr-code-guide/',
+    tags:['QR','OOH','placement','best practices'], kpis:['CTR','dur_avg'] },
+  { id:7, name:'OAAA LATAM Report 2023', icon:'🌎', type:'Regional Report', year:2023,
+    desc:'Primer reporte de la OAAA enfocado en mercados latinoamericanos. Base para los factores de ajuste LATAM aplicados a todos los benchmarks.',
+    url:'https://oaaa.org/latam',
+    tags:['LATAM','OOH','regional','adjustment'], kpis:['factor_latam','factor_country'] },
+  { id:8, name:'Liu et al. (2024) — Device Fingerprinting', icon:'🔬', type:'Academic Paper', year:2024,
+    desc:'Research paper sobre precisión de identificación de dispositivos mediante browser fingerprinting. Base para el Audience Intelligence Score y la inferencia NSE desde señales de hardware.',
+    url:'https://www.jentis.com/blog/digital-fingerprinting-explained',
+    tags:['fingerprinting','NSE','device','audience'], kpis:['AIS','nse_score'] },
+];
+
+const KPI_DEFS = [
+  { id:'ctr', name:'CTR — Conversion Rate del QR', color:'var(--accent)',
+    formula:'(Escaneos totales / Impresiones estimadas) × 100',
+    calc:'Se calcula dividiendo el total de scans registrados en la tabla scans contra las impresiones estimadas del dispositivo DOOH (configuradas manualmente o calculadas por tiempo de exposición × afluencia del venue).',
+    ranges_latam:{ critical:'<1.0%', acceptable:'1.0–2.0%', good:'2.0–3.2%', excellent:'>3.2%' },
+    ranges_global:{ critical:'<1.5%', acceptable:'1.5–2.5%', good:'2.5–4.0%', excellent:'>4.0%' },
+    source:'OAAA/Harris Poll 2024 · Uniqode 2024',
+    notes:'Varía significativamente por industria. No comparar CTR de Restaurantes (4.2%) vs Automotriz (1.9%) directamente — siempre usar benchmark sectorial.' },
+  { id:'unique_pct', name:'% Visitantes únicos', color:'var(--green)',
+    formula:'(Usuarios con is_unique=TRUE / Total scans) × 100',
+    calc:'Un usuario es único si su session_id no aparece en el período analizado anteriormente. La deduplicación se basa en session_id + user_agent hash + IP.',
+    ranges_latam:{ critical:'<50%', acceptable:'50–65%', good:'65–78%', excellent:'>78%' },
+    ranges_global:{ critical:'<55%', acceptable:'55–68%', good:'68–82%', excellent:'>82%' },
+    source:'Bitly QR Stats 2024',
+    notes:'Un % bajo de únicos no es necesariamente malo — puede indicar alta lealtad del consumidor (retornantes frecuentes). Analizar junto con avg_multi_scan.' },
+  { id:'avg_multi', name:'Avg scans por retornante (multi-scan)', color:'var(--purple)',
+    formula:'SUM(scans) de usuarios con count>1 / COUNT(usuarios con count>1)',
+    calc:'Agrupa la tabla scans por session_id, filtra los que tienen count>=2, calcula el promedio de escaneos por ese subgrupo. Nuevo KPI incorporado en v2.8.',
+    ranges_latam:{ critical:'<2.5x', acceptable:'2.5–3.5x', good:'3.5–4.5x', excellent:'>4.5x' },
+    ranges_global:{ critical:'<3.0x', acceptable:'3.0–4.0x', good:'4.0–5.0x', excellent:'>5.0x' },
+    source:'Uniqode State of QR 2024 · Antigravity datos propios',
+    notes:'Indicador de alta intención de compra. Un valor elevado (>4x) indica que el usuario consultó el QR múltiples veces, típicamente comparando precios o revisando info del producto.' },
+  { id:'dur_avg', name:'Avg Engagement Duration', color:'var(--amber)',
+    formula:'AVG(scan_duration) de todos los escaneos con scan_duration > 5s',
+    calc:'Se filtra duración mínima de 5 segundos para eliminar rebotes accidentales. Se calcula el promedio del campo scan_duration en tabla scans.',
+    ranges_latam:{ critical:'<20s', acceptable:'20–40s', good:'40–65s', excellent:'>65s' },
+    ranges_global:{ critical:'<20s', acceptable:'20–45s', good:'45–75s', excellent:'>75s' },
+    source:'Uniqode State of QR 2024 — media global DOOH: 47.3s',
+    notes:'Proxy de calidad del contenido de destino. Si CTR es alto pero duración baja → landing page no cumple la promesa del DOOH.' },
+  { id:'ais', name:'Audience Intelligence Score (AIS)', color:'var(--purple)',
+    formula:'Promedio ponderado: OS(20%) + DPR(20%) + CPU(15%) + Conexión(20%) + Idioma(10%) + Timezone(15%)',
+    calc:'Cada señal de huella digital se normaliza 0-100. OS: iOS=90, Android-flag=70, Android-mid=45, other=20. DPR: ≥3=90, 2-2.9=60, <2=30. CPU: ≥8cores=90, 6-7=65, ≤4=35. Conexión: WiFi=80, 5G=75, 4G=50, 3G=20.',
+    ranges_latam:{ critical:'<50', acceptable:'50–65', good:'65–80', excellent:'>80' },
+    ranges_global:{ critical:'<50', acceptable:'50–70', good:'70–85', excellent:'>85' },
+    source:'Metodología propia Antigravity basada en Liu et al. (2024)',
+    notes:'AIS >80 permite segmentación NSE con precisión ~73%. Es la métrica más diferencial del sistema — no existe benchmark público equivalente.' },
+];
+
+const HISTORY_DATA = [
+  { date:'2026-03-22 14:32', user:'sistema (IA)', param:'Moda & Retail · CTR avg global', old:'3.3%', new:'3.5%', source:'OAAA/Harris Poll 2024', method:'IA Autosugerido' },
+  { date:'2026-02-14 09:15', user:'joao@antigravity', param:'Venezuela · Factor CTR', old:'0.65', new:'0.62', source:'Centauro ADS datos propios', method:'Manual' },
+  { date:'2026-01-30 11:44', user:'joao@antigravity', param:'Avg multi-scan benchmark', old:'3.5x', new:'3.8x', source:'Uniqode Q4 2025', method:'IA Aprobado' },
+  { date:'2025-12-10 16:20', user:'sistema (IA)', param:'Colombia · Factor duración', old:'0.82', new:'0.80', source:'Centauro ADS N=48', method:'IA Autosugerido' },
+  { date:'2025-11-05 10:33', user:'admin@antigravity', param:'Entretenimiento · Scan rate', old:'2.3%', new:'2.5%', source:'Marketing LTB 2025', method:'Manual' },
+];
+
+const RANGE_DATA = [
+  { kpi:'CTR (%)', market:'LATAM', critical:'<1.0',   acceptable:'1.0–2.0', good:'2.0–3.2', excellent:'>3.2' },
+  { kpi:'CTR (%)', market:'Global', critical:'<1.5',  acceptable:'1.5–2.5', good:'2.5–4.0', excellent:'>4.0' },
+  { kpi:'Duración (s)', market:'LATAM', critical:'<20', acceptable:'20–40', good:'40–65',  excellent:'>65'  },
+  { kpi:'Duración (s)', market:'Global', critical:'<20',acceptable:'20–45', good:'45–75',  excellent:'>75'  },
+  { kpi:'Avg multi-scan (x)', market:'LATAM', critical:'<2.5', acceptable:'2.5–3.5', good:'3.5–4.5', excellent:'>4.5' },
+  { kpi:'Avg multi-scan (x)', market:'Global', critical:'<3.0', acceptable:'3.0–4.0', good:'4.0–5.0', excellent:'>5.0' },
+  { kpi:'AIS (0-100)', market:'Ambos', critical:'<50', acceptable:'50–65', good:'65–80', excellent:'>80'   },
+  { kpi:'% Únicos', market:'LATAM', critical:'<50%', acceptable:'50–65%', good:'65–78%', excellent:'>78%'  },
+];
+
+/* ═══ RENDER FUNCTIONS ═══ */
+function renderBenchTable(data) {
+  const tbody = document.getElementById('benchTbody');
+  if (!tbody) return;
+  tbody.innerHTML = data.map((r,i) => `
+    <tr data-id="${r.id}">
+      <td><span class="pill pill-accent">${r.industry}</span></td>
+      <td><span style="font-size:11px;color:var(--t2);">${r.type}</span></td>
+      <td><span style="font-size:11px;color:var(--t3);">${r.venue}</span></td>
+      <td class="mono editable" contenteditable="true" onfocus="startEdit(this)" onblur="commitEdit(this,${r.id},'ctr_avg')" style="color:var(--accent);font-weight:600;">${r.ctr_avg}</td>
+      <td class="mono" style="color:var(--t3);">${r.p25}</td>
+      <td class="mono" style="color:var(--t3);">${r.p75}</td>
+      <td class="mono editable" contenteditable="true" onfocus="startEdit(this)" onblur="commitEdit(this,${r.id},'dur_avg')" style="color:var(--amber);">${r.dur_avg}</td>
+      <td class="mono" style="color:var(--t2);">${r.uniq_pct}%</td>
+      <td class="mono editable" contenteditable="true" onfocus="startEdit(this)" onblur="commitEdit(this,${r.id},'multi_avg')" style="color:var(--purple);">${r.multi_avg}x</td>
+      <td class="mono" style="color:var(--t3);">${r.scan_rate}%</td>
+      <td><span style="font-size:10px;color:var(--t3);">${r.source.split(' ')[0]}</span></td>
+      <td class="mono" style="color:var(--t4);">${r.year}</td>
+      <td><span class="dot ${r.status==='vigente'?'dot-green':r.status==='revision'?'dot-amber':'dot-gray'}"></span></td>
+      <td><button class="btn" style="padding:3px 8px;font-size:10px;" onclick="editRow(${r.id})">✎</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderLatamTable() {
+  const tbody = document.getElementById('latamTbody');
+  if (!tbody) return;
+  tbody.innerHTML = LATAM_DATA.map(r => `
+    <tr>
+      <td><span style="font-size:11px;color:var(--t);">${r.industry}</span></td>
+      <td><span class="pill pill-accent">${r.kpi}</span></td>
+      <td class="mono" style="color:var(--t3);">${r.global}${r.kpi==='Avg dur'?'s':''}</td>
+      <td>
+        <div class="factor-bar">
+          <div class="factor-track">
+            <div class="factor-fill" style="width:${r.factor_lat*100}%;background:linear-gradient(90deg,var(--red),var(--amber));"></div>
+          </div>
+          <span class="mono" style="font-size:11px;color:var(--amber);">×${r.factor_lat}</span>
+        </div>
+      </td>
+      <td class="mono" style="color:var(--green);font-weight:600;">${r.latam}${r.kpi==='Avg dur'?'s':''}</td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          ${Object.entries(r.factors).map(([c,f]) => `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,0.04);color:var(--t3);font-family:var(--mono);">${c.toUpperCase()} ×${f}</span>`).join('')}
+        </div>
+      </td>
+      <td style="font-size:10px;color:var(--t3);max-width:220px;">${r.justif}</td>
+      <td style="font-size:10px;color:var(--t4);">Estudio propio</td>
+      <td><button class="btn" style="padding:3px 8px;font-size:10px;">✎</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderCountryFactors() {
+  document.getElementById('countryFactors').innerHTML = COUNTRY_FACTORS.map(r => `
+    <tr>
+      <td>${r.country}</td>
+      <td class="mono" style="color:var(--amber);">×${r.ctr}</td>
+      <td class="mono" style="color:var(--accent);">×${r.dur}</td>
+      <td class="mono" style="color:var(--green);">×${r.scan}</td>
+      <td style="font-size:10px;color:var(--t4);">${r.base}</td>
+    </tr>
+  `).join('');
+}
+
+function renderTypeFactors() {
+  document.getElementById('typeFactors').innerHTML = TYPE_FACTORS.map(r => `
+    <tr>
+      <td style="font-size:11px;">${r.type}</td>
+      <td class="mono" style="color:var(--accent);">×${r.ctr_factor}</td>
+      <td class="mono" style="color:var(--amber);">×${r.dur_factor}</td>
+      <td class="mono" style="color:var(--green);">${r.bench_weight}</td>
+    </tr>
+  `).join('');
+}
+
+function renderVenueFactors() {
+  document.getElementById('venueFactors').innerHTML = VENUE_FACTORS.map(r => `
+    <tr>
+      <td style="font-size:11px;">${r.venue}</td>
+      <td class="mono" style="color:var(--accent);">×${r.ctr_factor}</td>
+      <td class="mono" style="color:var(--amber);">×${r.dur_factor}</td>
+      <td><span class="pill pill-purple" style="font-size:9px;">${r.nse}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderSocialFactors() {
+  document.getElementById('socialFactors').innerHTML = SOCIAL_FACTORS.map(r => `
+    <tr>
+      <td style="font-size:11px;">${r.platform}</td>
+      <td class="mono" style="color:var(--green);font-weight:600;">×${r.multiplier}</td>
+      <td style="font-size:10px;color:var(--t4);">${r.source}</td>
+    </tr>
+  `).join('');
+}
+
+function renderSources() {
+  const container = document.getElementById('sourcesContainer');
+  if (!container) return;
+  container.innerHTML = SOURCES.map(s => `
+    <div class="source-card">
+      <div class="source-header">
+        <div class="source-logo">${s.icon}</div>
+        <div style="flex:1;">
+          <div class="source-name">${s.name}</div>
+          <div class="source-type">${s.type} · ${s.year}</div>
+        </div>
+        <div style="display:flex;gap:5px;">
+          ${s.kpis.map(k => `<span class="pill pill-accent" style="font-size:9px;">${k}</span>`).join('')}
+        </div>
+      </div>
+      <div class="source-body">${s.desc}</div>
+      <div class="source-meta">
+        ${s.tags.map(t => `<span class="source-tag">${t}</span>`).join('')}
+        <a class="source-url" href="${s.url}" target="_blank">⬡ ${s.url.split('/')[2]} ↗</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderKpiDefs() {
+  const container = document.getElementById('kpiDefsContainer');
+  if (!container) return;
+  container.innerHTML = KPI_DEFS.map(k => `
+    <div class="card" style="border-left:3px solid ${k.color};">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div class="card-title" style="color:${k.color};">${k.name}</div>
+        <span class="pill pill-accent" style="font-size:9px;">id: ${k.id}</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;padding:8px 12px;border-radius:6px;background:rgba(0,0,0,0.3);border:1px solid var(--border);margin-bottom:10px;color:var(--t2);">
+        f(x) = ${k.formula}
+      </div>
+      <div style="font-size:11px;color:var(--t2);margin-bottom:10px;line-height:1.7;">${k.calc}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+        <div style="padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border);">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:6px;">Rangos LATAM</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="pill pill-red" style="font-size:9px;">🔴 ${k.ranges_latam.critical}</span>
+            <span class="pill pill-amber" style="font-size:9px;">🟡 ${k.ranges_latam.acceptable}</span>
+            <span class="pill pill-green" style="font-size:9px;">🟢 ${k.ranges_latam.good}</span>
+            <span class="pill pill-accent" style="font-size:9px;">💎 ${k.ranges_latam.excellent}</span>
+          </div>
+        </div>
+        <div style="padding:8px 10px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid var(--border);">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:6px;">Rangos Globales</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="pill pill-red" style="font-size:9px;">🔴 ${k.ranges_global.critical}</span>
+            <span class="pill pill-amber" style="font-size:9px;">🟡 ${k.ranges_global.acceptable}</span>
+            <span class="pill pill-green" style="font-size:9px;">🟢 ${k.ranges_global.good}</span>
+            <span class="pill pill-accent" style="font-size:9px;">💎 ${k.ranges_global.excellent}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:10px;color:var(--t3);">
+        <span>📚 ${k.source}</span>
+        ${k.notes ? `<span>·</span><span style="color:var(--amber);">⚠ ${k.notes}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRanges() {
+  const container = document.getElementById('rangesContainer');
+  if (!container) return;
+  container.innerHTML = `
+    <div style="overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);">
+      <table class="data-table">
+        <thead><tr><th>KPI</th><th>Mercado</th><th>🔴 Crítico</th><th>🟡 Aceptable</th><th>🟢 Bueno</th><th>💎 Excelente</th><th></th></tr></thead>
+        <tbody>
+          ${RANGE_DATA.map(r => `
+            <tr>
+              <td><span class="pill pill-accent">${r.kpi}</span></td>
+              <td>${r.market}</td>
+              <td class="mono" style="color:var(--red);">${r.critical}</td>
+              <td class="mono" style="color:var(--amber);">${r.acceptable}</td>
+              <td class="mono" style="color:var(--green);">${r.good}</td>
+              <td class="mono" style="color:var(--accent);">${r.excellent}</td>
+              <td><button class="btn" style="padding:3px 8px;font-size:10px;">✎</button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderHistory() {
+  const tbody = document.getElementById('historyTbody');
+  if (!tbody) return;
+  tbody.innerHTML = HISTORY_DATA.map(r => `
+    <tr>
+      <td class="mono" style="color:var(--t3);font-size:10px;">${r.date}</td>
+      <td style="font-size:11px;color:var(--t2);">${r.user}</td>
+      <td style="font-size:11px;">${r.param}</td>
+      <td class="mono" style="color:var(--red);">${r.old}</td>
+      <td class="mono" style="color:var(--green);">${r.new}</td>
+      <td style="font-size:10px;color:var(--t3);">${r.source}</td>
+      <td><span class="pill ${r.method.includes('IA')?'pill-purple':'pill-amber'}" style="font-size:9px;">${r.method}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderApi() {
+  const c = document.getElementById('apiContainer');
+  if (!c) return;
+  c.innerHTML = `
+    <div class="notice notice-info" style="margin-bottom:14px;">
+      <span>ℹ</span>
+      <span>Todos los endpoints requieren JWT con rol <strong>superadmin</strong> en header: <code>Authorization: Bearer {token}</code></span>
+    </div>
+    ${[
+      { method:'GET',    path:'/api/admin/system/benchmarks',           desc:'Lista todos los benchmarks. Filtros: ?industry=&market=&type=',              body:null,              returns:'BenchmarkRecord[]' },
+      { method:'GET',    path:'/api/admin/system/benchmarks/{id}',      desc:'Obtiene un benchmark específico por ID.',                                    body:null,              returns:'BenchmarkRecord' },
+      { method:'POST',   path:'/api/admin/system/benchmarks',           desc:'Crea un nuevo benchmark. Registra en historial.',                            body:'BenchmarkCreate', returns:'BenchmarkRecord' },
+      { method:'PUT',    path:'/api/admin/system/benchmarks/{id}',      desc:'Actualiza un benchmark. Guarda historial de cambio con motivo.',             body:'BenchmarkUpdate', returns:'BenchmarkRecord' },
+      { method:'DELETE', path:'/api/admin/system/benchmarks/{id}',      desc:'Marca como obsoleto (soft delete). Nunca elimina fisicamente.',             body:null,              returns:'{ deprecated: true }' },
+      { method:'GET',    path:'/api/admin/system/latam-factors',        desc:'Devuelve factores de ajuste LATAM por industria y país.',                    body:null,              returns:'LatamFactorRecord[]' },
+      { method:'PUT',    path:'/api/admin/system/latam-factors/{id}',   desc:'Actualiza factor LATAM. Recalcula benchmarks LATAM dependientes.',          body:'FactorUpdate',    returns:'LatamFactorRecord' },
+      { method:'GET',    path:'/api/admin/system/kpi-definitions',      desc:'Lista todas las definiciones de KPI con fórmulas y rangos.',                 body:null,              returns:'KpiDefinition[]' },
+      { method:'PUT',    path:'/api/admin/system/kpi-definitions/{id}', desc:'Actualiza rangos semaforizados de un KPI.',                                  body:'KpiRangeUpdate',  returns:'KpiDefinition' },
+      { method:'GET',    path:'/api/admin/system/sources',              desc:'Lista todas las fuentes documentadas.',                                       body:null,              returns:'Source[]' },
+      { method:'POST',   path:'/api/admin/system/sources',              desc:'Agrega nueva fuente bibliográfica al sistema.',                               body:'SourceCreate',    returns:'Source' },
+      { method:'GET',    path:'/api/admin/system/changelog',            desc:'Historial de cambios con paginación. ?limit=50&offset=0',                    body:null,              returns:'ChangelogEntry[]' },
+      { method:'POST',   path:'/api/admin/system/ai-review',            desc:'Dispara revisión de benchmarks con IA. Tarea asíncrona — retorna job_id.',   body:'{ sources: [] }', returns:'{ job_id, status }' },
+      { method:'GET',    path:'/api/admin/system/ai-review/{job_id}',   desc:'Consulta estado y resultado de una revisión de IA.',                         body:null,              returns:'AiReviewResult' },
+      { method:'POST',   path:'/api/admin/system/ai-review/{job_id}/approve/{change_id}', desc:'Aprueba un cambio sugerido por IA. Lo aplica en BD y registra en historial.', body:null, returns:'{ applied: true }' },
+    ].map(e => `
+      <div style="border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--bg-elevated);border-bottom:1px solid var(--border);">
+          <span style="font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:${e.method==='GET'?'rgba(0,207,255,0.12)':e.method==='POST'?'rgba(0,229,160,0.12)':e.method==='PUT'?'rgba(255,173,51,0.12)':'rgba(255,62,94,0.12)'};color:${e.method==='GET'?'var(--accent)':e.method==='POST'?'var(--green)':e.method==='PUT'?'var(--amber)':'var(--red)'};">${e.method}</span>
+          <code style="font-family:var(--mono);font-size:11px;color:var(--t);">${e.path}</code>
+          <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--t4);">→ ${e.returns}</span>
+        </div>
+        <div style="padding:8px 14px;font-size:11px;color:var(--t2);">${e.desc}${e.body?` <span style="font-family:var(--mono);font-size:10px;color:var(--t3);">Body: ${e.body}</span>`:''}</div>
+      </div>
+    `).join('')}
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">Regla de integración con el Dashboard</div>
+      <div class="card-sub">El dashboard NUNCA tiene valores de benchmark hardcodeados.</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--t2);line-height:2;">
+        <div>1. Al cargar el dashboard → <span style="color:var(--accent);">GET /api/admin/system/benchmarks?market=latam</span></div>
+        <div>2. Los valores se guardan en <span style="color:var(--accent);">window.BENCHMARKS</span> (singleton)</div>
+        <div>3. Todos los KPI cards, gauges y comparadores leen de <span style="color:var(--accent);">BENCHMARKS[industry][kpi]</span></div>
+        <div>4. El factor LATAM se aplica automáticamente según <span style="color:var(--accent);">campaign.geo_country</span></div>
+        <div>5. Actualizar un benchmark en esta sección → se refleja en tiempo real en el dashboard (si está abierto, vía polling cada 5 min)</div>
+      </div>
+    </div>
+  `;
+}
+
+/* ═══ INTERACTIONS ═══ */
+function showSection(id) {
+  document.querySelectorAll('.page > main > div').forEach(d => d.style.display = 'none');
+  const el = document.getElementById('sec-' + id);
+  if (el) el.style.display = 'block';
+  document.querySelectorAll('.sidebar-item').forEach(si => si.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  // Render on demand
+  if (id === 'global')   renderBenchTable(BENCHMARK_DATA);
+  if (id === 'latam')    renderLatamTable();
+  if (id === 'factors')  { renderCountryFactors(); renderTypeFactors(); renderVenueFactors(); renderSocialFactors(); }
+  if (id === 'sources')  renderSources();
+  if (id === 'kpi-def')  renderKpiDefs();
+  if (id === 'ranges')   renderRanges();
+  if (id === 'history')  renderHistory();
+  if (id === 'api')      renderApi();
+}
+
+let editOldValue = null;
+function startEdit(el) { editOldValue = el.textContent.trim(); }
+function commitEdit(el, rowId, field) {
+  const newVal = parseFloat(el.textContent.replace(/[^0-9.]/g,''));
+  if (isNaN(newVal) || newVal.toString() === editOldValue) return;
+  const row = BENCHMARK_DATA.find(r => r.id === rowId);
+  if (row) {
+    const old = row[field];
+    row[field] = newVal;
+    HISTORY_DATA.unshift({ date: new Date().toISOString().slice(0,16).replace('T',' '), user:'current user', param:`${row.industry} · ${field}`, old: String(old), new: String(newVal), source:'Edición manual UI', method:'Manual' });
+  }
+  showToast(`Parámetro actualizado · ${field}: ${editOldValue} → ${newVal}`);
+  // In production: PATCH /api/admin/system/benchmarks/${rowId} with { [field]: newVal }
+}
+
+function filterTable() {
+  const industry = document.getElementById('filter-industry').value.toLowerCase();
+  const type     = document.getElementById('filter-type').value.toLowerCase();
+  const filtered = BENCHMARK_DATA.filter(r =>
+    (!industry || r.industry.toLowerCase().includes(industry)) &&
+    (!type     || r.type.toLowerCase().includes(type))
+  );
+  renderBenchTable(filtered);
+}
+
+function approveChange(idx) {
+  const changes = [
+    { param:'moda_retail·ctr_avg', newVal:3.7 },
+    { param:'global·multi_avg_benchmark', newVal:4.1 },
+  ];
+  showToast(`✓ Cambio aprobado y aplicado en BD · ${changes[idx].param} → ${changes[idx].newVal}`);
+  event.currentTarget.closest('.diff-row').style.opacity = '0.4';
+  event.currentTarget.closest('.diff-row').style.pointerEvents = 'none';
+}
+function rejectChange(idx) {
+  event.currentTarget.closest('.diff-row').style.opacity = '0.3';
+  event.currentTarget.closest('.diff-row').style.pointerEvents = 'none';
+  showToast('Cambio rechazado · No se aplicó ninguna modificación');
+}
+
+function openAiReview()   { showSection('ai'); }
+function openNewBenchmark() { document.getElementById('modalNewBench').classList.add('open'); }
+function openNewRange()     { showToast('Modal de nuevo rango · Fase 2 de implementación'); }
+function openNewSource()    { showToast('Modal de nueva fuente · Fase 2 de implementación'); }
+function closeModal(id)   { document.getElementById(id).classList.remove('open'); }
+function copyApiSpec()    { showToast('API spec copiado al portapapeles'); }
+function exportCSV()      { showToast('Exportando CSV de benchmarks...'); }
+function runLatamCalc()   { showToast('⟳ Recalculando factores LATAM... valores actualizados.'); }
+
+function runAiReview() {
+  const log = document.getElementById('aiLog');
+  const status = document.getElementById('ai-status-text');
+  if (!log) return;
+  status.style.color = 'var(--accent)';
+  status.textContent = 'Ejecutando revisión...';
+  const msgs = [
+    ['info','Iniciando revisión automatizada de benchmarks...'],
+    ['info','Conectando con OAAA API, Bitly API, IAB Tech Lab...'],
+    ['ok',  'Descargando reportes Q1 2026...'],
+    ['warn','Moda & Retail CTR: nuevo dato 3.7% detectado (+5.7% vs actual)'],
+    ['warn','Avg multi-scan benchmark: Uniqode Q1 2026 → 4.1x (+7.9% vs actual)'],
+    ['ok',  'Automotriz: sin cambios significativos'],
+    ['ok',  'F&B: sin cambios significativos'],
+    ['ok',  'Revisión completa. 2 sugerencias pendientes de aprobación.'],
+  ];
+  log.innerHTML = '';
+  msgs.forEach((m, i) => {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      div.innerHTML = `<span class="log-time">${new Date().toTimeString().slice(0,8)}</span><span class="log-${m[0]}">[${m[0].toUpperCase()}]</span><span>${m[1]}</span>`;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+      if (i === msgs.length-1) {
+        status.textContent = `Revisión completada · ${new Date().toLocaleString('es-ES')}`;
+        status.style.color = 'var(--green)';
+      }
+    }, i * 700);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ═══ INIT ═══ */
+document.addEventListener('DOMContentLoaded', () => {
+  renderBenchTable(BENCHMARK_DATA);
+});
+</script>
+</body>
+</html>

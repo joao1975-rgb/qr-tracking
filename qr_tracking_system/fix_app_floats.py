@@ -1,18 +1,35 @@
 import re
 
 with open('app.py', 'r', encoding='utf-8') as f:
-    c = f.read()
+    content = f.read()
 
-# Fix floats erroneously string-replaced by device_pixel_ratio and cpu_cores
-c = re.sub(r':\s*device_pixel_ratio', ': 1.0', c)
-c = re.sub(r':\s*cpu_cores', ': 1.0', c)
+# Replace simple ROUND(AVG(x), 2)
+# Example: ROUND(AVG(s.duration_seconds), 2) -> ROUND(CAST(AVG(s.duration_seconds) AS numeric), 2)
+content = re.sub(
+    r"ROUND\(\s*AVG\((.*?)\)\s*,\s*(\d+)\s*\)",
+    r"ROUND(CAST(AVG(\1) AS numeric), \2)",
+    content,
+    flags=re.IGNORECASE
+)
 
-# Fix any stray standalone overrides in dictionary values
-c = c.replace('"scan_rate": device_pixel_ratio', '"scan_rate": 1.0')
-c = c.replace('"scan_rate": cpu_cores', '"scan_rate": 1.0')
-c = c.replace('"bench_weight": device_pixel_ratio', '"bench_weight": 1.0')
+# Replace COALESCE variants: ROUND(COALESCE(AVG(x), 0), 2)
+# Example: ROUND(COALESCE(AVG(s.duration_seconds), 0), 2) -> ROUND(CAST(COALESCE(AVG(s.duration_seconds), 0) AS numeric), 2)
+content = re.sub(
+    r"ROUND\(\s*COALESCE\(\s*AVG\((.*?)\)\s*,\s*0\s*\)\s*,\s*(\d+)\s*\)",
+    r"ROUND(CAST(COALESCE(AVG(\1), 0) AS numeric), \2)",
+    content,
+    flags=re.IGNORECASE
+)
+
+# Replace any lingering ROUND(avg_duration, 2) where avg_duration might be a float
+content = re.sub(
+    r"ROUND\(\s*COALESCE\(\s*avg_duration\s*,\s*0\s*\)\s*,\s*(\d+)\s*\)",
+    r"ROUND(CAST(COALESCE(avg_duration, 0) AS numeric), \1)",
+    content,
+    flags=re.IGNORECASE
+)
 
 with open('app.py', 'w', encoding='utf-8') as f:
-    f.write(c)
+    f.write(content)
 
-print("App syntactic floats recompiled!")
+print("Patch applied to app.py")

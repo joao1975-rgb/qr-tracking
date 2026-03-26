@@ -1,21 +1,29 @@
-import urllib.request
-import json
+import paramiko
 
-print("Consultando el servidor Live por HTTP puro...")
-try:
-    req = urllib.request.Request("https://project-qr-tracking.9r85r6.easypanel.host/api/analytics/industry-benchmarks")
-    with urllib.request.urlopen(req) as response:
-        print("Code:", response.getcode())
-        data = json.loads(response.read().decode())
-        print("Datos:", str(data)[:100] + "...")
+def get_live_errors():
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    try:
+        client.connect('167.172.217.151', username='root', password='MERcenta2026!.ds', timeout=10)
         
-    req_html = urllib.request.Request("https://project-qr-tracking.9r85r6.easypanel.host/admin")
-    with urllib.request.urlopen(req_html) as response:
-        html = response.read().decode('utf-8')
-        if 'Industria' in html or 'industry_sub' in html:
-            print("\nUI CHECK: El HTML publico SÍ es la version v2.8 (Industria/Type)!")
-        else:
-            print("\nUI CHECK: El HTML publico ES el viejo formato (v2.7)!")
+        stdin, stdout, stderr = client.exec_command("docker ps --format '{{.Names}}' | grep qr-tracking")
+        container_name = stdout.read().decode().strip().split('\n')[0]
+        
+        if container_name:
+            cmd2 = f"docker exec {container_name} curl -s http://localhost:8080/api/analytics/dashboard"
+            stdin, stdout, stderr = client.exec_command(cmd2)
+            res2 = stdout.read().decode()
+            print("API DASH 8080:", res2[:1000] if len(res2)>1000 else res2)
             
-except Exception as e:
-    print(e)
+            cmd_logs = f"docker logs --tail 20 {container_name}"
+            stdin, stdout, stderr = client.exec_command(cmd_logs)
+            logs = stdout.read().decode()
+            print("DOCKER LOGS:", logs)
+        else:
+            print("NO CONTAINER FOUND")
+            
+    finally:
+        client.close()
+
+if __name__ == '__main__':
+    get_live_errors()

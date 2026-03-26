@@ -1,0 +1,259 @@
+import os
+
+html_content = """<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Premium - QR Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Leaflet JS + CSS for GeoMaps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/dashboard_premium.css">
+</head>
+
+<body>
+    <!-- Abstract Geometry Backgrounds -->
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="dashboard-container">
+        <!-- Banner and Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>📈 Intelligence Hub</h1>
+                <p>Data Analytics & Real-Time Tracking</p>
+            </div>
+            
+            <div class="header-right" style="display: flex; align-items: center; gap: 24px;">
+                <div class="live-pulse">
+                    <div class="pulse-dot"></div>
+                    Conexión En Vivo
+                </div>
+                
+                <button class="filter-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 12px; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px;" onclick="refreshAllData()" id="refreshBtn">
+                    🔄 Sincronizar
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Navigation -->
+        <nav class="nav-pills" style="margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="/" class="nav-pill" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: 20px; color: white; text-decoration: none; font-size: 0.9rem; font-weight: 600; border: 1px solid transparent; transition: all 0.2s;">🏠 Home</a>
+            <a href="/dashboard" class="nav-pill active" style="padding: 8px 16px; background: rgba(0,240,255,0.1); border-radius: 20px; color: var(--accent-primary); text-decoration: none; font-size: 0.9rem; font-weight: 600; border: 1px solid rgba(0,240,255,0.3);">📊 Executive Dashboard</a>
+            <a href="/admin/campaigns" class="nav-pill" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: 20px; color: white; text-decoration: none; font-size: 0.9rem; font-weight: 600;">📋 Gestión Campañas</a>
+            <a href="/devices" class="nav-pill" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: 20px; color: white; text-decoration: none; font-size: 0.9rem; font-weight: 600;">🖥️ Dispositivos DOOH</a>
+            <a href="/reports" class="nav-pill" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: 20px; color: white; text-decoration: none; font-size: 0.9rem; font-weight: 600;">📈 Big Data Reports</a>
+            <a href="/generate-qr" class="nav-pill" style="padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: 20px; color: white; text-decoration: none; font-size: 0.9rem; font-weight: 600;">📱 QR Engine</a>
+        </nav>
+
+        <!-- Bento Grid Main Content -->
+        <div class="bento-grid">
+            
+            <!-- Global Filters Bar -->
+            <div class="filters-bar col-span-12">
+                <div class="filter-group">
+                    <label>Período Inicial</label>
+                    <input type="date" id="filterStartDate" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); color:white; font-family:'JetBrains Mono';">
+                </div>
+                <div class="filter-group">
+                    <label>Período Final</label>
+                    <input type="date" id="filterEndDate" style="width:100%; padding:10px; border-radius:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); color:white; font-family:'JetBrains Mono';">
+                </div>
+                <div class="filter-group">
+                    <label>Filtro de Segmentación Estratégica</label>
+                    <select id="filterCampaign">
+                        <option value="">🎯 Todas las campañas</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Clúster DOOH</label>
+                    <select id="filterDevice">
+                        <option value="">🖥️ Todos los dispositivos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Portafolio Clientes</label>
+                    <select id="filterClient">
+                        <option value="">🏢 Todos los clientes</option>
+                    </select>
+                </div>
+                <button onclick="applyFilters()" style="padding: 12px 24px; background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%); border: none; border-radius: 12px; color: white; font-weight: 800; font-family: 'Plus Jakarta Sans'; font-size: 1rem; cursor: pointer; box-shadow: 0 10px 20px -5px rgba(0,240,255,0.3); transition: transform 0.2s;">
+                    Ejecutar Análisis
+                </button>
+            </div>
+
+            <!-- Row 1: Key Performance Metrics (KPIs) -->
+            <div class="glass-card stat-card col-span-3">
+                <div class="stat-icon icon-blue">🎯</div>
+                <div class="stat-value" id="totalScans">-</div>
+                <div class="stat-label">Impacto Total (Scans)</div>
+            </div>
+            
+            <div class="glass-card stat-card col-span-3">
+                <div class="stat-icon icon-purple">📱</div>
+                <div class="stat-value" id="uniqueDevices">-</div>
+                <div class="stat-label">Audiencia Única</div>
+                <div class="data-badge badge-success" style="position:absolute; top:24px; right:24px;">Growth</div>
+            </div>
+
+            <div class="glass-card stat-card col-span-3">
+                <div class="stat-icon icon-orange">⏱️</div>
+                <div class="stat-value" id="avgDuration">-</div>
+                <div class="stat-label">Time On Site (Promedio)</div>
+            </div>
+
+            <div class="glass-card stat-card col-span-3">
+                <div class="stat-icon icon-green">🖥️</div>
+                <div class="stat-value" id="activeDevices">-</div>
+                <div class="stat-label">Hardware DOOH Activo</div>
+            </div>
+            
+            <!-- Row 2: Advanced Charting Architecture -->
+            <!-- Main Line Chart -->
+            <div class="glass-card col-span-8">
+                <div class="card-title">
+                    <span class="card-title-icon">📊</span> Fluctuación de Tráfico
+                    <select id="chartPeriod" onchange="updateChart()" style="margin-left: auto; width: 150px; padding: 6px; font-size: 0.85rem;">
+                        <option value="24h">Últimas 24h</option>
+                        <option value="7d">Últimos 7 días</option>
+                        <option value="30d">Últimos 30 días</option>
+                    </select>
+                </div>
+                <div class="chart-container-large">
+                    <!-- Canvas Chart.js -->
+                    <canvas id="scansChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Radar Chart: Dispositivos / SO -->
+            <div class="glass-card col-span-4">
+                <div class="card-title">
+                    <span class="card-title-icon">🧬</span> Análisis Tecnológico
+                </div>
+                <div class="chart-container-large">
+                    <!-- Radar or Donut Chart via JS -->
+                    <canvas id="deviceChart"></canvas>
+                </div>
+                <!-- Device Hierarchy Cascade info under chart -->
+                <div id="deviceHierarchy" style="margin-top: 16px; font-size: 0.85rem; color: var(--text-secondary);">
+                    Cargando topología de hardware...
+                </div>
+            </div>
+
+            <!-- Row 3: Insights -->
+            <!-- Geo Map (Leaflet) placeholder -->
+            <div class="glass-card col-span-6">
+                <div class="card-title">
+                    <span class="card-title-icon">🗺️</span> Heatmap Geográfico DOOH
+                </div>
+                <div class="chart-container-medium">
+                    <div id="geoMap"></div>
+                </div>
+            </div>
+
+            <!-- Comparative Analytics Section -->
+            <div class="glass-card col-span-6" style="display: flex; flex-direction: column;">
+                <div class="card-title">
+                    <span class="card-title-icon">🔬</span> Comparative Benchmarks
+                </div>
+                <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <select id="compareSourceCampaign" onchange="loadComparativeData()" style="flex: 1; min-width: 150px; font-size: 0.85rem; padding: 8px;">
+                        <option value="">Seleccionar Campaña Base...</option>
+                    </select>
+                    <select id="compareTargetOption" onchange="loadComparativeData()" style="flex: 1; min-width: 150px; font-size: 0.85rem; padding: 8px;">
+                        <option value="benchmark">Vs Benchmark Industria</option>
+                        <option value="best">Vs Mejor Campaña OOH</option>
+                    </select>
+                </div>
+                
+                <div id="comparativeResults" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                    <h4 id="comparativeSubtitle" style="color: var(--text-muted); text-align: center; margin-bottom: 24px;">Selecciona parámetros para analizar</h4>
+                    <div id="comparativeDeltasGrid" class="comparative-deltas">
+                        <!-- JS injected comparison deltas -->
+                        <div class="delta-card">
+                            <div class="delta-title">Rendimiento (CTR)</div>
+                            <div class="delta-value delta-neutral">--</div>
+                        </div>
+                        <div class="delta-card">
+                            <div class="delta-title">Tasa Conversión</div>
+                            <div class="delta-value delta-neutral">--</div>
+                        </div>
+                        <div class="delta-card">
+                            <div class="delta-title">Engagement T.</div>
+                            <div class="delta-value delta-neutral">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 4: Top Topologies (Mini Tables) -->
+            <div class="glass-card col-span-4">
+                <div class="card-title"><span class="card-title-icon">🏆</span> Gold Campañas</div>
+                <div id="topCampaigns" style="display: flex; flex-direction: column; gap: 12px;">Cargando...</div>
+            </div>
+            
+            <div class="glass-card col-span-4">
+                <div class="card-title"><span class="card-title-icon">📍</span> Top Hardware Node</div>
+                <div id="topPhysicalDevices" style="display: flex; flex-direction: column; gap: 12px;">Cargando...</div>
+            </div>
+
+            <div class="glass-card col-span-4">
+                <div class="card-title"><span class="card-title-icon">🏢</span> Zonas de Mayor Impacto</div>
+                <div id="topVenues" style="display: flex; flex-direction: column; gap: 12px;">Cargando...</div>
+            </div>
+
+
+            <!-- Row 5: Master Data Flow Table (Live Stream) -->
+            <div class="glass-card col-span-12">
+                <div class="card-title" style="justify-content: space-between;">
+                    <span><span class="card-title-icon">🖧</span> Data Flow Stream (Live)</span>
+                    <span id="lastUpdate" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Sincronizando...</span>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Campaña Target</th>
+                                <th>Client Source</th>
+                                <th>Node ID (DOOH)</th>
+                                <th>Device Agent</th>
+                                <th>OS / Red</th>
+                                <th>Time-on-Site</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scansTableBody">
+                            <tr>
+                                <td colspan="8">
+                                    <div class="skeleton skeleton-text"></div>
+                                    <div class="skeleton skeleton-text"></div>
+                                    <div class="skeleton skeleton-text"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integrate JS Logic Files -->
+    <script src="/static/js/dashboard_logic.js"></script>
+</body>
+</html>
+"""
+
+with open('templates/dashboard.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("HTML rewritten to bento grid successfully.")
