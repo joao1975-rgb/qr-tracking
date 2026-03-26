@@ -916,11 +916,11 @@ async def dashboard():
 async def reports_page():
     """Página de reportes por cliente"""
     try:
-        reports_path = os.path.join(TEMPLATES_DIR, "client_reports.html")
+        reports_path = os.path.join(TEMPLATES_DIR, "reports.html")
         with open(reports_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
-        return HTMLResponse("<h1>Reportes</h1><p>Archivo client_reports.html no encontrado en /templates</p><a href='/'>← Volver</a>")
+        return HTMLResponse("<h1>Reportes</h1><p>Archivo reports.html no encontrado en /templates</p><a href='/'>← Volver</a>")
 
 @app.get("/tracking", response_class=HTMLResponse)
 async def tracking_page():
