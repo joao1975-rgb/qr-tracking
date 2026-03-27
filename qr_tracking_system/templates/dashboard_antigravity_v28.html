@@ -319,6 +319,12 @@ body {
   gap: 12px;
   margin-bottom: 12px;
 }
+.kpi-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
 
 .kpi-card {
   background: var(--bg-card);
@@ -1262,7 +1268,7 @@ body {
     <span class="section-title">Métricas de Rendimiento</span>
     <span class="section-hint">Actualizado hace 3 min ·  📊 23 días de campaña activa</span>
   </div>
-  <div class="kpi-grid" style="margin-bottom:10px;">
+  <div class="kpi-grid-5" style="margin-bottom:10px;">
 
     <div class="kpi-card featured" style="--card-accent:#00CFFF;--card-glow:rgba(0,207,255,0.08);">
       <div class="kpi-label"><span class="kpi-label-icon">⊞</span> Escaneos Totales</div>
@@ -1275,23 +1281,31 @@ body {
       <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="73" style="background:#00CFFF;"></div></div>
     </div>
 
-    <div class="kpi-card" style="--card-accent:#00E5A0;--card-glow:rgba(0,229,160,0.05);grid-column:span 1;">
-      <div class="kpi-label"><span class="kpi-label-icon">◎</span> Visitantes Únicos
-        <span style="margin-left:auto;font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(0,229,160,0.12);color:var(--green);border:1px solid rgba(0,229,160,0.2);">desglose</span>
-      </div>
+    <div class="kpi-card" style="--card-accent:#00E5A0;--card-glow:rgba(0,229,160,0.05);">
+      <div class="kpi-label"><span class="kpi-label-icon">◎</span> Visitantes Únicos</div>
       <div class="kpi-value" id="kpi-unique">0<span class="unit">únicos</span></div>
+      <div class="kpi-footer">
+        <span class="kpi-delta up">▲ 12.1%</span>
+        <span class="kpi-compare">73.6% del total scans</span>
+        <canvas class="kpi-sparkline" id="spark-unique"></canvas>
+      </div>
+      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="74" style="background:#00E5A0;"></div></div>
+    </div>
 
+    <div class="kpi-card" style="--card-accent:#00CFFF;--card-glow:rgba(0,207,255,0.05);">
+      <div class="kpi-label"><span class="kpi-label-icon">↻</span> Tasa de Retorno</div>
+      
       <!-- Breakdown: 1-click vs multi-click -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0 6px;">
         <div style="padding:6px 8px;border-radius:6px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.12);">
           <div style="font-size:9px;color:rgba(0,229,160,0.6);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Solo 1 scan</div>
           <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:#00E5A0;line-height:1;" id="kpi-single">0</div>
-          <div style="font-size:9px;color:var(--text-3);margin-top:2px;" id="kpi-single-pct">0% del total únic.</div>
+          <div style="font-size:9px;color:var(--text-3);margin-top:2px;" id="kpi-single-pct"></div>
         </div>
         <div style="padding:6px 8px;border-radius:6px;background:rgba(0,207,255,0.06);border:1px solid rgba(0,207,255,0.12);">
           <div style="font-size:9px;color:rgba(0,207,255,0.6);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">Multi-scan</div>
           <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--accent);line-height:1;" id="kpi-multi">0</div>
-          <div style="font-size:9px;color:var(--text-3);margin-top:2px;" id="kpi-multi-pct">0% · retornaron</div>
+          <div style="font-size:9px;color:var(--text-3);margin-top:2px;" id="kpi-multi-pct"></div>
         </div>
       </div>
 
@@ -1310,13 +1324,7 @@ body {
         </div>
         <span class="kpi-delta up" id="kpi-avg-delta" style="margin-left:6px;">▲ 0%</span>
       </div>
-
-      <div class="kpi-footer">
-        <span class="kpi-delta up">▲ 12.1%</span>
-        <span class="kpi-compare">73.6% del total scans</span>
-        <canvas class="kpi-sparkline" id="spark-unique"></canvas>
-      </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="74" style="background:#00E5A0;"></div></div>
+      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="65" style="background:#00CFFF;"></div></div>
     </div>
 
     <div class="kpi-card" style="--card-accent:#FFAD33;--card-glow:rgba(255,173,51,0.05);">
@@ -1750,6 +1758,38 @@ body {
       <div class="bm-status" style="background:var(--accent);"></div>
     </div>
 
+  </div>
+  </div>
+
+  <!-- MASTER DATA FLOW (LIVE STREAM) -->
+  <div class="section-header" style="margin-top:24px;">
+    <span class="section-title">🖧 Detalles de Escaneos (Live Stream)</span>
+    <span class="section-hint" id="lastUpdate">Sincronizando...</span>
+  </div>
+  <div class="panel-card" style="padding:0; overflow:hidden;">
+    <div style="overflow-x:auto;">
+      <table style="width:100%;text-align:left;border-collapse:collapse;white-space:nowrap;">
+        <thead style="background:rgba(255,255,255,0.02);font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.04em;">
+          <tr>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Timestamp</th>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Campaña Target</th>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Client Source</th>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Node ID</th>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Device Agent</th>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">OS / Red</th>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Time-on-Site</th>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Status</th>
+          </tr>
+        </thead>
+        <tbody id="scansTableBody" style="font-size:12px;color:var(--text-2);">
+          <tr>
+            <td colspan="8" style="padding:24px 16px;text-align:center;color:var(--text-3);">
+              Sincronizando flujo de datos en tiempo real...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </div> <!-- /tab-overview -->
@@ -2435,8 +2475,20 @@ function buildHeatmap() {
     row.forEach((v, ci) => {
       const cell = document.createElement('div');
       cell.className = 'hm-cell';
-      const opacity = Math.max(0.06, v);
-      cell.style.background = `rgba(0,207,255,${opacity})`;
+      
+      // Thermal Gradient Calculation
+      let bgColor;
+      if (v >= 0.85) {
+        bgColor = `rgba(255, 30, 30, ${v})`;     // Rojo intenso
+      } else if (v >= 0.60) {
+        bgColor = `rgba(255, 120, 0, ${v})`;    // Naranja
+      } else if (v >= 0.35) {
+        bgColor = `rgba(255, 210, 0, ${v + 0.1})`;  // Amarillo
+      } else {
+        bgColor = `rgba(255, 255, 255, ${Math.max(0.06, v + 0.2)})`; // Blanco translúcido
+      }
+      
+      cell.style.background = bgColor;
       cell.style.animationDelay = `${(ri * 7 + ci) * 20}ms`;
       const hrs = Math.round(v * 320);
       cell.setAttribute('data-tooltip', `${heatLabels[ri]} ${dayLabels[ci+1]} · ${hrs} scans`);
@@ -2571,6 +2623,57 @@ function animateBenchmarks() {
 }
 
 /* ═══════════════════════════════════════════════
+   LIVE DATA FLOW STREAM
+═══════════════════════════════════════════════ */
+async function loadLiveScans() {
+  try {
+    const res = await fetch('/api/scans?limit=15');
+    const data = await res.json();
+    const tbody = document.getElementById('scansTableBody');
+    const lastUp = document.getElementById('lastUpdate');
+    
+    if (data.success && data.scans.length > 0) {
+      tbody.innerHTML = data.scans.map(scan => {
+        const date = new Date(scan.scan_timestamp);
+        const timeStr = date.toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        const dur = scan.duration_seconds || 0;
+        const durStr = dur < 60 ? dur.toFixed(1) + 's' : (dur/60).toFixed(1) + 'm';
+        
+        return `
+        <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;">
+            <td style="padding:12px 16px;font-family:var(--mono);">
+                <span style="color:var(--text);">${date.toLocaleDateString('es-ES')}</span><br>
+                <span style="color:var(--text-3);font-size:10px;">${timeStr}</span>
+            </td>
+            <td style="padding:12px 16px;color:var(--accent);font-weight:600;">${scan.campaign_code || '-'}</td>
+            <td style="padding:12px 16px;">${scan.client || '-'}</td>
+            <td style="padding:12px 16px;">
+                <span style="color:var(--text);">${scan.device_name || scan.device_id || '-'}</span><br>
+                <span style="color:var(--text-3);font-size:10px;">${scan.venue || '-'}</span>
+            </td>
+            <td style="padding:12px 16px;font-family:var(--mono);">${scan.device_brand || scan.ua_brand || '-'}</td>
+            <td style="padding:12px 16px;">
+                <span style="color:var(--text);">${scan.operating_system || '-'}</span><br>
+                <span style="color:var(--text-3);font-size:10px;">${scan.connection_type || 'WiFi'}</span>
+            </td>
+            <td style="padding:12px 16px;font-family:var(--mono);color:var(--green);">${durStr}</td>
+            <td style="padding:12px 16px;">
+                ${scan.redirect_completed ? '<span style="color:#00E5A0;">✓ OK</span>' : '<span style="color:var(--amber);">↻ PEND</span>'}
+            </td>
+        </tr>`;
+      }).join('');
+      if (lastUp) {
+        lastUp.textContent = "Última sincronización: " + new Date().toLocaleTimeString('es-ES');
+      }
+    } else {
+      tbody.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--text-3);">Sin escaneos recientes...</td></tr>';
+    }
+  } catch (e) {
+    console.error("Error fetching live stream:", e);
+  }
+}
+
+/* ═══════════════════════════════════════════════
    MAIN INIT — IntersectionObserver for entry
 ═══════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -2578,6 +2681,10 @@ document.addEventListener('DOMContentLoaded', () => {
   createMainChart();
   createDonut();
   buildHeatmap();
+  
+  // Initialize Live Data Stream
+  loadLiveScans();
+  setInterval(loadLiveScans, 15000);
 
   // Draw sparklines
   const sparkData = {
