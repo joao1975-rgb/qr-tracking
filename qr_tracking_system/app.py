@@ -2618,7 +2618,7 @@ async def get_client_analytics(client_name: str):
                 FROM scans s
                 JOIN campaigns c ON s.campaign_code = c.campaign_code
                 WHERE c.client = %s AND s.device_id IS NOT NULL AND s.device_id != ''
-                GROUP BY s.device_id
+                GROUP BY s.device_id, s.device_name, s.location, s.venue
                 ORDER BY scans DESC
                 LIMIT 10
             """, (client_name,))
@@ -3275,7 +3275,7 @@ async def get_campaign_stats(campaign_code: str):
                 SELECT device_id, device_name, location, venue, COUNT(*) as scans
                 FROM scans 
                 WHERE campaign_code = %s AND device_id IS NOT NULL
-                GROUP BY device_id
+                GROUP BY device_id, device_name, location, venue
                 ORDER BY scans DESC
                 LIMIT 5
             """, (campaign_code,))
