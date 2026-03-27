@@ -1799,7 +1799,7 @@ body {
             <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Device Agent</th>
             <th style="padding:12px 16px;border-bottom:1px solid var(--border);">OS / Red</th>
             <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Time-on-Site</th>
-            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Status</th>
+            <th style="padding:12px 16px;border-bottom:1px solid var(--border);">Conexión</th>
           </tr>
         </thead>
         <tbody id="scansTableBody" style="font-size:12px;color:var(--text-2);">
@@ -2689,7 +2689,7 @@ async function loadLiveScans() {
             </td>
             <td style="padding:12px 16px;font-family:var(--mono);color:var(--green);">${durStr}</td>
             <td style="padding:12px 16px;">
-                ${scan.redirect_completed ? '<span style="color:#00E5A0;">✓ OK</span>' : '<span style="color:var(--amber);">↻ PEND</span>'}
+                ${scan.redirect_completed ? '<span style="color:#00E5A0;font-weight:600;">SÍ</span>' : '<span style="color:var(--amber);font-weight:600;">NO</span>'}
             </td>
         </tr>
         <tr class="scan-detail" id="scan-detail-${index}">
