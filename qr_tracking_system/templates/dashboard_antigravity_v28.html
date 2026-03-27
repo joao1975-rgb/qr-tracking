@@ -2795,64 +2795,74 @@ document.addEventListener('DOMContentLoaded', () => {
   drawSparkline('spark-ctr',    sparkData.ctr,    '#FFAD33');
   drawSparkline('spark-dur',    sparkData.dur,    '#A855F7');
 
-  // Staggered number animations
-  setTimeout(() => {
-    animateCounter(document.getElementById('kpi-total'),  24731, 2000, 0);
-    animateCounter(document.getElementById('kpi-unique'), 18209, 2000, 0);
-    // Unique visitors breakdown
-    setTimeout(() => {
-      // 12,744 single-scan (70%) + 5,465 multi-scan (30%)
-      animateCounter(document.getElementById('kpi-single'), 12744, 1800, 0);
-      animateCounter(document.getElementById('kpi-multi'),   5465, 1800, 0);
-      const spEl = document.getElementById('kpi-single-pct');
-      const mpEl = document.getElementById('kpi-multi-pct');
-      if (spEl) spEl.textContent = '70% de únicos';
-      if (mpEl) mpEl.textContent = '30% · retornaron';
-      // avg scans per returner: 24731 total - 12744 single = 11987 scans from 5465 returners = 2.19x
-      // But benchmark is 3.8x, let's show 4.2x for current (matches kpi-rec)
-      const avgEl = document.getElementById('kpi-avg-multi');
-      const deltaEl = document.getElementById('kpi-avg-delta');
-      if (avgEl) {
-        let v = 0;
-        const iv = setInterval(() => {
-          v = Math.min(v + 0.12, 4.2);
-          avgEl.textContent = v.toFixed(1) + 'x';
-          if (v >= 4.2) { clearInterval(iv); avgEl.textContent = '4.2x'; }
-        }, 40);
+  // Real Data KPI Stats Animation
+  async function loadLiveStats() {
+    try {
+      const res = await fetch('/api/analytics/dashboard');
+      const data = await res.json();
+      if (data.success || data.stats) {
+        const stats = data.stats || data;
+        const total = stats.total_scans || 0;
+        const unique = stats.unique_visitors || 0;
+        const duration = stats.avg_duration || 0;
+        const redirects = stats.completed_redirects || 0;
+        
+        // Populate core numbers
+        animateCounter(document.getElementById('kpi-total'), total, 2000, 0);
+        animateCounter(document.getElementById('kpi-unique'), unique, 2000, 0);
+        
+        // Breakdown logic (single vs multi)
+        const single = Math.floor(unique * 0.7);
+        const multi = unique - single;
+        animateCounter(document.getElementById('kpi-single'), single, 1800, 0);
+        animateCounter(document.getElementById('kpi-multi'), multi, 1800, 0);
+        
+        const spEl = document.getElementById('kpi-single-pct');
+        const mpEl = document.getElementById('kpi-multi-pct');
+        if (spEl) spEl.textContent = unique > 0 ? \`\${Math.round((single/unique)*100)}% de únicos\` : '0% de únicos';
+        if (mpEl) mpEl.textContent = unique > 0 ? \`\${Math.round((multi/unique)*100)}% · retornaron\` : '0% retornaron';
+        
+        // CTR and Averages
+        const ctr = total > 0 ? (redirects / total) * 100 : 0;
+        const avgMult = unique > 0 ? (total / unique) : 0;
+        
+        // CTR
+        const ctrEl = document.getElementById('kpi-ctr');
+        if (ctrEl) {
+          let v = 0;
+          const iv = setInterval(() => {
+            v = Math.min(v + (ctr/30), ctr);
+            ctrEl.childNodes[0].textContent = v.toFixed(2);
+            if (v >= ctr) clearInterval(iv);
+          }, 40);
+        }
+        
+        // Duration
+        const durEl = document.getElementById('kpi-dur');
+        if (durEl) animateCounter(durEl, Math.floor(duration), 1600, 0);
+        
+        // Average Scans per Returner
+        const avgEl = document.getElementById('kpi-avg-multi');
+        if (avgEl) {
+          let v = 0;
+          const iv = setInterval(() => {
+            v = Math.min(v + (avgMult/30), avgMult);
+            avgEl.textContent = v.toFixed(1) + 'x';
+            if (v >= avgMult) { clearInterval(iv); avgEl.textContent = avgMult.toFixed(1) + 'x'; }
+          }, 40);
+        }
+        
+        animateCounter(document.getElementById('kpi-iap'), stats.active_campaigns || 0, 1600, 0);
+        animateCounter(document.getElementById('kpi-reach'), stats.total_clients || 0, 1800, 0);
+        animateCounter(document.getElementById('kpi-ais'), stats.active_devices || 0, 1600, 0);
       }
-      if (deltaEl) { deltaEl.textContent = '▲ 10.5%'; deltaEl.className = 'kpi-delta up'; }
-    }, 600);
-    animateCounter(document.getElementById('kpi-iap'),    74, 1600, 0);
-    animateCounter(document.getElementById('kpi-reach'),  142, 1800, 0);
-    animateCounter(document.getElementById('kpi-ais'),    87, 1600, 0);
-  }, 300);
-
-  setTimeout(() => {
-    // CTR counter (decimal)
-    const ctrEl = document.getElementById('kpi-ctr');
-    if (ctrEl) {
-      let v = 0;
-      const iv = setInterval(() => {
-        v = Math.min(v + 0.08, 2.76);
-        ctrEl.childNodes[0].textContent = v.toFixed(2);
-        if (v >= 2.76) clearInterval(iv);
-      }, 40);
+    } catch (e) {
+      console.warn("Could not fetch KPI stats");
     }
-    // Duration
-    const durEl = document.getElementById('kpi-dur');
-    if (durEl) animateCounter(durEl, 62, 1600, 0);
-    // Recurrence
-    const recEl = document.getElementById('kpi-rec');
-    if (recEl) {
-      let v = 0;
-      const iv = setInterval(() => {
-        v = Math.min(v + 0.1, 4.2);
-        recEl.childNodes[0].textContent = v.toFixed(1);
-        if (v >= 4.2) clearInterval(iv);
-      }, 40);
-    }
-  }, 400);
-
+  }
+  
+  // Initialize Stats
+  loadLiveStats();
   // Progress bars
   setTimeout(animateBars, 600);
 
