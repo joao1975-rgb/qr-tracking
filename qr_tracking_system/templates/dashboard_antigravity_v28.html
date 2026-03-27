@@ -2819,8 +2819,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const spEl = document.getElementById('kpi-single-pct');
         const mpEl = document.getElementById('kpi-multi-pct');
-        if (spEl) spEl.textContent = unique > 0 ? \`\${Math.round((single/unique)*100)}% de únicos\` : '0% de únicos';
-        if (mpEl) mpEl.textContent = unique > 0 ? \`\${Math.round((multi/unique)*100)}% · retornaron\` : '0% retornaron';
+        if (spEl) spEl.textContent = unique > 0 ? `${Math.round((single/unique)*100)}% de únicos` : '0% de únicos';
+        if (mpEl) mpEl.textContent = unique > 0 ? `${Math.round((multi/unique)*100)}% · retornaron` : '0% retornaron';
         
         // CTR and Averages
         const ctr = total > 0 ? (redirects / total) * 100 : 0;
