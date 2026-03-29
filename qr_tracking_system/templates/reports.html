@@ -1523,8 +1523,7 @@
             // Chart de evolución temporal
             updateChart();
 
-            // Lista de campañas
-            updateCampaignsList();
+
 
             // Tabla de dispositivos/ubicaciones (incluye carga de jerarquía)
             updateDevicesSection();
@@ -1601,37 +1600,7 @@
             }
         }
 
-        function updateCampaignsList() {
-            const container = document.getElementById('campaignList');
-            const campaigns = reportData.campaigns || [];
 
-            if (campaigns.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🎯</div>
-                        <h3>Sin campañas con escaneos</h3>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = campaigns.map(campaign => {
-                const convRate = campaign.scans > 0 ? Math.round((campaign.completions / campaign.scans) * 100) : 0;
-                return `
-                    <div class="campaign-item">
-                        <div class="campaign-icon">${campaign.active ? '🎯' : '⏸️'}</div>
-                        <div class="campaign-info">
-                            <div class="campaign-name">${campaign.campaign_code}</div>
-                            <div class="campaign-meta">${campaign.description || campaign.destination || 'Sin descripción'}</div>
-                        </div>
-                        <div class="campaign-stats">
-                            <div class="campaign-scans">${campaign.scans || 0}</div>
-                            <div class="campaign-label">escaneos (${convRate}% conv.)</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
 
         function updateDevicesSection() {
             // Crear sección de dispositivos/ubicaciones si no existe
