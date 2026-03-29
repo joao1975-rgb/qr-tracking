@@ -2774,13 +2774,18 @@ async def get_dashboard_analytics():
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
-            # Estadísticas generales mejoradas
+            # Estadísticas generales mejoradas y aislamiento de éxito/fallo
             cursor.execute("""
                 SELECT
                     (SELECT COUNT(*) FROM campaigns WHERE active = TRUE) as active_campaigns,
                     (SELECT COUNT(*) FROM physical_devices WHERE active = TRUE) as active_devices,
                     (SELECT COUNT(*) FROM scans) as total_scans,
                     (SELECT COUNT(*) FROM scans WHERE redirect_completed = TRUE) as completed_redirects,
+                    (SELECT COUNT(*) FROM scans WHERE redirect_completed = FALSE) as failed_redirects,
+                    (SELECT COUNT(*) FROM (SELECT ip_address FROM scans WHERE redirect_completed = TRUE GROUP BY ip_address HAVING count(*) = 1) as t) as single_success_scans,
+                    (SELECT COALESCE(SUM(cnt), 0) FROM (SELECT COUNT(*) as cnt FROM scans WHERE redirect_completed = TRUE GROUP BY ip_address HAVING count(*) > 1) as t) as multi_success_scans,
+                    (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE redirect_completed = TRUE) as unique_success_devices,
+                    (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE redirect_completed = FALSE) as unique_failed_devices,
                     (SELECT COUNT(DISTINCT client) FROM campaigns WHERE client != '') as total_clients,
                     (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= NOW() - INTERVAL '24 hours') as scans_24h,
                     (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= NOW() - INTERVAL '7 days') as scans_7d,
