@@ -1353,15 +1353,18 @@ body {
   <div class="kpi-grid-5" style="margin-bottom:10px;">
 
     <div class="kpi-card featured" style="--card-accent:#00CFFF;--card-glow:rgba(0,207,255,0.08);">
-      <div class="kpi-label"><span class="kpi-label-icon">⊞</span> Escaneos Totales</div>
-      <div class="kpi-value" id="kpi-total">0<span class="unit">scans</span></div>
-      <div class="kpi-footer" style="margin-bottom: 6px;">
+      <div class="kpi-label" style="display:flex; justify-content:space-between; align-items:center;">
+          <span><span class="kpi-label-icon">⊞</span> Escaneos Totales</span>
+          <span style="font-weight:700; color:rgba(255,255,255,0.9); background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px; font-size:11px;" id="kpi-total">0<span style="display:none"></span></span>
+      </div>
+      <div class="kpi-value" id="kpi-success" style="color:var(--card-accent); font-size: 2.3rem; margin-top:8px; margin-bottom:4px;">0<span class="unit" style="font-size:0.45em; color:var(--text-3);">exitosos</span></div>
+      
+      <div class="kpi-footer" style="margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
         <span class="kpi-delta up">▲ 18.4%</span>
         <span class="kpi-compare">vs. período anterior</span>
         <canvas class="kpi-sparkline" id="spark-total"></canvas>
       </div>
       <div style="display:flex; justify-content:space-between; font-size:11px; color:rgba(255,255,255,0.6); background:rgba(0,0,0,0.2); padding:6px 8px; border-radius:4px; margin-top: auto;">
-        <span title="Redirecciones exitosas" id="kpi-success">✔️ 0 exitosos</span>
         <span title="Diferencia sin redirección completada" id="kpi-fail">❌ 0 fallidos</span>
         <span title="Tasa de Efectividad sobre Totales" id="kpi-effect" style="color:var(--card-accent); font-weight:600;">0% Efectividad</span>
       </div>
@@ -2984,7 +2987,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const elSucc = document.getElementById('kpi-success');
         const elFail = document.getElementById('kpi-fail');
         const elEff  = document.getElementById('kpi-effect');
-        if (elSucc) elSucc.innerHTML = `✔️ ${redirects} exitosos`;
+        if (elSucc) animateCounter(elSucc, redirects, 2000, 0);
         if (elFail) elFail.innerHTML = `❌ ${failed_redirects} fallidos`;
         if (elEff) elEff.innerHTML = `${effect_pct}% efectividad`;
         
