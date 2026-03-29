@@ -388,11 +388,12 @@ body {
   padding: 12px;
   position: absolute;
   z-index: 1000;
-  bottom: 125%;
+  top: 95px;         /* Move completely below the KPI value */
+  bottom: auto;      /* Remove upward pop */
   left: 50%;
   transform: translateX(-50%);
   opacity: 0;
-  transition: opacity 0.3s, bottom 0.3s;
+  transition: opacity 0.3s, top 0.3s;
   font-size: 0.75rem;
   font-weight: normal;
   font-family: inherit;
@@ -405,17 +406,18 @@ body {
 .kpi-tooltip::after {
   content: "";
   position: absolute;
-  top: 100%;
+  bottom: 100%;      /* Move arrow to top edge of the tooltip */
+  top: auto;
   left: 50%;
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: rgba(10, 10, 14, 0.98) transparent transparent transparent;
+  border-color: transparent transparent rgba(10, 10, 14, 0.98) transparent; /* Invert arrow color */
 }
 .kpi-tooltip-wrapper:hover .kpi-tooltip {
   visibility: visible;
   opacity: 1;
-  bottom: 140%;
+  top: 105px;        /* Hover animation downwards */
 }
 .kpi-tooltip-title {
   font-weight: 700;
