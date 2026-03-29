@@ -2636,6 +2636,28 @@ async def get_client_analytics(client_name: str):
                 ORDER BY count DESC
             """, (client_name,))
             device_types = [dict(row) for row in cursor.fetchall()]
+            
+            # Todos los escaneos del cliente para desglose por campaña en el Frontend
+            cursor.execute("""
+                SELECT 
+                    s.*,
+                    c.destination as campaign_destination,
+                    c.description as campaign_description
+                FROM scans s
+                JOIN campaigns c ON s.campaign_code = c.campaign_code
+                WHERE c.client = %s
+                ORDER BY s.scan_timestamp DESC
+            """, (client_name,))
+            
+            # Formatear el timestamp a ISO string para JSON
+            client_scans = []
+            for row in cursor.fetchall():
+                scan_dict = dict(row)
+                if isinstance(scan_dict.get('scan_timestamp'), datetime):
+                    scan_dict['scan_timestamp'] = scan_dict['scan_timestamp'].isoformat()
+                if isinstance(scan_dict.get('redirect_timestamp'), datetime):
+                    scan_dict['redirect_timestamp'] = scan_dict['redirect_timestamp'].isoformat()
+                client_scans.append(scan_dict)
         
         return {
             "success": True,
@@ -2644,7 +2666,8 @@ async def get_client_analytics(client_name: str):
             "campaigns": campaigns,
             "daily_activity": daily_activity,
             "top_devices": top_devices,
-            "device_types": device_types
+            "device_types": device_types,
+            "client_scans": client_scans
         }
     except Exception as e:
         logger.error(f"Error obteniendo analytics de cliente: {e}")
