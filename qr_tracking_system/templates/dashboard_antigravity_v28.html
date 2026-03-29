@@ -1463,7 +1463,9 @@ body {
         <span class="kpi-label-icon">↺</span> Tasa de Recurrencia
         <div class="kpi-tooltip" style="--accent: #00E5A0;">
           <span class="kpi-tooltip-title">Multiscan Core + Promedio Global</span>
-          El valor grande es el Promedio Global (Escaneos Totales / Usuarios Únicos). El texto debajo es el <b>Multiscan Core</b>, calculado únicamente con los usuarios leales que te escanearon más de 1 vez, descartando a los rebotados simples.
+          El valor grande es el Promedio Global (Escaneos Totales / Usuarios Únicos). El texto de abajo es el <b>Multiscan Core</b> calculado con la fórmula: <br><br>
+          <code style="background:rgba(0,0,0,0.2); padding:2px 4px; border-radius:4px;">(Escaneos Totales - Single Scans) / (Usuarios Únicos - Single Scans)</code><br><br>
+          <i>Nota: "Single Scans" representa a los visitantes que tuvieron exactamente 1 sesión registrada.</i>
         </div>
       </div>
       <div class="kpi-value" id="kpi-rec">0<span class="unit">x</span></div>
