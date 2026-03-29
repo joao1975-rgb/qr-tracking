@@ -2896,6 +2896,19 @@ async def get_dashboard_analytics():
                 LIMIT 5
             """)
             operating_systems = [dict(row) for row in cursor.fetchall()]
+            
+            # Daily scans (last 30 days)
+            cursor.execute("""
+                SELECT 
+                    TO_CHAR(scan_timestamp, 'YYYY-MM-DD') as date,
+                    COUNT(*) as scans,
+                    COUNT(DISTINCT ip_address) as unique_scans
+                FROM scans
+                WHERE scan_timestamp >= NOW() - INTERVAL '30 days'
+                GROUP BY TO_CHAR(scan_timestamp, 'YYYY-MM-DD')
+                ORDER BY date ASC
+            """)
+            daily_scans = [dict(row) for row in cursor.fetchall()]
         
         return {
             "success": True,
@@ -2906,7 +2919,8 @@ async def get_dashboard_analytics():
             "hourly": hourly,
             "venues": venues,
             "browsers": browsers,
-            "operating_systems": operating_systems
+            "operating_systems": operating_systems,
+            "daily_scans": daily_scans
         }
     except Exception as e:
         logger.error(f"Error obteniendo analytics: {e}")

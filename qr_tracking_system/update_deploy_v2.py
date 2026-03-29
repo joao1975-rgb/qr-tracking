@@ -35,7 +35,11 @@ def hot_reload_all():
             
             for cmd in commands:
                 stdin, stdout, stderr = client.exec_command(cmd)
-                stdout.read() # Wait for the command to finish
+                out = stdout.read().decode()
+                err = stderr.read().decode()
+                print(f'Ran: {cmd}')
+                if out: print('STDOUT:', out)
+                if err: print('STDERR:', err)
             
             print("Backend and Frontend hot-reloaded successfully!")
             

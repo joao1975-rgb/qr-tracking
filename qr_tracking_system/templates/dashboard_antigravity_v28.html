@@ -2894,6 +2894,30 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/analytics/dashboard');
       const data = await res.json();
       if (data.success || data.stats) {
+        
+        // --- 🔒 CERTIFICADO: AISLAMIENTO DE GRÁFICO A 59 ESCANEOS ---
+        // Se inyecta la data real de SQL filtrando exclusividad, sin alterar el resto de KPIs
+        if (data.daily_scans && mainChart) {
+            let labels = [], scans = [], unique = [];
+            data.daily_scans.forEach(row => {
+                labels.push(row.date.substring(5)); // Extraemos 'MM-DD'
+                scans.push(row.scans);
+                unique.push(row.unique_scans);
+            });
+            // Blindar todos los selectores de tiempo para forzar la muestra real
+            Object.keys(chartData).forEach(key => {
+                chartData[key] = {
+                    labels: labels,
+                    scans: scans,
+                    unique: unique,
+                    bench: new Array(labels.length).fill(null), // Anular benchmark simulado
+                    multiAvg: new Array(labels.length).fill(null) // Anular barras mock secundarias
+                };
+            });
+            updateMainChart('7d'); // Refresca lienzo
+        }
+        // -------------------------------------------------------------
+
         const stats = data.stats || data;
         const total = stats.total_scans || 0;
         const unique = stats.unique_visitors || 0;
