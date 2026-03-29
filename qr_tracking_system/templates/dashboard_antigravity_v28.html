@@ -1355,12 +1355,16 @@ body {
     <div class="kpi-card featured" style="--card-accent:#00CFFF;--card-glow:rgba(0,207,255,0.08);">
       <div class="kpi-label"><span class="kpi-label-icon">⊞</span> Escaneos Totales</div>
       <div class="kpi-value" id="kpi-total">0<span class="unit">scans</span></div>
-      <div class="kpi-footer">
+      <div class="kpi-footer" style="margin-bottom: 6px;">
         <span class="kpi-delta up">▲ 18.4%</span>
         <span class="kpi-compare">vs. período anterior</span>
         <canvas class="kpi-sparkline" id="spark-total"></canvas>
       </div>
-      <div class="kpi-progress"><div class="kpi-progress-fill" data-pct="73" style="background:#00CFFF;"></div></div>
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:rgba(255,255,255,0.6); background:rgba(0,0,0,0.2); padding:6px 8px; border-radius:4px; margin-top: auto;">
+        <span title="Redirecciones exitosas" id="kpi-success">✔️ 0 exitosos</span>
+        <span title="Diferencia sin redirección completada" id="kpi-fail">❌ 0 fallidos</span>
+        <span title="Tasa de Efectividad sobre Totales" id="kpi-effect" style="color:var(--card-accent); font-weight:600;">0% Efectividad</span>
+      </div>
     </div>
 
     <div class="kpi-card" style="--card-accent:#00E5A0;--card-glow:rgba(0,229,160,0.05);">
@@ -2972,6 +2976,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // Populate core numbers
         animateCounter(document.getElementById('kpi-total'), total, 2000, 0);
         animateCounter(document.getElementById('kpi-unique'), unique, 2000, 0);
+        
+        // Populating new specific fields for Escaneos Totales
+        const failed_redirects = Math.max(0, total - redirects);
+        const effect_pct = total > 0 ? ((redirects / total) * 100).toFixed(1) : 0;
+        
+        const elSucc = document.getElementById('kpi-success');
+        const elFail = document.getElementById('kpi-fail');
+        const elEff  = document.getElementById('kpi-effect');
+        if (elSucc) elSucc.innerHTML = `✔️ ${redirects} exitosos`;
+        if (elFail) elFail.innerHTML = `❌ ${failed_redirects} fallidos`;
+        if (elEff) elEff.innerHTML = `${effect_pct}% efectividad`;
+        
         
         // Breakdown logic (single vs multi)
         const single = stats.single_scanners !== undefined ? stats.single_scanners : 0;
