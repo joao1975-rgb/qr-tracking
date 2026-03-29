@@ -2917,7 +2917,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // CTR and Averages
         const ctr = total > 0 ? (redirects / total) * 100 : 0;
-        const avgMult = unique > 0 ? (total / unique) : 0;
+        const avgMult = stats.core_recurrence ? stats.core_recurrence : 0;
         
         // CTR
         const ctrEl = document.getElementById('kpi-ctr');
@@ -2945,14 +2945,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Average Scans per Returner (Original Top KPI)
+        // Average Scans per Returner vs Benchmark
         const avgEl = document.getElementById('kpi-avg-multi');
+        const avgDeltaEl = document.getElementById('kpi-avg-delta');
         if (avgEl) {
           let v = 0;
           const iv = setInterval(() => {
             v = Math.min(v + (avgMult/30), avgMult);
             avgEl.textContent = v.toFixed(1) + 'x';
-            if (v >= avgMult) { clearInterval(iv); avgEl.textContent = avgMult.toFixed(1) + 'x'; }
+            if (v >= avgMult) { 
+                clearInterval(iv); 
+                avgEl.textContent = avgMult.toFixed(1) + 'x'; 
+                if (avgDeltaEl && avgMult > 0) {
+                     const diff = ((avgMult - 3.8) / 3.8) * 100;
+                     avgDeltaEl.textContent = (diff > 0 ? '▲ ' : '▼ ') + Math.abs(diff).toFixed(1) + '%';
+                     avgDeltaEl.className = 'kpi-delta ' + (diff > 0 ? 'up' : 'down');
+                }
+            }
           }, 40);
         }
         
