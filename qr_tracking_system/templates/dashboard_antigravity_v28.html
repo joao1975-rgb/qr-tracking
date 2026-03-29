@@ -2935,9 +2935,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             data.user_devices.forEach(d => {
                 let cat = d.category || '';
-                if (cat.includes('iOS Premium')) { iosPct = d.percentage; iosScans = d.count; iosDev = d.unique_devices; }
-                else if (cat.includes('Android Flagship')) { andPct = d.percentage; andScans = d.count; andDev = d.unique_devices; }
-                else { otrPct = d.percentage; otrScans = d.count; otrDev = d.unique_devices; }
+                if (cat.includes('iOS Premium')) { iosPct = d.pct_dev || d.percentage; iosScans = d.count; iosDev = d.unique_devices; }
+                else if (cat.includes('Android Flagship')) { andPct = d.pct_dev || d.percentage; andScans = d.count; andDev = d.unique_devices; }
+                else { otrPct = d.pct_dev || d.percentage; otrScans = d.count; otrDev = d.unique_devices; }
             });
             
             // Update chart data

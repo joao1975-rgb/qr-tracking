@@ -2827,12 +2827,13 @@ async def get_dashboard_analytics():
                 ORDER BY count DESC
             """)
             user_devices = [dict(row) for row in cursor.fetchall()]
-            
-            # Calcular porcentajes basados en dispositivos unicos (25 registros)
+            # Calcular ambos porcentajes para máxima transparencia
+            total_device_scans = sum(d["count"] for d in user_devices)
             total_unique_devices = sum(d["unique_devices"] for d in user_devices)
-            for device in user_devices:
-                device["percentage"] = round((device["unique_devices"] / total_unique_devices * 100)) if total_unique_devices > 0 else 0
             
+            for device in user_devices:
+                device["pct_scans"] = round((device["count"] / total_device_scans * 100)) if total_device_scans > 0 else 0
+                device["percentage"] = round((device["unique_devices"] / total_unique_devices * 100)) if total_unique_devices > 0 else 0
             # Dispositivos físicos
             cursor.execute("""
                 SELECT 
