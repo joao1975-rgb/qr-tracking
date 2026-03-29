@@ -1558,21 +1558,24 @@ body {
           <div class="donut-legend-color" style="background:#00CFFF;"></div>
           <span class="donut-legend-name">iOS Premium</span>
           <span class="donut-legend-pct" id="donut-pct-ios">--%</span>
-          <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-left:auto;margin-right:8px;" id="donut-cnt-ios">- dev</span>
+          <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-left:auto;text-align:right;" id="donut-scans-ios">- scans</span>
+          <span style="font-size:0.8rem;color:rgba(255,255,255,0.7);margin-left:8px;margin-right:8px;text-align:right;" id="donut-cnt-ios">- dev</span>
           <span class="donut-legend-tag" style="background:rgba(0,207,255,0.1);color:var(--accent);">NSE A-B</span>
         </div>
         <div class="donut-legend-item">
           <div class="donut-legend-color" style="background:#00E5A0;"></div>
           <span class="donut-legend-name">Android Flagship</span>
           <span class="donut-legend-pct" id="donut-pct-android">--%</span>
-          <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-left:auto;margin-right:8px;" id="donut-cnt-android">- dev</span>
+          <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-left:auto;text-align:right;" id="donut-scans-android">- scans</span>
+          <span style="font-size:0.8rem;color:rgba(255,255,255,0.7);margin-left:8px;margin-right:8px;text-align:right;" id="donut-cnt-android">- dev</span>
           <span class="donut-legend-tag" style="background:rgba(0,229,160,0.1);color:var(--green);">NSE B</span>
         </div>
         <div class="donut-legend-item">
           <div class="donut-legend-color" style="background:rgba(255,255,255,0.2);"></div>
           <span class="donut-legend-name">Otros</span>
           <span class="donut-legend-pct" id="donut-pct-otros">--%</span>
-          <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-left:auto;margin-right:8px;" id="donut-cnt-otros">- dev</span>
+          <span style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-left:auto;text-align:right;" id="donut-scans-otros">- scans</span>
+          <span style="font-size:0.8rem;color:rgba(255,255,255,0.7);margin-left:8px;margin-right:8px;text-align:right;" id="donut-cnt-otros">- dev</span>
           <span class="donut-legend-tag" style="background:rgba(255,255,255,0.06);color:var(--text-3);">Mix</span>
         </div>
       </div>
@@ -2926,15 +2929,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // --- 🔒 CERTIFICADO: PERFIL DE DISPOSITIVOS ÚNICOS ---
         if (data.user_devices && window.myDonutChart) {
-            let iosPct = 0, iosCnt = 0;
-            let andPct = 0, andCnt = 0;
-            let otrPct = 0, otrCnt = 0;
+            let iosPct = 0, iosScans = 0, iosDev = 0;
+            let andPct = 0, andScans = 0, andDev = 0;
+            let otrPct = 0, otrScans = 0, otrDev = 0;
             
             data.user_devices.forEach(d => {
                 let cat = d.category || '';
-                if (cat.includes('iOS Premium')) { iosPct = d.percentage; iosCnt = d.count; }
-                else if (cat.includes('Android Flagship')) { andPct = d.percentage; andCnt = d.count; }
-                else { otrPct = d.percentage; otrCnt = d.count; }
+                if (cat.includes('iOS Premium')) { iosPct = d.percentage; iosScans = d.count; iosDev = d.unique_devices; }
+                else if (cat.includes('Android Flagship')) { andPct = d.percentage; andScans = d.count; andDev = d.unique_devices; }
+                else { otrPct = d.percentage; otrScans = d.count; otrDev = d.unique_devices; }
             });
             
             // Update chart data
@@ -2943,13 +2946,16 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Update UI Counters & Percentages
             document.getElementById('donut-pct-ios').innerHTML = iosPct + '<span style="font-size:0.5em;color:#888;">%</span>';
-            document.getElementById('donut-cnt-ios').innerHTML = '&bull; ' + iosCnt + ' dev';
+            document.getElementById('donut-scans-ios').innerHTML = iosScans + ' <span style="font-size:0.8em;color:#888;">scans</span>';
+            document.getElementById('donut-cnt-ios').innerHTML = '&bull; ' + iosDev + ' dev';
             
             document.getElementById('donut-pct-android').innerHTML = andPct + '<span style="font-size:0.5em;color:#888;">%</span>';
-            document.getElementById('donut-cnt-android').innerHTML = '&bull; ' + andCnt + ' dev';
+            document.getElementById('donut-scans-android').innerHTML = andScans + ' <span style="font-size:0.8em;color:#888;">scans</span>';
+            document.getElementById('donut-cnt-android').innerHTML = '&bull; ' + andDev + ' dev';
             
             document.getElementById('donut-pct-otros').innerHTML = otrPct + '<span style="font-size:0.5em;color:#888;">%</span>';
-            document.getElementById('donut-cnt-otros').innerHTML = '&bull; ' + otrCnt + ' dev';
+            document.getElementById('donut-scans-otros').innerHTML = otrScans + ' <span style="font-size:0.8em;color:#888;">scans</span>';
+            document.getElementById('donut-cnt-otros').innerHTML = '&bull; ' + otrDev + ' dev';
             
             // Update center element visually if logic dictates a primary percentage (e.g. mobile vs other)
             let totalSmartPct = iosPct + andPct;

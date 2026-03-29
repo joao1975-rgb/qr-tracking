@@ -2820,7 +2820,8 @@ async def get_dashboard_analytics():
                         WHEN operating_system ILIKE '%android%' THEN 'Android Flagship'
                         ELSE 'Otros' 
                     END as category,
-                    COUNT(DISTINCT session_id) as count
+                    COUNT(*) as count,
+                    COUNT(DISTINCT ip_address) as unique_devices
                 FROM scans 
                 GROUP BY category
                 ORDER BY count DESC
