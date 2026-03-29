@@ -2814,19 +2814,23 @@ async def get_dashboard_analytics():
             
             # Dispositivos de usuarios con porcentaje
             cursor.execute("""
-                SELECT user_device_type as device_type, browser, operating_system, COUNT(*) as count
+                SELECT 
+                    CASE 
+                        WHEN operating_system ILIKE '%ios%' THEN 'iOS Premium'
+                        WHEN operating_system ILIKE '%android%' THEN 'Android Flagship'
+                        ELSE 'Otros' 
+                    END as category,
+                    COUNT(DISTINCT session_id) as count
                 FROM scans 
-                WHERE user_device_type IS NOT NULL
-                GROUP BY user_device_type, browser, operating_system
+                GROUP BY category
                 ORDER BY count DESC
-                LIMIT 10
             """)
             user_devices = [dict(row) for row in cursor.fetchall()]
             
             # Calcular porcentajes
             total_device_scans = sum(d["count"] for d in user_devices)
             for device in user_devices:
-                device["percentage"] = round((device["count"] / total_device_scans * 100), 1) if total_device_scans > 0 else 0
+                device["percentage"] = round((device["count"] / total_device_scans * 100)) if total_device_scans > 0 else 0
             
             # Dispositivos físicos
             cursor.execute("""
