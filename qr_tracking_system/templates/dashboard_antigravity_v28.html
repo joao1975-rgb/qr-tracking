@@ -2905,8 +2905,8 @@ document.addEventListener('DOMContentLoaded', () => {
         animateCounter(document.getElementById('kpi-unique'), unique, 2000, 0);
         
         // Breakdown logic (single vs multi)
-        const single = Math.floor(unique * 0.7);
-        const multi = unique - single;
+        const single = stats.single_scanners !== undefined ? stats.single_scanners : 0;
+        const multi  = stats.multi_scanners !== undefined ? stats.multi_scanners : 0;
         animateCounter(document.getElementById('kpi-single'), single, 1800, 0);
         animateCounter(document.getElementById('kpi-multi'), multi, 1800, 0);
         
