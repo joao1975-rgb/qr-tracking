@@ -2814,15 +2814,23 @@ async def get_dashboard_analytics():
             
             # Dispositivos de usuarios con porcentaje
             cursor.execute("""
+                WITH IPCategory AS (
+                    SELECT 
+                        ip_address,
+                        MAX(CASE 
+                            WHEN operating_system ILIKE '%ios%' THEN 'iOS Premium'
+                            WHEN operating_system ILIKE '%android%' THEN 'Android Flagship'
+                            ELSE 'Otros' 
+                        END) as category,
+                        COUNT(id) as scan_count
+                    FROM scans
+                    GROUP BY ip_address
+                )
                 SELECT 
-                    CASE 
-                        WHEN operating_system ILIKE '%ios%' THEN 'iOS Premium'
-                        WHEN operating_system ILIKE '%android%' THEN 'Android Flagship'
-                        ELSE 'Otros' 
-                    END as category,
-                    COUNT(*) as count,
-                    COUNT(DISTINCT ip_address) as unique_devices
-                FROM scans 
+                    category,
+                    CAST(SUM(scan_count) AS INTEGER) as count,
+                    COUNT(ip_address) as unique_devices
+                FROM IPCategory
                 GROUP BY category
                 ORDER BY count DESC
             """)
