@@ -2785,10 +2785,16 @@ async def get_dashboard_analytics():
                     (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= NOW() - INTERVAL '24 hours') as scans_24h,
                     (SELECT COUNT(*) FROM scans WHERE scan_timestamp >= NOW() - INTERVAL '7 days') as scans_7d,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans) as unique_visitors,
+                    (SELECT COUNT(*) FROM (SELECT ip_address FROM scans GROUP BY ip_address HAVING count(*) = 1) as single_t) as single_scanners,
                     (SELECT AVG(duration_seconds) FROM scans) as avg_duration,
                     (SELECT COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM scans), 0) FROM scans WHERE operating_system ILIKE '%ios%') as ios_pct
             """)
             stats = dict(cursor.fetchone())
+            
+            # Recurrencia Core (Solo multi-scanners)
+            stats['multi_scanners'] = max(0, stats['unique_visitors'] - stats['single_scanners'])
+            multi_scans_total = max(0, stats['total_scans'] - stats['single_scanners'])
+            stats['core_recurrence'] = round(multi_scans_total / stats['multi_scanners'], 2) if stats['multi_scanners'] > 0 else 0
             
             # Estadísticas por campaña
             cursor.execute("""
