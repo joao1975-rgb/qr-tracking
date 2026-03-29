@@ -332,10 +332,14 @@ body {
   border-radius: var(--radius);
   padding: 16px 18px 14px;
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to allow tooltip popup to escape */
   cursor: pointer;
   transition: all 0.25s;
   animation: cardEnter 0.5s both;
+  z-index: 10;
+}
+.kpi-card:hover {
+  z-index: 50; /* Ensure tooltip renders above other cards when hovered */
 }
 .kpi-card::before {
   content: '';
@@ -344,6 +348,7 @@ body {
   height: 2px;
   background: var(--card-accent, var(--accent));
   opacity: 0.6;
+  border-radius: var(--radius) var(--radius) 0 0; /* Add radius since overflow is visible */
   transition: opacity 0.2s;
 }
 .kpi-card::after {
