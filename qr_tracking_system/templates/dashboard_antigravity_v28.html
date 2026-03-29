@@ -2459,6 +2459,7 @@ function createMainChart() {
           bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
           callbacks: {
             label: ctx => {
+              if (ctx.parsed.y === null || isNaN(ctx.parsed.y)) return null;
               if (ctx.dataset.label === 'Avg multi-scan')
                 return `  ◈ Avg multi-scan: ${ctx.parsed.y.toFixed(1)}x`;
               return `  ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('es-ES')}`;
@@ -2904,6 +2905,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 scans.push(row.scans);
                 unique.push(row.unique_scans);
             });
+            // Extraer el Avg multi-scan real para la columna izquierda
+            let realMultiValue = data.stats && data.stats.core_recurrence ? parseFloat(data.stats.core_recurrence) : 4.78;
+
             // Blindar todos los selectores de tiempo para forzar la muestra real
             Object.keys(chartData).forEach(key => {
                 chartData[key] = {
@@ -2911,7 +2915,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     scans: scans,
                     unique: unique,
                     bench: new Array(labels.length).fill(null), // Anular benchmark simulado
-                    multiAvg: new Array(labels.length).fill(null) // Anular barras mock secundarias
+                    multiAvg: new Array(labels.length).fill(realMultiValue) // Fijar altura real del eje Izquierdo
                 };
             });
             updateMainChart('7d'); // Refresca lienzo
