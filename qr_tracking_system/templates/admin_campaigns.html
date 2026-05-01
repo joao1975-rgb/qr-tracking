@@ -1307,6 +1307,9 @@
                     return;
                 }
                 
+                window.campaignsData = {};
+                data.campaigns.forEach(c => window.campaignsData[c.campaign_code] = c);
+                
                 tbody.innerHTML = data.campaigns.map(campaign => `
                     <tr>
                         <td><code style="background:#f3f4f6; padding:4px 8px; border-radius:4px;">${campaign.campaign_code}</code></td>
@@ -1327,6 +1330,9 @@
                             <div class="action-buttons">
                                 <button class="btn btn-success btn-sm" onclick="generateQR('${campaign.campaign_code}')" title="Generar QR">
                                     🔲 QR
+                                </button>
+                                <button class="btn btn-info btn-sm" onclick="openEditCampaignModal('${campaign.campaign_code}')" title="Editar Campaña" style="background-color: #3b82f6; border-color: #3b82f6; color: white;">
+                                    ✏️ Editar
                                 </button>
                                 <button class="btn btn-secondary btn-sm" onclick="copyTrackingUrl('${campaign.campaign_code}')" title="Copiar URL de Tracking">
                                     🔗 Copiar URL
@@ -1547,6 +1553,79 @@ function openNewCampaignModal() {
   document.getElementById('campaignModal').style.display = 'flex';
   document.getElementById('modalTitle').textContent = 'Nueva Campaña';
   document.getElementById('campaignForm').dataset.mode = 'create';
+  document.getElementById('campaignForm').campaign_code.readOnly = false;
+  document.getElementById('campaignForm').campaign_code.style.backgroundColor = '';
+}
+
+function openEditCampaignModal(campaignCode) {
+  const campaign = window.campaignsData[campaignCode];
+  if (!campaign) return;
+  
+  const form = document.getElementById('campaignForm');
+  form.reset();
+  form.dataset.mode = 'edit';
+  form.dataset.code = campaignCode;
+  
+  document.getElementById('modalTitle').textContent = 'Editar Campaña: ' + campaignCode;
+  
+  // Populate fields
+  if (form.campaign_code) {
+      form.campaign_code.value = campaign.campaign_code || '';
+      form.campaign_code.readOnly = true;
+      form.campaign_code.style.backgroundColor = '#f3f4f6';
+  }
+  if (form.client) form.client.value = campaign.client || '';
+  if (form.destination) form.destination.value = campaign.destination || '';
+  if (form.description) form.description.value = campaign.description || '';
+  if (form.product_name) form.product_name.value = campaign.product_name || '';
+  if (form.start_date) form.start_date.value = campaign.start_date ? campaign.start_date.split('T')[0] : '';
+  if (form.end_date) form.end_date.value = campaign.end_date ? campaign.end_date.split('T')[0] : '';
+  if (form.campaign_status) form.campaign_status.value = campaign.campaign_status || 'draft';
+  if (form.campaign_phase) form.campaign_phase.value = campaign.campaign_phase || '';
+  if (form.account_manager) form.account_manager.value = campaign.account_manager || '';
+  if (form.hashtag) form.hashtag.value = campaign.hashtag || '';
+  if (form.tags) form.tags.value = campaign.tags || '';
+  if (form.industry) form.industry.value = campaign.industry || '';
+  if (form.industry_sub) form.industry_sub.value = campaign.industry_sub || '';
+  if (form.geo_country) form.geo_country.value = campaign.geo_country || 'BR';
+  if (form.geo_region) form.geo_region.value = campaign.geo_region || '';
+  if (form.is_benchmark_eligible) form.is_benchmark_eligible.checked = campaign.is_benchmark_eligible !== false;
+  if (form.campaign_type) form.campaign_type.value = campaign.campaign_type || '';
+  if (form.campaign_objective) form.campaign_objective.value = campaign.campaign_objective || '';
+  if (form.dooh_format) form.dooh_format.value = campaign.dooh_format || '';
+  if (form.creative_type) form.creative_type.value = campaign.creative_type || '';
+  if (form.venue_category) form.venue_category.value = campaign.venue_category || '';
+  if (form.budget_tier) form.budget_tier.value = campaign.budget_tier || '';
+  if (form.budget_currency) form.budget_currency.value = campaign.budget_currency || 'USD';
+  if (form.target_audience) form.target_audience.value = campaign.target_audience || '';
+  if (form.social_amplification) form.social_amplification.checked = campaign.social_amplification === true;
+  if (form.influencer_support) form.influencer_support.checked = campaign.influencer_support === true;
+  if (form.internal_notes) form.internal_notes.value = campaign.internal_notes || '';
+  if (form.target_scans) form.target_scans.value = campaign.target_scans || '';
+  if (form.target_unique_visitors) form.target_unique_visitors.value = campaign.target_unique_visitors || '';
+  if (form.target_ctr_pct) form.target_ctr_pct.value = campaign.target_ctr_pct || '';
+  
+  // Update social fields visibility
+  if (typeof toggleSocialFields === 'function' && form.social_amplification) {
+      toggleSocialFields(form.social_amplification.checked);
+  }
+  
+  // Set social platforms checkboxes
+  if (campaign.social_platforms) {
+      const platforms = campaign.social_platforms.split(',');
+      form.querySelectorAll('input[name="social_platforms"]').forEach(cb => {
+          cb.checked = platforms.includes(cb.value);
+      });
+  }
+  
+  if (typeof updateBenchmarkPreview === 'function') {
+      updateBenchmarkPreview();
+  }
+  
+  document.getElementById('campaignModal').style.display = 'flex';
+  if (typeof showTab === 'function') {
+      showTab('tab-basic', document.querySelector('.form-tab'));
+  }
 }
 
         // GENERAR QR
