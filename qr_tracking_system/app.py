@@ -1777,8 +1777,22 @@ async def health_check():
         )
 
 # ================================
+# ================================
 # ENDPOINT DE TRACKING PRINCIPAL
 # ================================
+# ⚠️ ADVERTENCIA CRÍTICA PARA DESARROLLADORES / IA ⚠️
+# -----------------------------------------------------------------------------------
+# BAJO NINGUNA CIRCUNSTANCIA se debe implementar una página intermedia de HTML o un 
+# retraso (delay/setTimeout) en este endpoint. El objetivo supremo es la VELOCIDAD 
+# (<1 segundo) para el escaneo del usuario.
+# 
+# En iteraciones anteriores, se implementó una pantalla con temporizador de 3 segundos
+# para capturar variables de JavaScript (como resolución de pantalla, etc.), lo cual
+# ARRUINÓ la experiencia de usuario y fue revertido explícitamente.
+# 
+# EL REDIRECCIONAMIENTO DEBE SER SIEMPRE INMEDIATO mediante: 
+# return RedirectResponse(url=destination, status_code=307)
+# -----------------------------------------------------------------------------------
 
 @app.get("/track")
 async def track_qr_scan(request: Request):
