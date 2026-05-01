@@ -1844,7 +1844,7 @@ async def track_qr_scan(request: Request):
         if not destination:
             destination = f"https://google.com/search?q={campaign_code}"
         
-        # Registrar el escaneo en la base de datos (incluyendo UTM y marcado como completado)
+        # Registrar el escaneo en la base de datos (se completará via JS asíncrono)
         current_time = datetime.now().isoformat()
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -1853,16 +1853,14 @@ async def track_qr_scan(request: Request):
                     campaign_code, client, destination, device_id, device_name, 
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
-                    utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                    redirect_completed, redirect_timestamp, duration_seconds
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, 0)
+                    utm_source, utm_medium, utm_campaign, utm_term, utm_content
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
                 current_time,
-                utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                current_time
+                utm_source, utm_medium, utm_campaign, utm_term, utm_content
             ))
             conn.commit()
             scan_id = cursor.lastrowid
@@ -1870,9 +1868,23 @@ async def track_qr_scan(request: Request):
         # Log del escaneo (logger específico para scans)
         scans_logger.info(f"QR escaneado: campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
         
-        # Redirección inmediata para máxima velocidad (evita segunda pantalla)
-        # 307 Temporary Redirect evita el caché del navegador, asegurando que cada escaneo cuente
-        return RedirectResponse(url=destination, status_code=307)
+        # Leemos tracking.html e inyectamos variables dinámicas
+        try:
+            tracking_path = os.path.join(TEMPLATES_DIR, "tracking.html")
+            with open(tracking_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+                
+            # Inyectar el session_id, scan_id, y destination resueltos desde el backend
+            safe_dest = destination.replace("'", "\\'")
+            html_content = html_content.replace(
+                "trackingData.sessionId = urlParams.get('session_id') || generateSessionId();",
+                f"trackingData.sessionId = '{session_id}';\\n            trackingData.scanId = {scan_id};\\n            trackingData.destination = '{safe_dest}';"
+            )
+            return HTMLResponse(content=html_content)
+        except Exception as e:
+            logger.error(f"Error cargando tracking.html: {e}")
+            # Fallback a redirección directa en caso de error
+            return RedirectResponse(url=destination, status_code=307)
         
     except HTTPException:
         raise

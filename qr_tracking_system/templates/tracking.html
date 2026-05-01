@@ -408,6 +408,7 @@
             // Obtener el session ID del servidor de la URL principal
             // Si por alguna razon no viene, caemos en un fallback
             trackingData.sessionId = urlParams.get('session_id') || generateSessionId();
+            trackingData.scanId = urlParams.get('scan_id') || null;
 
             console.log('📊 Tracking Data:', trackingData);
         }
@@ -527,6 +528,7 @@
                 // Enviar confirmación nativa de término en segundo plano sin ralentizar interfaz
                 const completeData = JSON.stringify({
                     session_id: trackingData.sessionId,
+                    scan_id: trackingData.scanId,
                     time_spent: timeSpent,
                     completion_time: new Date().toISOString()
                 });
@@ -680,6 +682,7 @@
 
             navigator.sendBeacon(`${API_BASE}/api/track/complete`, JSON.stringify({
                 session_id: trackingData.sessionId,
+                scan_id: trackingData.scanId,
                 time_spent: timeSpent,
                 exit_type: 'beforeunload'
             }));
