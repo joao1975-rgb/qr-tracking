@@ -664,7 +664,7 @@
       <button onclick="closeCampaignModal()" class="modal-close">✕</button>
     </div>
 
-    <form id="campaignForm" onsubmit="submitCampaign(event)">
+    <form id="campaignForm" onsubmit="submitCampaign(event)" novalidate>
       
       <!-- ── TAB NAVIGATION ── -->
       <div class="form-tabs" style="display:flex;gap:4px;padding:12px 20px 0;border-bottom:1px solid var(--border);margin-bottom:0">
@@ -1447,6 +1447,24 @@ function updateBenchmarkPreview() {
 async function submitCampaign(e) {
   e.preventDefault();
   const form = document.getElementById('campaignForm');
+  
+  if (!form.checkValidity()) {
+      const invalidElement = form.querySelector(':invalid');
+      if (invalidElement) {
+          const tabPane = invalidElement.closest('.tab-panel');
+          if (tabPane) {
+              const tabId = tabPane.id;
+              const tabBtn = document.querySelector(`.form-tab[onclick*="${tabId}"]`);
+              if (tabBtn) {
+                  showTab(tabId, tabBtn);
+                  invalidElement.focus();
+              }
+          }
+      }
+      showToast('Por favor, complete todos los campos obligatorios marcados en rojo.', 'warning');
+      return;
+  }
+
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
   btn.innerHTML = '⏳ Guardando...';
