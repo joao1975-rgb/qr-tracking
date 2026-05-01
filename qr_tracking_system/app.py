@@ -212,6 +212,8 @@ except ImportError:
     print("⚠️  ADVERTENCIA: Biblioteca 'Pillow' no instalada.")
     print("   Ejecute: pip install Pillow")
 
+from logos_base64 import CENTAURO_LOGO_BASE64, CENTAURO_BANNER_BASE64
+
 # ================================
 # CONFIGURACIÓN DE DIRECTORIOS
 # ================================
@@ -735,6 +737,10 @@ class QRGenerateRequest(BaseModel):
     color_light: str = "#FFFFFF"
     include_logo: bool = False
     base_url: Optional[str] = None  # URL base del servidor (ej: http://192.168.1.100:8000)
+    logo_mode: str = "no_logo"
+    brand_logo_base64: Optional[str] = None
+    brand_banner_base64: Optional[str] = None
+    error_correction: str = "M"
 
 class QRCustomRequest(BaseModel):
     """Solicitud de generación de QR personalizado desde URL"""
@@ -745,6 +751,20 @@ class QRCustomRequest(BaseModel):
     color_dark: str = "#000000"
     color_light: str = "#FFFFFF"
     error_correction: str = "M"  # L, M, Q, H
+    logo_mode: str = "no_logo"
+    brand_logo_base64: Optional[str] = None
+    brand_banner_base64: Optional[str] = None
+
+class QRGenerateWithLogoRequest(BaseModel):
+    """Solicitud directa de generación de QR con logo"""
+    data: str
+    size: int = 300
+    error_correction: str = "M"
+    color_dark: str = "#000000"
+    color_light: str = "#FFFFFF"
+    logo_mode: str = "no_logo"
+    brand_logo_base64: Optional[str] = None
+    brand_banner_base64: Optional[str] = None
 
 class BackupRequest(BaseModel):
     """Solicitud de backup manual"""
@@ -2972,7 +2992,9 @@ async def log_qr_generation(qr_log: QRGenerationLog, request: Request):
 # ================================
 
 def generate_qr_image(data: str, size: int = 300, error_correction: str = "M", 
-                      color_dark: str = "#000000", color_light: str = "#FFFFFF") -> Optional[str]:
+                      color_dark: str = "#000000", color_light: str = "#FFFFFF",
+                      logo_mode: str = "no_logo", brand_logo_base64: Optional[str] = None,
+                      brand_banner_base64: Optional[str] = None) -> Optional[str]:
     """
     Genera una imagen QR y la devuelve como base64
     
@@ -3019,8 +3041,42 @@ def generate_qr_image(data: str, size: int = 300, error_correction: str = "M",
         back_color = hex_to_rgb(color_light)
         
         # Crear imagen
-        img = qr.make_image(fill_color=fill_color, back_color=back_color)
+        img = qr.make_image(fill_color=fill_color, back_color=back_color).convert("RGBA")
         
+        # Superponer logo si se solicitó
+        if PIL_AVAILABLE and logo_mode != "no_logo":
+            logo_b64 = None
+            if logo_mode == "default":
+                logo_b64 = CENTAURO_LOGO_BASE64
+            elif logo_mode == "brand_only" and brand_logo_base64:
+                logo_b64 = brand_logo_base64
+            elif logo_mode == "brand_full" and brand_banner_base64:
+                logo_b64 = brand_banner_base64
+            elif logo_mode == "brand_full" and brand_logo_base64:
+                logo_b64 = brand_logo_base64
+
+            if logo_b64:
+                try:
+                    if "," in logo_b64:
+                        logo_b64 = logo_b64.split(",")[1]
+                    logo_bytes = base64.b64decode(logo_b64)
+                    logo_img = Image.open(io.BytesIO(logo_bytes)).convert("RGBA")
+                    
+                    logo_size = int(img.size[0] * 0.25)
+                    w_percent = (logo_size / float(logo_img.size[0]))
+                    h_size = int((float(logo_img.size[1]) * float(w_percent)))
+                    logo_img = logo_img.resize((logo_size, h_size), Image.LANCZOS)
+                    
+                    pos_x = (img.size[0] - logo_img.size[0]) // 2
+                    pos_y = (img.size[1] - logo_img.size[1]) // 2
+                    
+                    logo_bg = Image.new("RGBA", logo_img.size, "WHITE")
+                    logo_bg.paste(logo_img, (0, 0), logo_img)
+                    
+                    img.paste(logo_bg, (pos_x, pos_y), logo_bg)
+                except Exception as e:
+                    logger.error(f"Error procesando el logo: {e}")
+
         # Redimensionar si es necesario
         if img.size[0] != size:
             img = img.resize((size, size), Image.LANCZOS if PIL_AVAILABLE else Image.NEAREST)
@@ -3113,9 +3169,12 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
         qr_image = generate_qr_image(
             data=tracking_url,
             size=qr_request.size,
-            error_correction="M",
+            error_correction="H" if qr_request.logo_mode != "no_logo" else "M",
             color_dark=qr_request.color_dark,
-            color_light=qr_request.color_light
+            color_light=qr_request.color_light,
+            logo_mode=qr_request.logo_mode,
+            brand_logo_base64=qr_request.brand_logo_base64,
+            brand_banner_base64=qr_request.brand_banner_base64
         )
         
         if not qr_image:
@@ -3194,9 +3253,12 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
         qr_image = generate_qr_image(
             data=url,
             size=qr_request.size,
-            error_correction=error_correction,
+            error_correction="H" if qr_request.logo_mode != "no_logo" else error_correction,
             color_dark=qr_request.color_dark,
-            color_light=qr_request.color_light
+            color_light=qr_request.color_light,
+            logo_mode=qr_request.logo_mode,
+            brand_logo_base64=qr_request.brand_logo_base64,
+            brand_banner_base64=qr_request.brand_banner_base64
         )
         
         if not qr_image:
@@ -3227,6 +3289,43 @@ async def generate_custom_qr(qr_request: QRCustomRequest, request: Request):
         
     except Exception as e:
         logger.error(f"Error generando QR personalizado: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/qr/generate-with-logo")
+async def generate_qr_with_logo(request_data: QRGenerateWithLogoRequest, request: Request):
+    try:
+        if not QR_LIBRARY_AVAILABLE:
+            return {
+                "success": False, 
+                "error": "Biblioteca de generación de QR no disponible."
+            }
+            
+        error_correction = request_data.error_correction
+        if request_data.logo_mode != "no_logo":
+            error_correction = "H"
+            
+        qr_image = generate_qr_image(
+            data=request_data.data,
+            size=request_data.size,
+            error_correction=error_correction,
+            color_dark=request_data.color_dark,
+            color_light=request_data.color_light,
+            logo_mode=request_data.logo_mode,
+            brand_logo_base64=request_data.brand_logo_base64,
+            brand_banner_base64=request_data.brand_banner_base64
+        )
+        
+        if not qr_image:
+            return {"success": False, "error": "Error generando imagen QR"}
+            
+        return {
+            "success": True,
+            "qr_image": qr_image,
+            "url": request_data.data,
+            "size": request_data.size
+        }
+    except Exception as e:
+        logger.error(f"Error en generate-with-logo: {e}")
         return {"success": False, "error": str(e)}
 
 @app.get("/api/qr/status")
