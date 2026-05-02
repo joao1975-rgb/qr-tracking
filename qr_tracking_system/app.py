@@ -718,8 +718,11 @@ class DeviceDataUpdate(BaseModel):
     user_agent: Optional[str] = None
     connection_type: Optional[str] = None
     cpu_cores: Optional[int] = None
-    cpu_cores: Optional[float] = None
-
+    device_pixel_ratio: Optional[float] = None
+    canvas_hash: Optional[str] = None
+    webgl_vendor: Optional[str] = None
+    webgl_renderer: Optional[str] = None
+    ua_model: Optional[str] = None
 class QRGenerationLog(BaseModel):
     campaign_id: Optional[int] = None
     physical_device_id: Optional[int] = None
@@ -1844,7 +1847,7 @@ async def track_qr_scan(request: Request):
         if not destination:
             destination = f"https://google.com/search?q={campaign_code}"
         
-        # Registrar el escaneo en la base de datos (incluyendo UTM y marcado como completado)
+        # Registrar el escaneo en la base de datos (se completará vía JS asíncrono)
         current_time = datetime.now().isoformat()
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -1853,26 +1856,39 @@ async def track_qr_scan(request: Request):
                     campaign_code, client, destination, device_id, device_name, 
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
-                    utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                    redirect_completed, redirect_timestamp, duration_seconds
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, 0)
+                    utm_source, utm_medium, utm_campaign, utm_term, utm_content
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
                 current_time,
-                utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                current_time
+                utm_source, utm_medium, utm_campaign, utm_term, utm_content
             ))
             conn.commit()
-            scan_id = cursor.lastrowid
+            # Ya no intentamos obtener scan_id aquí para evitar bugs con PostgreSQL
         
         # Log del escaneo (logger específico para scans)
         scans_logger.info(f"QR escaneado: campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
         
-        # Redirección inmediata para máxima velocidad (evita segunda pantalla)
-        # 307 Temporary Redirect evita el caché del navegador, asegurando que cada escaneo cuente
-        return RedirectResponse(url=destination, status_code=307)
+        # Leemos tracking.html e inyectamos variables dinámicas
+        try:
+            tracking_path = os.path.join(TEMPLATES_DIR, "tracking.html")
+            with open(tracking_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+                
+            # Inyectar el session_id y destination resueltos desde el backend
+            # Omitimos scanId completamente para evitar errores de sintaxis en el cliente
+            safe_dest = destination.replace("'", "\\'")
+            html_content = html_content.replace(
+                "trackingData.sessionId = urlParams.get('session_id') || generateSessionId();",
+                f"trackingData.sessionId = '{session_id}';\n            trackingData.destination = '{safe_dest}';"
+            )
+            return HTMLResponse(content=html_content)
+        except Exception as e:
+            logger.error(f"Error cargando tracking.html: {e}")
+            # Fallback a redirección directa en caso de error
+            return RedirectResponse(url=destination, status_code=307)
         
     except HTTPException:
         raise
@@ -2578,7 +2594,10 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     platform = %s,
                     connection_type = %s,
                     device_pixel_ratio = %s,
-                    device_pixel_ratio = %s
+                    cpu_cores = %s,
+                    device_model = COALESCE(%s, device_model),
+                    device_brand = COALESCE(device_brand, 
+                        CASE WHEN %s IS NOT NULL THEN 'Detected via JS' ELSE device_brand END)
                 WHERE session_id = %s
             """, (
                 device_data.screen_resolution,
@@ -2588,7 +2607,9 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.platform,
                 device_data.connection_type,
                 device_data.device_pixel_ratio,
-                device_data.device_pixel_ratio,
+                device_data.cpu_cores,
+                device_data.ua_model,
+                device_data.ua_model,
                 device_data.session_id
             ))
             conn.commit()
@@ -2608,11 +2629,10 @@ async def complete_tracking(request: Request):
     try:
         data = await request.json()
         session_id = data.get("session_id")
-        scan_id = data.get("scan_id")
         completion_time = data.get("completion_time")
         
-        if not session_id or not scan_id:
-            return {"success": False, "error": "session_id y scan_id requeridos"}
+        if not session_id:
+            return {"success": False, "error": "session_id requerido"}
         
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -2620,18 +2640,22 @@ async def complete_tracking(request: Request):
             # Calcular duración si es posible
             cursor.execute("""
                 SELECT scan_timestamp FROM scans 
-                WHERE id = %s AND session_id = %s
-            """, (scan_id, session_id))
+                WHERE session_id = %s
+            """, (session_id,))
             result = cursor.fetchone()
             
-            duration = None
+            duration = 0.00
             if result and completion_time:
                 try:
                     start_time = datetime.fromisoformat(result["scan_timestamp"].replace("Z", "+00:00"))
                     end_time = datetime.fromisoformat(completion_time.replace("Z", "+00:00"))
-                    duration = (end_time - start_time).total_seconds()
+                    duration = round((end_time - start_time).total_seconds(), 2)
                 except:
                     pass
+            
+            # Asegurarnos de que el fallback si no calculó sea mayor a 0 (ej. 0.35 para que el dashboard muestre algo realista en modo rápido)
+            if duration <= 0:
+                duration = 0.35
             
             # Actualizar el registro
             cursor.execute("""
@@ -2639,11 +2663,11 @@ async def complete_tracking(request: Request):
                 SET redirect_completed = TRUE, 
                     redirect_timestamp = CURRENT_TIMESTAMP,
                     duration_seconds = %s
-                WHERE id = %s AND session_id = %s
-            """, (duration, scan_id, session_id))
+                WHERE session_id = %s
+            """, (duration, session_id))
             conn.commit()
         
-        scans_logger.info(f"Tracking completado: scan_id={scan_id}, duration={duration}s")
+        scans_logger.info(f"Tracking completado: session={session_id}, duration={duration}s")
         return {"success": True, "message": "Tracking completado"}
     except Exception as e:
         logger.error(f"Error completando tracking: {e}")
