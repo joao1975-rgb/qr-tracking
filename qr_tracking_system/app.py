@@ -2805,7 +2805,12 @@ async def get_dashboard_analytics():
                     (SELECT COUNT(DISTINCT ip_address) FROM scans) as unique_visitors,
                     (SELECT COUNT(*) FROM (SELECT ip_address FROM scans GROUP BY ip_address HAVING count(*) = 1) as single_t) as single_scanners,
                     (SELECT AVG(duration_seconds) FROM scans) as avg_duration,
-                    (SELECT COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM scans), 0) FROM scans WHERE operating_system ILIKE '%ios%') as ios_pct
+                    (SELECT COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM scans), 0) FROM scans WHERE operating_system ILIKE '%ios%') as ios_pct,
+                    (SELECT SUM(target_scans) FROM campaigns WHERE active = TRUE) as agg_target_scans,
+                    (SELECT SUM(target_unique_visitors) FROM campaigns WHERE active = TRUE) as agg_target_unique_visitors,
+                    (SELECT MIN(target_ctr_pct) FROM campaigns WHERE active = TRUE AND target_ctr_pct IS NOT NULL) as min_target_ctr,
+                    (SELECT MAX(target_ctr_pct) FROM campaigns WHERE active = TRUE AND target_ctr_pct IS NOT NULL) as max_target_ctr,
+                    (SELECT AVG(target_ctr_pct) FROM campaigns WHERE active = TRUE AND target_ctr_pct IS NOT NULL) as avg_target_ctr
             """)
             stats = dict(cursor.fetchone())
             

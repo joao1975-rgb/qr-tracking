@@ -1611,9 +1611,9 @@ body {
       </div>
       <div class="gauge-info">
         <div class="gauge-name">Escaneos</div>
-        <div class="gauge-sub">Meta de la campaña</div>
+        <div class="gauge-sub">Meta global de campañas</div>
         <div class="gauge-current" id="gauge1-val">0</div>
-        <div class="gauge-target">de 15,000 objetivo</div>
+        <div class="gauge-target" id="gauge1-target">de 0 objetivo</div>
       </div>
     </div>
 
@@ -1631,9 +1631,9 @@ body {
       </div>
       <div class="gauge-info">
         <div class="gauge-name">Visitantes Únicos</div>
-        <div class="gauge-sub">Meta de alcance</div>
+        <div class="gauge-sub">Meta global de alcance</div>
         <div class="gauge-current" id="gauge2-val">0</div>
-        <div class="gauge-target">de 10,000 objetivo</div>
+        <div class="gauge-target" id="gauge2-target">de 0 objetivo</div>
       </div>
     </div>
 
@@ -1651,9 +1651,9 @@ body {
       </div>
       <div class="gauge-info">
         <div class="gauge-name">CTR Objetivo</div>
-        <div class="gauge-sub">vs. 3.5% meta</div>
+        <div class="gauge-sub" id="gauge3-sub">Promedio: 0%</div>
         <div class="gauge-current" id="gauge3-val">0%</div>
-        <div class="gauge-target">benchmark sector: 3.5%</div>
+        <div class="gauge-target" id="gauge3-target">Min: 0% | Max: 0%</div>
       </div>
     </div>
 
@@ -3106,6 +3106,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const aisValue = Math.round(baseScore + addScore);
         
         animateCounter(document.getElementById('kpi-ais'), aisValue, 1600, 0);
+
+        // --- 🔒 CERTIFICADO: ACTUALIZACIÓN DE MEDIDORES DE METAS ---
+        const targetScans = stats.agg_target_scans || 15000;
+        const currentScans = total;
+        const pctScans = targetScans > 0 ? Math.min(100, Math.round((currentScans / targetScans) * 100)) : 0;
+        
+        const targetUniques = stats.agg_target_unique_visitors || 10000;
+        const currentUniques = unique;
+        const pctUniques = targetUniques > 0 ? Math.min(100, Math.round((currentUniques / targetUniques) * 100)) : 0;
+        
+        const minCtr = stats.min_target_ctr !== null ? Number(stats.min_target_ctr).toFixed(1) : 2.5;
+        const maxCtr = stats.max_target_ctr !== null ? Number(stats.max_target_ctr).toFixed(1) : 4.5;
+        const avgCtr = stats.avg_target_ctr !== null ? Number(stats.avg_target_ctr).toFixed(1) : 3.5;
+        const currentCtr = total > 0 ? ((redirects / total) * 100).toFixed(1) : 0;
+        const pctCtr = avgCtr > 0 ? Math.min(100, Math.round((currentCtr / avgCtr) * 100)) : 0;
+
+        if (document.getElementById('gauge1-target')) {
+            document.getElementById('gauge1-target').textContent = `de ${targetScans.toLocaleString()} objetivo`;
+            document.getElementById('gauge2-target').textContent = `de ${targetUniques.toLocaleString()} objetivo`;
+            document.getElementById('gauge3-target').innerHTML = `Min: ${minCtr}% <span style="opacity:0.5">|</span> Max: ${maxCtr}%`;
+            document.getElementById('gauge3-sub').textContent = `Promedio: ${avgCtr}%`;
+            
+            // Retrasamos un poco la animación para fluidez visual
+            setTimeout(() => {
+              animateGauge('gauge1-arc', 'gauge1-pct', 'gauge1-val', pctScans, currentScans, targetScans);
+              animateGauge('gauge2-arc', 'gauge2-pct', 'gauge2-val', pctUniques, currentUniques, targetUniques);
+              animateGauge('gauge3-arc', 'gauge3-pct', 'gauge3-val', pctCtr, currentCtr, avgCtr, '%');
+            }, 500);
+        }
       }
     } catch (e) {
       console.warn("Could not fetch KPI stats");
@@ -3117,12 +3146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Progress bars
   setTimeout(animateBars, 600);
 
-  // Gauges
-  setTimeout(() => {
-    animateGauge('gauge1-arc', 'gauge1-pct', 'gauge1-val', 82, 12309, 15000);
-    animateGauge('gauge2-arc', 'gauge2-pct', 'gauge2-val', 90, 8980, 10000);
-    animateGauge('gauge3-arc', 'gauge3-pct', 'gauge3-val', 79, 2.76, 3.5, '%');
-  }, 500);
+  // Gauges (Ahora se animan dinámicamente en loadLiveStats)
 
   // Segments
   animateSegments();
