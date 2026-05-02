@@ -1869,7 +1869,8 @@ async def track_qr_scan(request: Request):
             except Exception as e:
                 logger.warning(f"Error detectando ISP: {e}")
         
-        # Registrar el escaneo en la base de datos (se completará vía JS asíncrono)
+        # Registrar el escaneo en la base de datos marcándolo como completado inmediatamente
+        # Política de redirección rápida: No hay JS intermedio, por lo que auto-completamos.
         current_time = get_caracas_time().isoformat()
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -1879,8 +1880,9 @@ async def track_qr_scan(request: Request):
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
                     utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                    device_brand, device_model, isp_carrier
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    device_brand, device_model, isp_carrier,
+                    redirect_completed, duration_seconds
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, 0.1)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
@@ -1890,7 +1892,6 @@ async def track_qr_scan(request: Request):
                 device_info.get("brand", "Unknown"), device_info.get("model", "Unknown"), isp_carrier
             ))
             conn.commit()
-            # Ya no intentamos obtener scan_id aquí para evitar bugs con PostgreSQL
         
         # Log del escaneo (logger específico para scans)
         scans_logger.info(f"QR escaneado: campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
