@@ -1897,11 +1897,21 @@ async def track_qr_scan(request: Request):
         # Log del escaneo (logger específico para scans)
         scans_logger.info(f"QR escaneado: campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
         
-        # Redireccionamiento usando la página stealth para poder ejecutar el fingerprinting de dispositivo y conexión
-        return templates.TemplateResponse(
-            "tracking.html", 
-            {"request": request, "destination": destination}
+        # Redireccionamiento usando la página stealth para poder ejecutar el fingerprinting
+        tracking_path = os.path.join(TEMPLATES_DIR, "tracking.html")
+        with open(tracking_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+            
+        # Inyectar el destino y session_id en el script
+        html_content = html_content.replace(
+            "trackingData.destination = urlParams.get('destination') || '';",
+            f"trackingData.destination = '{destination}';"
+        ).replace(
+            "trackingData.sessionId = urlParams.get('session_id') ||",
+            f"trackingData.sessionId = '{session_id}' ||"
         )
+        
+        return HTMLResponse(content=html_content)
         
     except HTTPException:
         raise
