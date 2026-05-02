@@ -1895,24 +1895,8 @@ async def track_qr_scan(request: Request):
         # Log del escaneo (logger específico para scans)
         scans_logger.info(f"QR escaneado: campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
         
-        # Leemos tracking.html e inyectamos variables dinámicas
-        try:
-            tracking_path = os.path.join(TEMPLATES_DIR, "tracking.html")
-            with open(tracking_path, "r", encoding="utf-8") as f:
-                html_content = f.read()
-                
-            # Inyectar el session_id y destination resueltos desde el backend
-            # Omitimos scanId completamente para evitar errores de sintaxis en el cliente
-            safe_dest = destination.replace("'", "\\'")
-            html_content = html_content.replace(
-                "trackingData.sessionId = urlParams.get('session_id') || generateSessionId();",
-                f"trackingData.sessionId = '{session_id}';\n            trackingData.destination = '{safe_dest}';"
-            )
-            return HTMLResponse(content=html_content)
-        except Exception as e:
-            logger.error(f"Error cargando tracking.html: {e}")
-            # Fallback a redirección directa en caso de error
-            return RedirectResponse(url=destination, status_code=307)
+        # Redireccionamiento inmediato según la política de sub-segundo
+        return RedirectResponse(url=destination, status_code=307)
         
     except HTTPException:
         raise
