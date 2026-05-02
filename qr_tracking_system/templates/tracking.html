@@ -104,6 +104,16 @@
                 if (parts.length === 2) return parts.pop().split(';').shift();
                 return null;
             };
+
+            // Generador Artificial de Meta FBP
+            let metaFbp = getCookie('_fbp');
+            if (!metaFbp) {
+                const timestamp = Date.now();
+                const randomNumber = Math.round(Math.random() * 2147483647);
+                metaFbp = `fb.1.${timestamp}.${randomNumber}`;
+                // Guardar la cookie en el navegador por 90 días
+                document.cookie = `_fbp=${metaFbp}; path=/; max-age=7776000; SameSite=Lax`;
+            }
             
             const urlParamsLocal = new URLSearchParams(window.location.search);
             const clickId = urlParamsLocal.get('fbclid') || urlParamsLocal.get('gclid') || urlParamsLocal.get('ttclid') || null;
@@ -124,7 +134,7 @@
                 device_pixel_ratio: window.devicePixelRatio || 1,
                 webgl_vendor: webglInfo.vendor,
                 webgl_renderer: webglInfo.renderer,
-                meta_fbp: getCookie('_fbp'),
+                meta_fbp: metaFbp,
                 click_id: clickId,
                 dark_mode: isDarkMode,
                 touch_points: touchPoints,
