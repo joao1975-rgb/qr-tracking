@@ -724,7 +724,6 @@ class DeviceDataUpdate(BaseModel):
     connection_type: Optional[str] = None
     cpu_cores: Optional[int] = None
     device_pixel_ratio: Optional[float] = None
-    canvas_hash: Optional[str] = None
     webgl_vendor: Optional[str] = None
     webgl_renderer: Optional[str] = None
     ua_model: Optional[str] = None

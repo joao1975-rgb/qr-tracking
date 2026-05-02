@@ -2830,10 +2830,7 @@ async function loadLiveScans() {
                         <div class="detail-label">🌐 Dirección IP</div>
                         <div class="detail-value" style="font-family:var(--mono);">${scan.ip_address || '-'}</div>
                     </div>
-                    <div class="detail-item">
-                        <div class="detail-label">🔐 Fingerprint</div>
-                        <div class="detail-value" style="font-family:var(--mono); font-size:11px;">${scan.device_fingerprint || '-'}</div>
-                    </div>
+
                     <div class="detail-item">
                         <div class="detail-label">⚙️ Hardware</div>
                         <div class="detail-value">${scan.cpu_cores ? scan.cpu_cores + ' cores' : '-'}${scan.device_memory ? ' • ' + scan.device_memory + 'GB RAM' : ''}</div>
