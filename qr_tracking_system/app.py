@@ -1851,6 +1851,19 @@ async def track_qr_scan(request: Request):
         if not destination:
             destination = f"https://google.com/search?q={campaign_code}"
         
+        # Detectar operadora/ISP a través de ip-api
+        isp_carrier = "Unknown"
+        if client_ip and client_ip not in ("127.0.0.1", "::1", "localhost", ""):
+            try:
+                import httpx
+                with httpx.Client(timeout=2.0) as http_client:
+                    resp = http_client.get(f"http://ip-api.com/json/{client_ip}?fields=isp,org")
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        isp_carrier = data.get("isp") or data.get("org") or "Unknown"
+            except Exception as e:
+                logger.warning(f"Error detectando ISP: {e}")
+        
         # Registrar el escaneo en la base de datos (se completará vía JS asíncrono)
         current_time = datetime.now().isoformat()
         with get_db_connection() as conn:
@@ -1861,15 +1874,15 @@ async def track_qr_scan(request: Request):
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
                     utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                    device_brand, device_model
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    device_brand, device_model, isp_carrier
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
                 current_time,
                 utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                device_info["brand"], device_info["model"]
+                device_info.get("brand", "Unknown"), device_info.get("model", "Unknown"), isp_carrier
             ))
             conn.commit()
             # Ya no intentamos obtener scan_id aquí para evitar bugs con PostgreSQL
@@ -3592,6 +3605,22 @@ async def startup_event():
     
     # Inicializar base de datos
     init_database()
+    
+    # Asegurar que la columna isp_carrier exista usando ALTER TABLE
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            try:
+                # El syntax funciona tanto para PostgreSQL como para SQLite si se envuelve en un try/except (SQLite tira error si ya existe)
+                cursor.execute("ALTER TABLE scans ADD COLUMN isp_carrier TEXT")
+                conn.commit()
+                logger.info("Migración: columna isp_carrier añadida.")
+            except Exception as e:
+                conn.rollback()
+                # Probablemente la columna ya existe, es esperado
+                logger.info("Columna isp_carrier ya existe o error menor: " + str(e))
+    except Exception as e:
+        logger.error(f"Error en migración automática de isp_carrier: {e}")
     
     # Crear backup automático al iniciar
     create_backup("auto")
