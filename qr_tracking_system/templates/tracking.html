@@ -97,19 +97,6 @@
             const webglInfo = getWebGLInfo();
             const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
 
-            // Avanzadas (Meta _fbp, Click IDs, Modo UI, Touch)
-            const getCookie = (name) => {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-                return null;
-            };
-            
-            const urlParamsLocal = new URLSearchParams(window.location.search);
-            const clickId = urlParamsLocal.get('fbclid') || urlParamsLocal.get('gclid') || urlParamsLocal.get('ttclid') || null;
-            const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const touchPoints = navigator.maxTouchPoints || 0;
-
             const deviceData = {
                 session_id: trackingData.sessionId,
                 screen_resolution: `${screen.width}x${screen.height}`,
@@ -124,10 +111,6 @@
                 device_pixel_ratio: window.devicePixelRatio || 1,
                 webgl_vendor: webglInfo.vendor,
                 webgl_renderer: webglInfo.renderer,
-                meta_fbp: getCookie('_fbp'),
-                click_id: clickId,
-                dark_mode: isDarkMode,
-                touch_points: touchPoints,
                 ua_model: null
             };
 
