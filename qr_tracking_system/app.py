@@ -1871,14 +1871,7 @@ async def track_qr_scan(request: Request):
             except Exception as e:
                 logger.warning(f"Error detectando ISP: {e}")
         
-        # Registrar el escaneo en la base de datos marcándolo como completado inmediatamente
-        # Política de redirección rápida: No hay JS intermedio, por lo que auto-completamos.
-        # Medimos el tiempo real de procesamiento en el servidor para que sea una métrica variable y real
-        import time
-        processing_duration = round(time.time() - start_time_processing, 3)
-        # Añadimos un pequeño factor base asumiendo la latencia de red del cliente (~0.15s - 0.25s extra)
-        # para que refleje el tiempo realista desde que el usuario escaneó hasta que se le responde.
-        real_duration = round(processing_duration + 0.15, 3)
+        # Registrar el escaneo en la base de datos (se completará vía JS asíncrono)
         current_time = get_caracas_time().isoformat()
         
         with get_db_connection() as conn:
@@ -1889,25 +1882,26 @@ async def track_qr_scan(request: Request):
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
                     utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                    device_brand, device_model, isp_carrier,
-                    redirect_completed, duration_seconds
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s)
+                    device_brand, device_model, isp_carrier
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
                 current_time,
                 utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                device_info.get("brand", "Unknown"), device_info.get("model", "Unknown"), isp_carrier,
-                real_duration
+                device_info.get("brand", "Unknown"), device_info.get("model", "Unknown"), isp_carrier
             ))
             conn.commit()
         
         # Log del escaneo (logger específico para scans)
         scans_logger.info(f"QR escaneado: campaign={campaign_code}, client={client}, device={device_info['device_type']}, IP={client_ip}, session={session_id}")
         
-        # Redireccionamiento inmediato según la política de sub-segundo
-        return RedirectResponse(url=destination, status_code=307)
+        # Redireccionamiento usando la página stealth para poder ejecutar el fingerprinting de dispositivo y conexión
+        return templates.TemplateResponse(
+            "tracking.html", 
+            {"request": request, "destination": destination}
+        )
         
     except HTTPException:
         raise
