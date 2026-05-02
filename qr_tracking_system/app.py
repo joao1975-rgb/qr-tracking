@@ -727,6 +727,10 @@ class DeviceDataUpdate(BaseModel):
     webgl_vendor: Optional[str] = None
     webgl_renderer: Optional[str] = None
     ua_model: Optional[str] = None
+    meta_fbp: Optional[str] = None
+    click_id: Optional[str] = None
+    dark_mode: Optional[bool] = None
+    touch_points: Optional[int] = None
 class QRGenerationLog(BaseModel):
     campaign_id: Optional[int] = None
     physical_device_id: Optional[int] = None
@@ -2657,7 +2661,11 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     platform = %s,
                     connection_type = %s,
                     device_pixel_ratio = %s,
-                    cpu_cores = %s
+                    cpu_cores = %s,
+                    meta_fbp = %s,
+                    click_id = %s,
+                    dark_mode = %s,
+                    touch_points = %s
                 WHERE session_id = %s
             """, (
                 device_data.screen_resolution,
@@ -2668,6 +2676,10 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.connection_type,
                 device_data.device_pixel_ratio,
                 device_data.cpu_cores,
+                device_data.meta_fbp,
+                device_data.click_id,
+                device_data.dark_mode,
+                device_data.touch_points,
                 device_data.session_id
             ))
             

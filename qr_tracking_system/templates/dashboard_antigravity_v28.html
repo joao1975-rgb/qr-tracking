@@ -2832,12 +2832,16 @@ async function loadLiveScans() {
                     </div>
 
                     <div class="detail-item">
-                        <div class="detail-label">⚙️ Hardware</div>
-                        <div class="detail-value">${scan.cpu_cores ? scan.cpu_cores + ' cores' : '-'}${scan.device_memory ? ' • ' + scan.device_memory + 'GB RAM' : ''}</div>
+                        <div class="detail-label">🎯 Meta FBP</div>
+                        <div class="detail-value" style="font-family:var(--mono); font-size:11px;">${scan.meta_fbp || '-'}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">🔋 Estado de Batería</div>
-                        <div class="detail-value">${scan.battery_level !== null ? scan.battery_level + '%' : '-'}${scan.battery_charging ? ' ⚡' : ''}</div>
+                        <div class="detail-label">🔗 Click ID</div>
+                        <div class="detail-value" style="font-family:var(--mono); font-size:11px; word-break: break-all;">${scan.click_id || '-'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">🌗 Modo UI / 👆 Táctil</div>
+                        <div class="detail-value">${scan.dark_mode === true ? 'Oscuro' : (scan.dark_mode === false ? 'Claro' : '-')} • ${scan.touch_points !== null && scan.touch_points !== undefined ? scan.touch_points + ' pts' : '-'}</div>
                     </div>
                 </div>
             </td>
