@@ -35,3 +35,6 @@ connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection re
 2026-03-22 17:51:52,377 - qr_tracking.database - ERROR - [database.py:465] - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'
 2026-03-22 18:03:28,792 - qr_tracking.database - ERROR - [database.py:115] - Error en conexión a base de datos: 'sqlite3.Row' object has no attribute 'values'
 2026-03-22 18:03:28,793 - qr_tracking.database - ERROR - [database.py:465] - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'
+2026-05-01 22:35:12,560 - qr_tracking.database - ERROR - [database.py:124] - Error en conexión a base de datos: near "%": syntax error
+2026-05-01 22:35:12,560 - qr_tracking - ERROR - [app.py:1920] - Error en tracking: near "%": syntax error
+2026-05-01 22:36:39,499 - qr_tracking.database - ERROR - [database.py:125] - Error en conexión a base de datos: table scans has no column named isp_carrier

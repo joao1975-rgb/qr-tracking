@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>QR Analytics - New Campaign</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-tint": "#b8c3ff",
+              "error": "#ffb4ab",
+              "tertiary": "#2ae500",
+              "on-primary-container": "#cbd2ff",
+              "on-primary-fixed": "#001356",
+              "inverse-primary": "#124af0",
+              "secondary-container": "#4804dd",
+              "on-tertiary": "#053900",
+              "on-tertiary-fixed": "#022100",
+              "on-primary-fixed-variant": "#0035be",
+              "on-tertiary-fixed-variant": "#095300",
+              "primary": "#b8c3ff",
+              "on-surface-variant": "#c9c4d7",
+              "on-secondary-fixed-variant": "#4500d8",
+              "inverse-on-surface": "#2f3034",
+              "inverse-surface": "#e2e2e6",
+              "surface-bright": "#37393d",
+              "primary-fixed": "#dde1ff",
+              "error-container": "#93000a",
+              "on-secondary-fixed": "#1b0063",
+              "surface-container-high": "#282a2d",
+              "on-primary": "#002388",
+              "surface-container": "#1e2023",
+              "on-background": "#e2e2e6",
+              "on-surface": "#e2e2e6",
+              "on-secondary-container": "#bbaeff",
+              "surface-variant": "#333538",
+              "on-error": "#690005",
+              "surface-container-low": "#1a1c1f",
+              "secondary-fixed-dim": "#c9beff",
+              "on-error-container": "#ffdad6",
+              "outline-variant": "#484554",
+              "secondary-fixed": "#e6deff",
+              "surface-dim": "#111317",
+              "surface-container-lowest": "#0c0e11",
+              "surface": "#111317",
+              "secondary": "#c9beff",
+              "on-tertiary-container": "#2df500",
+              "tertiary-container": "#0f6b00",
+              "tertiary-fixed-dim": "#2ae500",
+              "on-secondary": "#2f009b",
+              "tertiary-fixed": "#79ff5b",
+              "primary-container": "#0846ed",
+              "surface-container-highest": "#333538",
+              "background": "#111317",
+              "primary-fixed-dim": "#b8c3ff",
+              "outline": "#938ea0"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24
+    }
+.glass-panel {
+    background: rgba(30, 32, 35, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px)
+    }
+.bg-dashboard-mock {
+    background-image: linear-gradient(rgba(17, 19, 23, 0.85), rgba(17, 19, 23, 0.85)), url(https://lh3.googleusercontent.com/aida-public/AB6AXuDIV8MV4gx-_U2BbhiisHciK6ArHfU-Joh1QbGbyQ-PUnbrI0fOCWwLUGJ7Q97ZMxNHfKFu5aHJUr240_ZgAviLhIc1obYdI1g0zeF2ZZEBb7zr-IlyQhU9TsY6TuxcVNyrysXrQ_CnnK805MJabKTPVIjeB3pQilHWQEgERizFSWekfMEYDxzpCnGSScTvt8qTyd-QTiMZN8a8Yx6nCFy0Zc-olNLROSKS7UbEAuuyUrc1bC8fMpSIzYH2jvQePhkPt268J7Mpv5M);
+    background-size: cover;
+    background-position: center
+    }</style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased overflow-hidden">
+<!-- Background Simulation (Blurred Dashboard) -->
+<div class="fixed inset-0 z-0 bg-dashboard-mock filter blur-xl scale-110" data-alt="Dark high-tech analytics dashboard with glowing charts, network nodes, and vibrant blue and green data visualizations on a black background."></div>
+<!-- Modal Overlay Backdrop -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/40 backdrop-blur-sm">
+<!-- Modal Container -->
+<div class="glass-panel w-full max-w-4xl max-h-[921px] overflow-y-auto rounded-xl shadow-[0px_24px_48px_rgba(0,0,0,0.6)] border border-outline-variant/10 flex flex-col relative">
+<!-- Modal Header -->
+<header class="flex items-center justify-between px-8 py-6 border-b border-outline-variant/10 sticky top-0 z-10 glass-panel">
+<div class="flex flex-col">
+<h1 class="font-headline text-2xl font-bold tracking-tight text-primary">Nueva Campaña de Tracking</h1>
+<p class="text-on-surface-variant text-sm font-medium">Configura los parámetros de tu observatorio cinético</p>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-container-high transition-colors group">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-on-surface" data-icon="close">close</span>
+</button>
+</header>
+<!-- Modal Content (Form) -->
+<form class="px-8 py-8 space-y-10">
+<!-- Section 1: Basic Info -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="flex flex-col space-y-2">
+<label class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Nombre de Campaña</label>
+<input class="bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 text-on-surface placeholder:text-outline py-3 transition-all outline-none" placeholder="Ej: Lanzamiento Verano 2024" type="text"/>
+</div>
+<div class="flex flex-col space-y-2">
+<label class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Industria / Sector</label>
+<div class="relative">
+<select class="w-full bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 text-on-surface py-3 appearance-none outline-none">
+<option disabled="" selected="" value="">Selecciona sector</option>
+<option class="bg-surface-container">Retail &amp; Moda</option>
+<option class="bg-surface-container">Tecnología</option>
+<option class="bg-surface-container">Automotriz</option>
+<option class="bg-surface-container">Entretenimiento</option>
+<option class="bg-surface-container">Inmobiliaria</option>
+</select>
+<span class="material-symbols-outlined absolute right-0 top-3 pointer-events-none text-on-surface-variant" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Section 2: Campaign Type (Visual Cards) -->
+<div class="space-y-4">
+<label class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Tipo de Campaña</label>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<!-- Card 1 -->
+<div class="group relative cursor-pointer">
+<input checked="" class="peer hidden" id="type_billboard" name="camp_type" type="radio"/>
+<label class="flex flex-col items-center justify-center p-6 rounded-lg bg-surface-container-low border border-outline-variant/10 peer-checked:border-tertiary peer-checked:bg-tertiary-container/10 transition-all hover:bg-surface-container text-center space-y-3" for="type_billboard">
+<span class="material-symbols-outlined text-4xl text-primary group-hover:scale-110 transition-transform" data-icon="ads_click">ads_click</span>
+<span class="text-sm font-semibold tracking-wide">Digital Billboard</span>
+</label>
+<div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group relative cursor-pointer">
+<input class="peer hidden" id="type_poster" name="camp_type" type="radio"/>
+<label class="flex flex-col items-center justify-center p-6 rounded-lg bg-surface-container-low border border-outline-variant/10 peer-checked:border-tertiary peer-checked:bg-tertiary-container/10 transition-all hover:bg-surface-container text-center space-y-3" for="type_poster">
+<span class="material-symbols-outlined text-4xl text-secondary group-hover:scale-110 transition-transform" data-icon="description">description</span>
+<span class="text-sm font-semibold tracking-wide">Flyer/Poster</span>
+</label>
+<div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group relative cursor-pointer">
+<input class="peer hidden" id="type_pos" name="camp_type" type="radio"/>
+<label class="flex flex-col items-center justify-center p-6 rounded-lg bg-surface-container-low border border-outline-variant/10 peer-checked:border-tertiary peer-checked:bg-tertiary-container/10 transition-all hover:bg-surface-container text-center space-y-3" for="type_pos">
+<span class="material-symbols-outlined text-4xl text-on-secondary-container group-hover:scale-110 transition-transform" data-icon="storefront">storefront</span>
+<span class="text-sm font-semibold tracking-wide">Point of Sale</span>
+</label>
+<div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 3: Dest & Notes -->
+<div class="space-y-8">
+<div class="flex flex-col space-y-2 group">
+<label class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">URL de Destino</label>
+<div class="flex items-center border-b border-outline-variant focus-within:border-primary transition-all">
+<span class="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors mr-3" data-icon="link">link</span>
+<input class="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-outline py-3 outline-none" placeholder="https://tu-sitio.com/landing" type="url"/>
+</div>
+</div>
+<div class="flex flex-col space-y-2">
+<label class="font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant ml-1">Notas</label>
+<textarea class="bg-surface-container-low rounded-lg border border-outline-variant/10 focus:border-primary focus:ring-0 text-on-surface placeholder:text-outline p-4 transition-all resize-none outline-none" placeholder="Detalles adicionales sobre la ubicación o el objetivo..." rows="3"></textarea>
+</div>
+</div>
+<!-- Section 4: Footer Actions -->
+<div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-tertiary" data-icon="info" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="text-xs max-w-xs leading-relaxed">El código QR se generará automáticamente con parámetros de rastreo UTM integrados.</p>
+</div>
+<div class="flex items-center gap-4 w-full sm:w-auto">
+<button class="px-8 py-4 rounded-lg font-headline font-bold text-sm tracking-wide text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" type="button">
+                            CANCELAR
+                        </button>
+<button class="flex-1 sm:flex-none px-10 py-4 rounded-lg bg-gradient-to-r from-primary-container to-secondary-container font-headline font-extrabold text-sm tracking-widest text-white shadow-lg shadow-primary-container/20 hover:scale-[1.02] active:scale-95 transition-all" type="submit">
+                            GUARDAR CAMPAÑA
+                        </button>
+</div>
+</div>
+</form>
+<!-- Decorative corner elements -->
+<div class="absolute bottom-0 right-0 w-32 h-32 bg-tertiary/5 blur-[60px] pointer-events-none"></div>
+<div class="absolute top-0 left-0 w-32 h-32 bg-primary/5 blur-[60px] pointer-events-none"></div>
+</div>
+</div>
+<!-- Background Navigation Shell (Hidden/Blurred) -->
+<nav class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 z-40 bg-[#111317]/40 backdrop-blur-2xl py-8">
+<div class="px-8 mb-12">
+<h2 class="text-[#2ae500] font-['Space_Grotesk'] font-bold text-2xl tracking-tighter">QR Analytics</h2>
+</div>
+<div class="flex-1 px-4 space-y-2">
+<div class="flex items-center px-4 py-3 gap-3 bg-gradient-to-r from-[#0846ed]/20 to-transparent border-l-4 border-[#2ae500] text-[#e2e2e6] transition-transform">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-sm font-medium tracking-wide uppercase">Overview</span>
+</div>
+<div class="flex items-center px-4 py-3 gap-3 text-[#e2e2e6]/40 hover:text-[#b8c3ff] hover:bg-[#1e2023] transition-all duration-300">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-['Inter'] text-sm font-medium tracking-wide uppercase">Analytics</span>
+</div>
+</div>
+</nav>
+<header class="hidden md:flex items-center justify-between px-8 py-4 w-full max-w-none fixed top-0 left-64 right-0 z-50 bg-[#111317]/80 backdrop-blur-xl shadow-2xl shadow-black/50">
+<div class="flex gap-8">
+<a class="font-['Inter'] text-[#e2e2e6]/60 hover:text-[#e2e2e6] transition-colors" href="#">Dashboard</a>
+<a class="font-['Inter'] text-[#b8c3ff] border-b-2 border-[#b8c3ff] pb-1" href="#">Campaigns</a>
+<a class="font-['Inter'] text-[#e2e2e6]/60 hover:text-[#e2e2e6] transition-colors" href="#">Inventory</a>
+</div>
+<div class="flex items-center gap-6">
+<span class="material-symbols-outlined text-[#b8c3ff]" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-container" data-alt="User profile placeholder"></div>
+</div>
+</header>
+</body></html>

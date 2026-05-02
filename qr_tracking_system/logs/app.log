@@ -498,3 +498,10 @@ connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection re
 2026-03-22 18:03:28,792 - qr_tracking.database - ERROR - Error en conexión a base de datos: 'sqlite3.Row' object has no attribute 'values'
 2026-03-22 18:03:28,793 - qr_tracking.database - ERROR - Error inicializando base de datos: 'sqlite3.Row' object has no attribute 'values'
 2026-03-22 18:04:25,784 - qr_tracking - INFO - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-05-01 22:34:45,447 - qr_tracking - INFO - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-05-01 22:35:12,440 - qr_tracking - INFO - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-05-01 22:35:12,560 - qr_tracking.database - ERROR - Error en conexión a base de datos: near "%": syntax error
+2026-05-01 22:35:12,560 - qr_tracking - ERROR - Error en tracking: near "%": syntax error
+2026-05-01 22:36:39,363 - qr_tracking - INFO - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
+2026-05-01 22:36:39,499 - qr_tracking.database - ERROR - Error en conexión a base de datos: table scans has no column named isp_carrier
+2026-05-01 22:36:55,204 - qr_tracking - INFO - Archivos estáticos montados en /static desde C:\Users\joaou\.gemini\antigravity\QR tracking\qr_tracking_system\static
