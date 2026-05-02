@@ -1815,19 +1815,16 @@ async def health_check():
 # -----------------------------------------------------------------------------------
 
 @app.get("/track")
-@app.get("/l/{campaign_code}")
-async def track_qr_scan(request: Request, campaign_code: Optional[str] = None):
+async def track_qr_scan(request: Request):
     import time
     start_time_processing = time.time()
-    """Endpoint principal de tracking de QR y Enlaces Cortos"""
+    """Endpoint principal de tracking de QR"""
     try:
         # Obtener parámetros de la URL
         params = dict(request.query_params)
         
         # Parámetros requeridos
-        if not campaign_code:
-            campaign_code = params.get("campaign")
-            
+        campaign_code = params.get("campaign")
         if not campaign_code:
             raise HTTPException(status_code=400, detail="Parámetro 'campaign' requerido")
         
@@ -1913,16 +1910,13 @@ async def track_qr_scan(request: Request, campaign_code: Optional[str] = None):
         with open(tracking_path, "r", encoding="utf-8") as f:
             html_content = f.read()
             
-        # Inyectar el destino, session_id y campaign en el script
+        # Inyectar el destino y session_id en el script
         html_content = html_content.replace(
             "trackingData.destination = urlParams.get('destination') || '';",
             f"trackingData.destination = '{destination}';"
         ).replace(
             "trackingData.sessionId = urlParams.get('session_id') ||",
             f"trackingData.sessionId = '{session_id}' ||"
-        ).replace(
-            "trackingData.campaign = urlParams.get('campaign') || '';",
-            f"trackingData.campaign = '{campaign_code}';"
         )
         
         return HTMLResponse(content=html_content)
@@ -2193,16 +2187,13 @@ async def get_campaign_tracking_url(campaign_code: str, request: Request):
         from urllib.parse import urlencode, quote
         
         params = {
+            "campaign": campaign_data["campaign_code"],
             "client": campaign_data["client"] or "",
             "destination": campaign_data["destination"] or ""
         }
         
-        # Filtrar params vacíos
-        params = {k: v for k, v in params.items() if v}
-        
-        # URL de tracking completa (Smart Link)
-        query_string = f"?{urlencode(params, quote_via=quote)}" if params else ""
-        tracking_url = f"{base_url}/l/{campaign_data['campaign_code']}{query_string}"
+        # URL de tracking completa
+        tracking_url = f"{base_url}/track?{urlencode(params, quote_via=quote)}"
         
         logger.info(f"URL de tracking generada para campaña: {campaign_code}")
         return {
@@ -3153,6 +3144,7 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
         
         # Parámetros de la URL de tracking
         params = {
+            "campaign": campaign_data["campaign_code"],
             "client": campaign_data["client"] or "",
             "destination": campaign_data["destination"] or ""
         }
@@ -3163,12 +3155,8 @@ async def generate_qr_from_campaign(qr_request: QRGenerateRequest, request: Requ
             params["device_name"] = device_data.get("device_name", "")
             params["location"] = device_data.get("location", "")
             params["venue"] = device_data.get("venue", "")
-            
-        # Filtrar params vacíos
-        params = {k: v for k, v in params.items() if v}
         
-        query_string = f"?{urlencode(params, quote_via=quote)}" if params else ""
-        tracking_url = f"{base_url}/l/{campaign_data['campaign_code']}{query_string}"
+        tracking_url = f"{base_url}/track?{urlencode(params, quote_via=quote)}"
         
         # Generar imagen QR
         qr_image = generate_qr_image(
