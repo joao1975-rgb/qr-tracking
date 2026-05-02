@@ -2835,10 +2835,6 @@ async function loadLiveScans() {
                         <div class="detail-label">⚙️ Hardware</div>
                         <div class="detail-value">${scan.cpu_cores ? scan.cpu_cores + ' cores' : '-'}${scan.device_memory ? ' • ' + scan.device_memory + 'GB RAM' : ''}</div>
                     </div>
-                    <div class="detail-item">
-                        <div class="detail-label">🔋 Estado de Batería</div>
-                        <div class="detail-value">${scan.battery_level !== null ? scan.battery_level + '%' : '-'}${scan.battery_charging ? ' ⚡' : ''}</div>
-                    </div>
                 </div>
             </td>
         </tr>
