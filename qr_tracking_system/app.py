@@ -184,6 +184,11 @@ INDUSTRY_BENCHMARKS = {
 }
 
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+def get_caracas_time():
+    """Retorna la fecha y hora actual en la zona horaria de Caracas/Venezuela (UTC-4)"""
+    return datetime.now(ZoneInfo('America/Caracas'))
 import uuid
 import user_agents
 import ipaddress
@@ -339,7 +344,7 @@ def create_backup(backup_type: str = "auto") -> Optional[str]:
             logger.warning("No existe base de datos para respaldar")
             return None
         
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        timestamp = get_caracas_time().strftime("%Y-%m-%d_%H-%M-%S")
         backup_filename = f"qr_tracking_{backup_type}_{timestamp}.db"
         backup_path = os.path.join(BACKUPS_DIR, backup_filename)
         
@@ -1770,7 +1775,7 @@ async def health_check():
                 "total": logs_info["total_logs"],
                 "size_mb": logs_info["total_size_mb"]
             },
-            "timestamp": datetime.now().isoformat()
+            "timestamp": get_caracas_time().isoformat()
         }
     except Exception as e:
         logger.error(f"Error en health check: {e}")
@@ -1779,7 +1784,7 @@ async def health_check():
             content={
                 "status": "error",
                 "error": str(e),
-                "timestamp": datetime.now().isoformat()
+                "timestamp": get_caracas_time().isoformat()
             }
         )
 
@@ -1865,7 +1870,7 @@ async def track_qr_scan(request: Request):
                 logger.warning(f"Error detectando ISP: {e}")
         
         # Registrar el escaneo en la base de datos (se completará vía JS asíncrono)
-        current_time = datetime.now().isoformat()
+        current_time = get_caracas_time().isoformat()
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -3594,7 +3599,7 @@ async def export_scans(
             "success": True,
             "data": scans,
             "total": len(scans),
-            "export_timestamp": datetime.now().isoformat()
+            "export_timestamp": get_caracas_time().isoformat()
         }
         
     except Exception as e:
@@ -3652,7 +3657,7 @@ async def export_client_data(client_name: str, format: str = "json"):
             "client": client_name,
             "data": scans,
             "total": len(scans),
-            "export_timestamp": datetime.now().isoformat()
+            "export_timestamp": get_caracas_time().isoformat()
         }
         
     except Exception as e:

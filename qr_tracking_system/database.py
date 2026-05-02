@@ -36,7 +36,8 @@ def adapt_query(query: str) -> str:
     - AUTOINCREMENT → SERIAL (manejado en schema)
     """
     if not IS_POSTGRES:
-        return query
+        # Si la app usa %s y estamos en SQLite, debemos cambiarlo a ?
+        return query.replace("%s", "?")
     
     # Reemplazar placeholders ? por %s
     # Usamos un enfoque que no afecta los ? dentro de strings
