@@ -2785,7 +2785,7 @@ async function loadLiveScans() {
             </td>
             <td style="padding:12px 16px;color:var(--accent);font-weight:600;">${scan.campaign_code || '-'}</td>
             <td style="padding:12px 16px;">${scan.client || '-'}</td>
-            <td style="padding:12px 16px;">
+            <td style="padding:12px 16px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${scan.device_name || scan.device_id || '-'} - ${scan.venue || '-'}">
                 <span style="color:var(--text);">${scan.device_name || scan.device_id || '-'}</span><br>
                 <span style="color:var(--text-3);font-size:10px;">${scan.venue || '-'}</span>
             </td>

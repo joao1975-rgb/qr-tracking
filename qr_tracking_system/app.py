@@ -807,7 +807,9 @@ def detect_device_info(user_agent_string: str) -> Dict[str, str]:
             "operating_system": f"{user_agent.os.family} {user_agent.os.version_string}",
             "is_mobile": user_agent.is_mobile,
             "is_tablet": user_agent.is_tablet,
-            "is_pc": user_agent.is_pc
+            "is_pc": user_agent.is_pc,
+            "brand": user_agent.device.brand or "Unknown",
+            "model": user_agent.device.model or "Unknown"
         }
     except Exception as e:
         logger.warning(f"Error detectando dispositivo: {e}")
@@ -817,7 +819,9 @@ def detect_device_info(user_agent_string: str) -> Dict[str, str]:
             "operating_system": "Unknown",
             "is_mobile": False,
             "is_tablet": False,
-            "is_pc": False
+            "is_pc": False,
+            "brand": "Unknown",
+            "model": "Unknown"
         }
 
 def get_client_ip(request: Request) -> str:
@@ -1856,14 +1860,16 @@ async def track_qr_scan(request: Request):
                     campaign_code, client, destination, device_id, device_name, 
                     location, venue, user_device_type, browser, operating_system, 
                     user_agent, ip_address, session_id, scan_timestamp,
-                    utm_source, utm_medium, utm_campaign, utm_term, utm_content
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+                    device_brand, device_model
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
                 current_time,
-                utm_source, utm_medium, utm_campaign, utm_term, utm_content
+                utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+                device_info["brand"], device_info["model"]
             ))
             conn.commit()
             # Ya no intentamos obtener scan_id aquí para evitar bugs con PostgreSQL
@@ -2595,9 +2601,7 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     connection_type = %s,
                     device_pixel_ratio = %s,
                     cpu_cores = %s,
-                    device_model = COALESCE(%s, device_model),
-                    device_brand = COALESCE(device_brand, 
-                        CASE WHEN %s IS NOT NULL THEN 'Detected via JS' ELSE device_brand END)
+                    device_model = COALESCE(%s, device_model)
                 WHERE session_id = %s
             """, (
                 device_data.screen_resolution,
@@ -2608,7 +2612,6 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.connection_type,
                 device_data.device_pixel_ratio,
                 device_data.cpu_cores,
-                device_data.ua_model,
                 device_data.ua_model,
                 device_data.session_id
             ))
