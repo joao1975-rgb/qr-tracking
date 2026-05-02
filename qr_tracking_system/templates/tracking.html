@@ -142,12 +142,18 @@
                 } catch (err) {}
             }
 
-            fetch(`${API_BASE}/api/track/device-data`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(deviceData),
-                keepalive: true
-            }).catch(err => {});
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 1000);
+                await fetch(`${API_BASE}/api/track/device-data`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(deviceData),
+                    keepalive: true,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+            } catch (err) {}
         }
     </script>
 </body>
