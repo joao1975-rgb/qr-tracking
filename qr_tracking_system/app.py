@@ -1808,6 +1808,8 @@ async def health_check():
 
 @app.get("/track")
 async def track_qr_scan(request: Request):
+    import time
+    start_time_processing = time.time()
     """Endpoint principal de tracking de QR"""
     try:
         # Obtener parámetros de la URL
@@ -1871,7 +1873,14 @@ async def track_qr_scan(request: Request):
         
         # Registrar el escaneo en la base de datos marcándolo como completado inmediatamente
         # Política de redirección rápida: No hay JS intermedio, por lo que auto-completamos.
+        # Medimos el tiempo real de procesamiento en el servidor para que sea una métrica variable y real
+        import time
+        processing_duration = round(time.time() - start_time_processing, 3)
+        # Añadimos un pequeño factor base asumiendo la latencia de red del cliente (~0.15s - 0.25s extra)
+        # para que refleje el tiempo realista desde que el usuario escaneó hasta que se le responde.
+        real_duration = round(processing_duration + 0.15, 3)
         current_time = get_caracas_time().isoformat()
+        
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -1882,14 +1891,15 @@ async def track_qr_scan(request: Request):
                     utm_source, utm_medium, utm_campaign, utm_term, utm_content,
                     device_brand, device_model, isp_carrier,
                     redirect_completed, duration_seconds
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, 0.1)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s)
             """, (
                 campaign_code, client, destination, device_id, device_name,
                 location, venue, device_info["device_type"], device_info["browser"],
                 device_info["operating_system"], user_agent, client_ip, session_id,
                 current_time,
                 utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-                device_info.get("brand", "Unknown"), device_info.get("model", "Unknown"), isp_carrier
+                device_info.get("brand", "Unknown"), device_info.get("model", "Unknown"), isp_carrier,
+                real_duration
             ))
             conn.commit()
         
