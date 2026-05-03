@@ -2566,14 +2566,8 @@ function createDonut() {
 /* ═══════════════════════════════════════════════
    HEATMAP
 ═══════════════════════════════════════════════ */
-const heatData = [
-  [0.1, 0.2, 0.15, 0.25, 0.35, 0.55, 0.30],
-  [0.3, 0.5, 0.45, 0.70, 0.80, 0.60, 0.35],
-  [0.5, 0.8, 0.75, 1.00, 0.90, 0.65, 0.40],
-  [0.4, 0.7, 0.65, 0.85, 0.75, 0.55, 0.30],
-  [0.3, 0.5, 0.55, 0.65, 0.70, 0.85, 0.60],
-  [0.2, 0.3, 0.35, 0.45, 0.55, 0.90, 0.70],
-];
+let globalHeatmapData = null;
+
 const heatLabels = ['00–05h','07–09h','10–12h','12–15h','15–18h','18–22h'];
 const dayLabels  = ['','L','M','X','J','V','S','D'];
 
@@ -2591,10 +2585,21 @@ function buildHeatmap() {
   });
   container.appendChild(dayRow);
 
+  if (!globalHeatmapData || !globalHeatmapData.length) return;
+  
+  // Find max value to calculate colors relatively
+  let maxVal = 0;
+  globalHeatmapData.forEach(row => {
+    row.forEach(v => {
+      if (v > maxVal) maxVal = v;
+    });
+  });
+  if (maxVal === 0) maxVal = 1;
+
   // Grid
   const grid = document.createElement('div');
   grid.className = 'heatmap-grid';
-  heatData.forEach((row, ri) => {
+  globalHeatmapData.forEach((row, ri) => {
     const tl = document.createElement('div');
     tl.className = 'hm-time-label';
     tl.textContent = heatLabels[ri];
@@ -2604,22 +2609,23 @@ function buildHeatmap() {
       const cell = document.createElement('div');
       cell.className = 'hm-cell';
       
+      const ratio = v / maxVal;
+      
       // Thermal Gradient Calculation
       let bgColor;
-      if (v >= 0.85) {
-        bgColor = `rgba(255, 30, 30, ${v})`;     // Rojo intenso
-      } else if (v >= 0.60) {
-        bgColor = `rgba(255, 120, 0, ${v})`;    // Naranja
-      } else if (v >= 0.35) {
-        bgColor = `rgba(255, 210, 0, ${v + 0.1})`;  // Amarillo
+      if (ratio >= 0.85) {
+        bgColor = `rgba(255, 30, 30, ${ratio})`;     // Rojo intenso
+      } else if (ratio >= 0.60) {
+        bgColor = `rgba(255, 120, 0, ${ratio})`;    // Naranja
+      } else if (ratio >= 0.35) {
+        bgColor = `rgba(255, 210, 0, ${ratio + 0.1})`;  // Amarillo
       } else {
-        bgColor = `rgba(255, 255, 255, ${Math.max(0.06, v + 0.2)})`; // Blanco translúcido
+        bgColor = `rgba(255, 255, 255, ${Math.max(0.06, ratio + 0.2)})`; // Blanco translúcido
       }
       
       cell.style.background = bgColor;
       cell.style.animationDelay = `${(ri * 7 + ci) * 20}ms`;
-      const hrs = Math.round(v * 320);
-      cell.setAttribute('data-tooltip', `${heatLabels[ri]} ${dayLabels[ci+1]} · ${hrs} scans`);
+      cell.setAttribute('data-tooltip', `${heatLabels[ri]} ${dayLabels[ci+1]} · ${v} scans`);
       grid.appendChild(cell);
     });
   });
@@ -3142,6 +3148,12 @@ document.addEventListener('DOMContentLoaded', () => {
               animateGauge('gauge2-arc', 'gauge2-pct', 'gauge2-val', pctUniques, currentUniques, targetUniques);
               animateGauge('gauge3-arc', 'gauge3-pct', 'gauge3-val', pctCtr, actualCtr, avgCtr, '%');
             }, 500);
+        }
+        
+        if (data.heatmap_data) {
+            globalHeatmapData = data.heatmap_data;
+            document.getElementById('heatmapContainer').innerHTML = '';
+            buildHeatmap();
         }
       }
     } catch (e) {

@@ -2947,6 +2947,56 @@ async def get_dashboard_analytics():
             """)
             daily_scans = [dict(row) for row in cursor.fetchall()]
         
+            # Heatmap data (last 7 days)
+            from database import IS_POSTGRES
+            
+            if IS_POSTGRES:
+                cursor.execute("""
+                    SELECT 
+                        CAST(EXTRACT(ISODOW FROM scan_timestamp) AS INTEGER) as day_of_week,
+                        CAST(EXTRACT(HOUR FROM scan_timestamp) AS INTEGER) as hour_of_day,
+                        COUNT(*) as total
+                    FROM scans
+                    WHERE scan_timestamp >= NOW() - INTERVAL '7 days'
+                    GROUP BY 1, 2
+                """)
+            else:
+                cursor.execute("""
+                    SELECT 
+                        CAST(strftime('%w', scan_timestamp) AS INTEGER) as day_of_week,
+                        CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour_of_day,
+                        COUNT(*) as total
+                    FROM scans
+                    WHERE scan_timestamp >= datetime('now', '-7 days')
+                    GROUP BY 1, 2
+                """)
+            
+            heatmap_raw = cursor.fetchall()
+            
+            # Filas: 6 franjas horarias, Columnas: 7 días
+            heatmap_data = [[0 for _ in range(7)] for _ in range(6)]
+            
+            for row in heatmap_raw:
+                day_raw = row['day_of_week']
+                
+                # ISODOW: 1=Lunes. strftime: 0=Domingo
+                if IS_POSTGRES:
+                    day_idx = day_raw - 1
+                else:
+                    day_idx = 6 if day_raw == 0 else day_raw - 1
+                
+                hour = row['hour_of_day']
+                
+                if hour <= 6: row_idx = 0
+                elif hour <= 9: row_idx = 1
+                elif hour <= 12: row_idx = 2
+                elif hour <= 15: row_idx = 3
+                elif hour <= 18: row_idx = 4
+                else: row_idx = 5
+                
+                if 0 <= row_idx < 6 and 0 <= day_idx < 7:
+                    heatmap_data[row_idx][day_idx] += row['total']
+
         return {
             "success": True,
             "stats": stats,
@@ -2957,7 +3007,8 @@ async def get_dashboard_analytics():
             "venues": venues,
             "browsers": browsers,
             "operating_systems": operating_systems,
-            "daily_scans": daily_scans
+            "daily_scans": daily_scans,
+            "heatmap_data": heatmap_data
         }
     except Exception as e:
         logger.error(f"Error obteniendo analytics: {e}")
