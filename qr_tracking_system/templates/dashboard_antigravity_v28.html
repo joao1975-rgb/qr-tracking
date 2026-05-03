@@ -2645,8 +2645,9 @@ function buildHeatmap() {
       
       // Tooltip Text
       const uq = cell.unique;
+      const multi = v - uq;
       const recurrence = uq > 0 ? (v / uq).toFixed(1) : 0;
-      const tooltipText = `${heatLabels[ri]} ${dayLabels[ci+1]}\nClics Totales: ${v}\nClics Únicos: ${uq}\nRecurrencia: ${recurrence}x`;
+      const tooltipText = `${heatLabels[ri]} ${dayLabels[ci+1]}\nClics Totales: ${v}\nClics Únicos: ${uq}\nMultiScan: ${multi}\nRecurrencia: ${recurrence}x`;
       
       domCell.style.background = bgColor;
       domCell.style.animationDelay = `${(ri * 7 + ci) * 20}ms`;
