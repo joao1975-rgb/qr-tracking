@@ -2957,7 +2957,6 @@ async def get_dashboard_analytics():
                         CAST(EXTRACT(HOUR FROM scan_timestamp) AS INTEGER) as hour_of_day,
                         COUNT(*) as total
                     FROM scans
-                    WHERE scan_timestamp >= NOW() - INTERVAL '7 days'
                     GROUP BY 1, 2
                 """)
             else:
@@ -2967,7 +2966,6 @@ async def get_dashboard_analytics():
                         CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour_of_day,
                         COUNT(*) as total
                     FROM scans
-                    WHERE scan_timestamp >= datetime('now', '-7 days')
                     GROUP BY 1, 2
                 """)
             
