@@ -697,7 +697,7 @@ body {
 /* Heatmap */
 .heatmap-days {
   display: grid;
-  grid-template-columns: 28px repeat(7, 1fr);
+  grid-template-columns: 28px repeat(8, 1fr);
   gap: 0;
   margin-bottom: 3px;
 }
@@ -710,7 +710,7 @@ body {
 }
 .heatmap-grid {
   display: grid;
-  grid-template-columns: 28px repeat(7, 1fr);
+  grid-template-columns: 28px repeat(8, 1fr);
   gap: 3px;
 }
 .hm-time-label {
@@ -2629,7 +2629,14 @@ function createDonut() {
 let globalHeatmapData = null;
 
 const heatLabels = ['00–05h','07–09h','10–12h','12–15h','15–18h','18–22h'];
-const dayLabels  = ['','L','M','X','J','V','S','D'];
+const dayLabels  = ['','L','M','X','J','V','S','D','Tot.'];
+
+function getThermalColor(ratio) {
+  if (ratio >= 0.85) return `rgba(255, 30, 30, ${ratio})`;
+  if (ratio >= 0.60) return `rgba(255, 120, 0, ${ratio})`;
+  if (ratio >= 0.35) return `rgba(255, 210, 0, ${ratio + 0.1})`;
+  return `rgba(255, 255, 255, ${Math.max(0.06, ratio + 0.2)})`;
+}
 
 function buildHeatmap() {
   const container = document.getElementById('heatmapContainer');
@@ -2645,6 +2652,7 @@ function buildHeatmap() {
   dayLabels.forEach(d => {
     const lbl = document.createElement('div');
     lbl.className = 'hm-day-label';
+    if(d === 'Tot.') lbl.style.fontWeight = 'bold';
     lbl.textContent = d;
     dayRow.appendChild(lbl);
   });
@@ -2654,15 +2662,25 @@ function buildHeatmap() {
   
   // Find max value to calculate colors relatively
   let maxVal = 0;
+  const colTotals = [0, 0, 0, 0, 0, 0, 0];
+  const rowTotals = [];
+
   globalHeatmapData.forEach(row => {
-    row.forEach(cell => {
+    let rTotal = 0;
+    row.forEach((cell, ci) => {
       let v = cell.total;
       if (filter === 'efectivos') v = cell.connected;
       if (filter === 'fallidos') v = cell.failed;
       if (v > maxVal) maxVal = v;
+      rTotal += v;
+      colTotals[ci] += v;
     });
+    rowTotals.push(rTotal);
   });
+
   if (maxVal === 0) maxVal = 1;
+  const maxRowTotal = Math.max(...rowTotals) || 1;
+  const maxColTotal = Math.max(...colTotals) || 1;
 
   // Grid
   const grid = document.createElement('div');
@@ -2682,18 +2700,7 @@ function buildHeatmap() {
       if (filter === 'fallidos') v = cell.failed;
       
       const ratio = v / maxVal;
-      
-      // Thermal Gradient Calculation
-      let bgColor;
-      if (ratio >= 0.85) {
-        bgColor = `rgba(255, 30, 30, ${ratio})`;     // Rojo intenso
-      } else if (ratio >= 0.60) {
-        bgColor = `rgba(255, 120, 0, ${ratio})`;    // Naranja
-      } else if (ratio >= 0.35) {
-        bgColor = `rgba(255, 210, 0, ${ratio + 0.1})`;  // Amarillo
-      } else {
-        bgColor = `rgba(255, 255, 255, ${Math.max(0.06, ratio + 0.2)})`; // Blanco translúcido
-      }
+      domCell.style.background = getThermalColor(ratio);
       
       // Tooltip Text
       const uq = cell.unique;
@@ -2701,12 +2708,68 @@ function buildHeatmap() {
       const recurrence = uq > 0 ? (v / uq).toFixed(1) : 0;
       const tooltipText = `${heatLabels[ri]} ${dayLabels[ci+1]}\nClics Totales: ${v}\nClics Únicos: ${uq}\nMultiScan: ${multi}\nRecurrencia: ${recurrence}x`;
       
-      domCell.style.background = bgColor;
-      domCell.style.animationDelay = `${(ri * 7 + ci) * 20}ms`;
+      domCell.style.animationDelay = `${(ri * 8 + ci) * 20}ms`;
       domCell.setAttribute('data-tooltip', tooltipText);
       grid.appendChild(domCell);
     });
+
+    // Row Total Cell
+    const rTotCell = document.createElement('div');
+    rTotCell.className = 'hm-cell';
+    const rRatio = rowTotals[ri] / maxRowTotal;
+    rTotCell.style.background = getThermalColor(rRatio);
+    rTotCell.style.animationDelay = `${(ri * 8 + 7) * 20}ms`;
+    rTotCell.setAttribute('data-tooltip', `Total ${heatLabels[ri]}\nClics: ${rowTotals[ri]}`);
+    rTotCell.textContent = rowTotals[ri];
+    rTotCell.style.fontSize = '8px';
+    rTotCell.style.color = '#fff';
+    rTotCell.style.display = 'flex';
+    rTotCell.style.alignItems = 'center';
+    rTotCell.style.justifyContent = 'center';
+    rTotCell.style.fontWeight = 'bold';
+    grid.appendChild(rTotCell);
   });
+
+  // Bottom Row Label
+  const bl = document.createElement('div');
+  bl.className = 'hm-time-label';
+  bl.textContent = 'Tot.';
+  bl.style.fontWeight = 'bold';
+  grid.appendChild(bl);
+
+  // Bottom Row Cells (Column Totals)
+  colTotals.forEach((cVal, ci) => {
+    const cTotCell = document.createElement('div');
+    cTotCell.className = 'hm-cell';
+    const cRatio = cVal / maxColTotal;
+    cTotCell.style.background = getThermalColor(cRatio);
+    cTotCell.style.animationDelay = `${(6 * 8 + ci) * 20}ms`;
+    cTotCell.setAttribute('data-tooltip', `Total ${dayLabels[ci+1]}\nClics: ${cVal}`);
+    cTotCell.textContent = cVal;
+    cTotCell.style.fontSize = '8px';
+    cTotCell.style.color = '#fff';
+    cTotCell.style.display = 'flex';
+    cTotCell.style.alignItems = 'center';
+    cTotCell.style.justifyContent = 'center';
+    cTotCell.style.fontWeight = 'bold';
+    grid.appendChild(cTotCell);
+  });
+
+  // Bottom-Right Corner (Grand Total)
+  const grandTotal = colTotals.reduce((a, b) => a + b, 0);
+  const gtCell = document.createElement('div');
+  gtCell.className = 'hm-cell';
+  gtCell.style.background = 'rgba(255,255,255,0.2)';
+  gtCell.setAttribute('data-tooltip', `Gran Total\nClics: ${grandTotal}`);
+  gtCell.textContent = grandTotal;
+  gtCell.style.fontSize = '8px';
+  gtCell.style.color = '#fff';
+  gtCell.style.display = 'flex';
+  gtCell.style.alignItems = 'center';
+  gtCell.style.justifyContent = 'center';
+  gtCell.style.fontWeight = 'bold';
+  grid.appendChild(gtCell);
+
   container.appendChild(grid);
 }
 
