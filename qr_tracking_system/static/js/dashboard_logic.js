@@ -713,10 +713,9 @@ async function loadScans() {
 
                 // Tipo de conexión con icono
                 let connectionIcon = '📶';
-                let connectionType = scan.connection_type || 'No detectado';
+                let connectionType = scan.connection_generation || scan.connection_type || 'No detectado';
                 if (connectionType.toLowerCase().includes('wifi')) connectionIcon = '📶';
-                else if (connectionType.toLowerCase().includes('4g')) connectionIcon = '📱';
-                else if (connectionType.toLowerCase().includes('3g')) connectionIcon = '📱';
+                else if (connectionType.toLowerCase().includes('4g') || connectionType.toLowerCase().includes('3g') || connectionType.toLowerCase().includes('5g')) connectionIcon = '📱';
 
                 // ISP/Operadora con colores
                 let ispDisplay = scan.isp_carrier || 'No detectado';
@@ -735,7 +734,7 @@ async function loadScans() {
                         <td class="mono">${durationText}</td>
                         <td>${connected}</td>
                         <td style="${brandStyle}">${deviceBrand}</td>
-                        <td>${connectionIcon} ${scan.connection_type || '-'} <br><small>${ispDisplay}</small></td>
+                        <td>${connectionIcon} ${connectionType} <br><small>${ispDisplay}</small></td>
                     </tr>
                     <tr class="scan-detail" id="scan-detail-${index}">
                         <td colspan="10">
