@@ -2853,8 +2853,8 @@ async function loadLiveScans() {
         const durStr = dur < 60 ? dur.toFixed(1) + 's' : (dur/60).toFixed(1) + 'm';
         
         let connectionIcon = '📶';
-        let connectionType = scan.connection_type || 'No detectado';
-        if (connectionType.toLowerCase().includes('4g') || connectionType.toLowerCase().includes('3g')) connectionIcon = '📱';
+        let connectionType = scan.connection_generation || scan.connection_type || 'No detectado';
+        if (connectionType.toLowerCase().includes('4g') || connectionType.toLowerCase().includes('3g') || connectionType.toLowerCase().includes('5g')) connectionIcon = '📱';
         
         let ispDisplay = scan.isp_carrier || 'No detectado';
         if (ispDisplay.includes('Digitel')) ispDisplay = '<span style="color:#00E5A0;">📱 Digitel</span>';
