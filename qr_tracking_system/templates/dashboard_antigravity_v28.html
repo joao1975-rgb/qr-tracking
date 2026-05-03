@@ -2662,25 +2662,33 @@ function buildHeatmap() {
   
   // Find max value to calculate colors relatively
   let maxVal = 0;
-  const colTotals = [0, 0, 0, 0, 0, 0, 0];
+  const colTotals = Array.from({length: 7}, () => ({total: 0, unique: 0, connected: 0, failed: 0}));
   const rowTotals = [];
 
   globalHeatmapData.forEach(row => {
-    let rTotal = 0;
+    let rTot = {total: 0, unique: 0, connected: 0, failed: 0};
     row.forEach((cell, ci) => {
       let v = cell.total;
       if (filter === 'efectivos') v = cell.connected;
       if (filter === 'fallidos') v = cell.failed;
       if (v > maxVal) maxVal = v;
-      rTotal += v;
-      colTotals[ci] += v;
+      
+      rTot.total += cell.total;
+      rTot.unique += cell.unique;
+      rTot.connected += cell.connected;
+      rTot.failed += cell.failed;
+
+      colTotals[ci].total += cell.total;
+      colTotals[ci].unique += cell.unique;
+      colTotals[ci].connected += cell.connected;
+      colTotals[ci].failed += cell.failed;
     });
-    rowTotals.push(rTotal);
+    rowTotals.push(rTot);
   });
 
   if (maxVal === 0) maxVal = 1;
-  const maxRowTotal = Math.max(...rowTotals) || 1;
-  const maxColTotal = Math.max(...colTotals) || 1;
+  const maxRowTotal = Math.max(...rowTotals.map(r => filter === 'efectivos' ? r.connected : (filter === 'fallidos' ? r.failed : r.total))) || 1;
+  const maxColTotal = Math.max(...colTotals.map(c => filter === 'efectivos' ? c.connected : (filter === 'fallidos' ? c.failed : c.total))) || 1;
 
   // Grid
   const grid = document.createElement('div');
@@ -2716,11 +2724,21 @@ function buildHeatmap() {
     // Row Total Cell
     const rTotCell = document.createElement('div');
     rTotCell.className = 'hm-cell';
-    const rRatio = rowTotals[ri] / maxRowTotal;
-    rTotCell.style.background = getThermalColor(rRatio);
+    
+    let rtV = rowTotals[ri].total;
+    if (filter === 'efectivos') rtV = rowTotals[ri].connected;
+    if (filter === 'fallidos') rtV = rowTotals[ri].failed;
+    
+    const rtRatio = rtV / maxRowTotal;
+    rTotCell.style.background = getThermalColor(rtRatio);
     rTotCell.style.animationDelay = `${(ri * 8 + 7) * 20}ms`;
-    rTotCell.setAttribute('data-tooltip', `Total ${heatLabels[ri]}\nClics: ${rowTotals[ri]}`);
-    rTotCell.textContent = rowTotals[ri];
+    
+    const rtUq = rowTotals[ri].unique;
+    const rtMulti = rtV - rtUq;
+    const rtRecurrence = rtUq > 0 ? (rtV / rtUq).toFixed(1) : 0;
+    
+    rTotCell.setAttribute('data-tooltip', `Total ${heatLabels[ri]}\nClics Totales: ${rtV}\nClics Únicos: ${rtUq}\nMultiScan: ${rtMulti}\nRecurrencia: ${rtRecurrence}x`);
+    rTotCell.textContent = rtV;
     rTotCell.style.fontSize = '8px';
     rTotCell.style.color = '#fff';
     rTotCell.style.display = 'flex';
@@ -2738,14 +2756,24 @@ function buildHeatmap() {
   grid.appendChild(bl);
 
   // Bottom Row Cells (Column Totals)
-  colTotals.forEach((cVal, ci) => {
+  colTotals.forEach((cObj, ci) => {
     const cTotCell = document.createElement('div');
     cTotCell.className = 'hm-cell';
-    const cRatio = cVal / maxColTotal;
-    cTotCell.style.background = getThermalColor(cRatio);
+    
+    let ctV = cObj.total;
+    if (filter === 'efectivos') ctV = cObj.connected;
+    if (filter === 'fallidos') ctV = cObj.failed;
+    
+    const ctRatio = ctV / maxColTotal;
+    cTotCell.style.background = getThermalColor(ctRatio);
     cTotCell.style.animationDelay = `${(6 * 8 + ci) * 20}ms`;
-    cTotCell.setAttribute('data-tooltip', `Total ${dayLabels[ci+1]}\nClics: ${cVal}`);
-    cTotCell.textContent = cVal;
+    
+    const ctUq = cObj.unique;
+    const ctMulti = ctV - ctUq;
+    const ctRecurrence = ctUq > 0 ? (ctV / ctUq).toFixed(1) : 0;
+    
+    cTotCell.setAttribute('data-tooltip', `Total ${dayLabels[ci+1]}\nClics Totales: ${ctV}\nClics Únicos: ${ctUq}\nMultiScan: ${ctMulti}\nRecurrencia: ${ctRecurrence}x`);
+    cTotCell.textContent = ctV;
     cTotCell.style.fontSize = '8px';
     cTotCell.style.color = '#fff';
     cTotCell.style.display = 'flex';
@@ -2756,12 +2784,20 @@ function buildHeatmap() {
   });
 
   // Bottom-Right Corner (Grand Total)
-  const grandTotal = colTotals.reduce((a, b) => a + b, 0);
+  let gtV = 0, gtUq = 0;
+  colTotals.forEach(c => {
+    gtV += (filter === 'efectivos' ? c.connected : (filter === 'fallidos' ? c.failed : c.total));
+    gtUq += c.unique;
+  });
+  
+  const gtMulti = gtV - gtUq;
+  const gtRecurrence = gtUq > 0 ? (gtV / gtUq).toFixed(1) : 0;
+
   const gtCell = document.createElement('div');
   gtCell.className = 'hm-cell';
   gtCell.style.background = 'rgba(255,255,255,0.2)';
-  gtCell.setAttribute('data-tooltip', `Gran Total\nClics: ${grandTotal}`);
-  gtCell.textContent = grandTotal;
+  gtCell.setAttribute('data-tooltip', `Gran Total\nClics Totales: ${gtV}\nClics Únicos: ${gtUq}\nMultiScan: ${gtMulti}\nRecurrencia: ${gtRecurrence}x`);
+  gtCell.textContent = gtV;
   gtCell.style.fontSize = '8px';
   gtCell.style.color = '#fff';
   gtCell.style.display = 'flex';
