@@ -728,6 +728,7 @@ class DeviceDataUpdate(BaseModel):
     webgl_renderer: Optional[str] = None
     ua_model: Optional[str] = None
     meta_fbp: Optional[str] = None
+    connection_generation: Optional[str] = None
     click_id: Optional[str] = None
     dark_mode: Optional[bool] = None
     touch_points: Optional[int] = None
@@ -2660,6 +2661,7 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     language = %s,
                     platform = %s,
                     connection_type = %s,
+                    connection_generation = %s,
                     device_pixel_ratio = %s,
                     cpu_cores = %s,
                     meta_fbp = %s,
@@ -2674,6 +2676,7 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.language,
                 device_data.platform,
                 device_data.connection_type,
+                device_data.connection_generation,
                 device_data.device_pixel_ratio,
                 device_data.cpu_cores,
                 device_data.meta_fbp,
@@ -2708,6 +2711,20 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     new_brand = "Apple"
                     new_model = ios_model
                     scans_logger.info(f"iPhone Inferido Probabilísticamente: {ios_model} (Resolución: {device_data.screen_resolution}, GPU: {device_data.webgl_renderer})")
+            
+            # Inferir generación de red para iPhones premium si reporta celular pero generación desconocida (constructo híbrido)
+            if new_brand == "Apple" and new_model:
+                # Si el modelo está en tier A1 o B2
+                premium_models = ["iPhone 14", "iPhone 15", "iPhone 16", "iPhone 13", "iPhone SE (3rd Gen)"]
+                is_premium = any(pm in new_model for pm in premium_models)
+                
+                # En tracking.html, si no soporta la API, puede llegar como 'unknown'. 
+                # Asumiremos la red celular si no sabemos el connection_type en Apple pero tiene un IP celular, 
+                # o si manda cellular pero sin generacion.
+                if is_premium and (device_data.connection_generation in [None, 'unknown', '']) and device_data.connection_type != 'wifi':
+                    cursor.execute("""
+                        UPDATE scans SET connection_type = %s, connection_generation = %s WHERE session_id = %s
+                    """, ('cellular', '5g/4g+', device_data.session_id))
             
             # Ejecutar superposición si descubrimos algo nuevo
             if new_brand and new_model and (new_brand != "Unknown" or new_model != "Unknown"):
@@ -2805,6 +2822,18 @@ async def get_dashboard_analytics():
                     (SELECT COUNT(DISTINCT ip_address) FROM scans) as unique_visitors,
                     (SELECT COUNT(*) FROM (SELECT ip_address FROM scans GROUP BY ip_address HAVING count(*) = 1) as single_t) as single_scanners,
                     (SELECT AVG(duration_seconds) FROM scans) as avg_duration,
+                    (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
+                        (device_brand = 'Apple' AND (device_model LIKE '%iPhone 14 Pro%' OR device_model LIKE '%iPhone 15%' OR device_model LIKE '%iPhone 16%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND connection_generation LIKE '%5g%')
+                    ) as seg1_count,
+                    (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
+                        (device_brand = 'Apple' AND (device_model LIKE '%iPhone 13%' OR device_model = 'iPhone 14' OR device_model = 'iPhone 14 Plus' OR device_model LIKE '%SE (3rd%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND (connection_generation IS NULL OR connection_generation NOT LIKE '%5g%'))
+                    ) as seg2_count,
+                    (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
+                        (device_brand = 'Apple' AND (device_model LIKE '%iPhone 11%' OR device_model LIKE '%iPhone 12%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 2 AND device_pixel_ratio < 3)
+                    ) as seg3_count,
                     (SELECT COUNT(DISTINCT ip_address) * 100.0 / NULLIF((SELECT COUNT(DISTINCT ip_address) FROM scans), 0) FROM scans WHERE operating_system ILIKE '%ios%') as ios_pct,
                     (SELECT SUM(target_scans) FROM campaigns WHERE active = TRUE) as agg_target_scans,
                     (SELECT SUM(target_unique_visitors) FROM campaigns WHERE active = TRUE) as agg_target_unique_visitors,
@@ -3770,6 +3799,14 @@ async def startup_event():
                 conn.rollback()
                 # Probablemente la columna ya existe, es esperado
                 logger.info("Columna isp_carrier ya existe o error menor: " + str(e))
+                
+            try:
+                cursor.execute("ALTER TABLE scans ADD COLUMN connection_generation TEXT")
+                conn.commit()
+                logger.info("Migración: columna connection_generation añadida.")
+            except Exception as e:
+                conn.rollback()
+                logger.info("Columna connection_generation ya existe o error menor: " + str(e))
     except Exception as e:
         logger.error(f"Error en migración automática de isp_carrier: {e}")
     

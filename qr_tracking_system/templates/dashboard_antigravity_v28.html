@@ -1703,7 +1703,20 @@ body {
             <div class="segment-name">Ejecutivo ABC1</div>
             <div class="segment-detail">iOS · WiFi premium · DPR≥3 · alta conversión</div>
           </div>
-          <div class="segment-pct" id="seg1-pct">0%</div>
+          <div class="segment-metrics" style="display:flex; gap:16px; text-align:right; margin-left:auto;">
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Equipos</span>
+                <span id="seg1-count" style="font-weight:600; font-size:14px; color:var(--text);">0</span>
+             </div>
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Real</span>
+                <span id="seg1-real" style="font-weight:700; font-size:14px; color:var(--seg-color);">0%</span>
+             </div>
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Ref.</span>
+                <span style="font-weight:500; font-size:12px; color:var(--text-muted);">38%</span>
+             </div>
+          </div>
         </div>
         <div class="segment-item" style="--seg-color:#A855F7;--seg-bg:rgba(168,85,247,0.08);">
           <div class="segment-avatar">B2</div>
@@ -1711,7 +1724,20 @@ body {
             <div class="segment-name">Millennial Digital-First</div>
             <div class="segment-detail">Android flagship · 5G · alta recurrencia</div>
           </div>
-          <div class="segment-pct" id="seg2-pct">0%</div>
+          <div class="segment-metrics" style="display:flex; gap:16px; text-align:right; margin-left:auto;">
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Equipos</span>
+                <span id="seg2-count" style="font-weight:600; font-size:14px; color:var(--text);">0</span>
+             </div>
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Real</span>
+                <span id="seg2-real" style="font-weight:700; font-size:14px; color:var(--seg-color);">0%</span>
+             </div>
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Ref.</span>
+                <span style="font-weight:500; font-size:12px; color:var(--text-muted);">24%</span>
+             </div>
+          </div>
         </div>
         <div class="segment-item" style="--seg-color:#00E5A0;--seg-bg:rgba(0,229,160,0.08);">
           <div class="segment-avatar">C3</div>
@@ -1719,7 +1745,20 @@ body {
             <div class="segment-name">Explorador Activo C1</div>
             <div class="segment-detail">Android mid · 4G · sesión larga</div>
           </div>
-          <div class="segment-pct" id="seg3-pct">0%</div>
+          <div class="segment-metrics" style="display:flex; gap:16px; text-align:right; margin-left:auto;">
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Equipos</span>
+                <span id="seg3-count" style="font-weight:600; font-size:14px; color:var(--text);">0</span>
+             </div>
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Real</span>
+                <span id="seg3-real" style="font-weight:700; font-size:14px; color:var(--seg-color);">0%</span>
+             </div>
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Ref.</span>
+                <span style="font-weight:500; font-size:12px; color:var(--text-muted);">21%</span>
+             </div>
+          </div>
         </div>
         <div class="segment-item" style="--seg-color:#6B7280;--seg-bg:rgba(107,114,128,0.08);">
           <div class="segment-avatar">D4</div>
@@ -1727,7 +1766,20 @@ body {
             <div class="segment-name">Audiencia Genérica</div>
             <div class="segment-detail">Mix devices · señal baja</div>
           </div>
-          <div class="segment-pct" id="seg4-pct">0%</div>
+          <div class="segment-metrics" style="display:flex; gap:16px; text-align:right; margin-left:auto;">
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Equipos</span>
+                <span id="seg4-count" style="font-weight:600; font-size:14px; color:var(--text);">0</span>
+             </div>
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Real</span>
+                <span id="seg4-real" style="font-weight:700; font-size:14px; color:var(--seg-color);">0%</span>
+             </div>
+             <div style="display:flex; flex-direction:column;">
+                <span style="font-size:10px; color:var(--text-muted);">Ref.</span>
+                <span style="font-weight:500; font-size:12px; color:var(--text-muted);">17%</span>
+             </div>
+          </div>
         </div>
       </div>
     </div>
@@ -3138,6 +3190,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const aisValue = Math.round(baseScore + addScore);
         
         animateCounter(document.getElementById('kpi-ais'), aisValue, 1600, 0);
+
+        // --- 🔒 ACTUALIZACIÓN DE SEGMENTOS DE AUDIENCIA REALES ---
+        const seg1Cnt = stats.seg1_count || 0;
+        const seg2Cnt = stats.seg2_count || 0;
+        const seg3Cnt = stats.seg3_count || 0;
+        const seg4Cnt = Math.max(0, unique - (seg1Cnt + seg2Cnt + seg3Cnt));
+
+        const updateSegmentUI = (idPrefix, count) => {
+             const cntEl = document.getElementById(idPrefix + '-count');
+             const realEl = document.getElementById(idPrefix + '-real');
+             if (cntEl) animateCounter(cntEl, count, 1500, 0);
+             if (realEl) {
+                  const pct = unique > 0 ? ((count / unique) * 100) : 0;
+                  let vPct = 0;
+                  const ivPct = setInterval(() => {
+                       vPct = Math.min(vPct + (pct/30), pct);
+                       realEl.textContent = vPct.toFixed(1) + '%';
+                       if (vPct >= pct) { clearInterval(ivPct); realEl.textContent = pct.toFixed(1) + '%'; }
+                  }, 40);
+             }
+        };
+
+        updateSegmentUI('seg1', seg1Cnt);
+        updateSegmentUI('seg2', seg2Cnt);
+        updateSegmentUI('seg3', seg3Cnt);
+        updateSegmentUI('seg4', seg4Cnt);
 
         // --- 🔒 CERTIFICADO: ACTUALIZACIÓN DE MEDIDORES DE METAS ---
         const targetScans = stats.agg_target_scans || 15000;
