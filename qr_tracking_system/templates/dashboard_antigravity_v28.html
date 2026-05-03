@@ -1689,12 +1689,12 @@ body {
 
     <!-- AUDIENCE SEGMENTS -->
     <div class="panel-card">
-      <div class="panel-header">
+      <div class="panel-header" data-tooltip="Valores de referencia del mercado (Latam 2024).&#10;Se infieren combinando el S.O., Device Pixel Ratio y Tipo de Red.&#10;- A1: iOS + WiFi Premium&#10;- B2: Android Flagship (DPR ≥ 3) + 5G&#10;- C3: Gama media + 4G&#10;- D4: Gama entrada + Señal inestable">
         <div>
-          <div class="panel-title">Segmentos de audiencia inferidos</div>
+          <div class="panel-title" style="border-bottom: 1px dashed rgba(255,255,255,0.3); display: inline-block;">Segmentos de audiencia inferidos</div>
           <div class="panel-subtitle">Basado en huella digital del dispositivo</div>
         </div>
-        <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-weight:600;">4 perfiles</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent);font-weight:600;">Referencia</span>
       </div>
       <div class="segment-list">
         <div class="segment-item" style="--seg-color:#00CFFF;--seg-bg:rgba(0,207,255,0.08);">
@@ -1734,9 +1734,9 @@ body {
 
     <!-- DEVICE SIGNALS -->
     <div class="panel-card">
-      <div class="panel-header">
+      <div class="panel-header" data-tooltip="Valores fijos de benchmark para comparar el rendimiento.&#10;Basado en estudios de la industria y OAAA 2024.&#10;Señales premium combinadas estiman el poder adquisitivo.">
         <div>
-          <div class="panel-title">Señales de contexto de consumo</div>
+          <div class="panel-title" style="border-bottom: 1px dashed rgba(255,255,255,0.3); display: inline-block;">Señales de contexto de consumo</div>
           <div class="panel-subtitle">Huella digital → capacidad de compra inferida</div>
         </div>
       </div>
@@ -1797,8 +1797,8 @@ body {
           <span class="signal-badge" style="background:rgba(0,207,255,0.1);color:var(--accent);">Early</span>
         </div>
       </div>
-      <div class="nse-summary">
-        <div class="nse-label">🎯 NSE inferido de la audiencia total</div>
+      <div class="nse-summary" data-tooltip="Estimación teórica que combina la penetración de iOS&#10;y conexiones Premium en el mercado objetivo.">
+        <div class="nse-label" style="border-bottom: 1px dashed rgba(255,255,255,0.3); display: inline-block;">🎯 NSE inferido de la audiencia total</div>
         <div class="nse-value">NSE A+B estimado · <span id="nse-pct">0</span>% de audiencia</div>
       </div>
     </div>
