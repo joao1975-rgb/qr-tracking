@@ -1211,7 +1211,8 @@ body {
   padding: 5px 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
-  white-space: nowrap;
+  white-space: pre;
+  text-align: left;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.15s;
@@ -2642,9 +2643,14 @@ function buildHeatmap() {
         bgColor = `rgba(255, 255, 255, ${Math.max(0.06, ratio + 0.2)})`; // Blanco translúcido
       }
       
+      // Tooltip Text
+      const uq = cell.unique;
+      const recurrence = uq > 0 ? (((v - uq) / uq) * 100).toFixed(1) : 0;
+      const tooltipText = `${heatLabels[ri]} ${dayLabels[ci+1]}\nClics Totales: ${v}\nClics Únicos: ${uq}\nRecurrencia: ${recurrence}%`;
+      
       domCell.style.background = bgColor;
       domCell.style.animationDelay = `${(ri * 7 + ci) * 20}ms`;
-      domCell.setAttribute('data-tooltip', `${heatLabels[ri]} ${dayLabels[ci+1]} · ${v} scans`);
+      domCell.setAttribute('data-tooltip', tooltipText);
       grid.appendChild(domCell);
     });
   });
