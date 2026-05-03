@@ -2651,6 +2651,11 @@ async def track_device_data(device_data: DeviceDataUpdate):
         return None
 
     try:
+        # Construct true hybrid connection field
+        hybrid_conn = device_data.connection_type or 'unknown'
+        if device_data.connection_generation and device_data.connection_generation.lower() not in ["", "unknown", "none"]:
+            hybrid_conn = f"{hybrid_conn}-{device_data.connection_generation.upper()}"
+            
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -2676,7 +2681,7 @@ async def track_device_data(device_data: DeviceDataUpdate):
                 device_data.language,
                 device_data.platform,
                 device_data.connection_type,
-                device_data.connection_generation,
+                hybrid_conn,
                 device_data.device_pixel_ratio,
                 device_data.cpu_cores,
                 device_data.meta_fbp,
@@ -2711,20 +2716,6 @@ async def track_device_data(device_data: DeviceDataUpdate):
                     new_brand = "Apple"
                     new_model = ios_model
                     scans_logger.info(f"iPhone Inferido Probabilísticamente: {ios_model} (Resolución: {device_data.screen_resolution}, GPU: {device_data.webgl_renderer})")
-            
-            # Inferir generación de red para iPhones premium si reporta celular pero generación desconocida (constructo híbrido)
-            if new_brand == "Apple" and new_model:
-                # Si el modelo está en tier A1 o B2
-                premium_models = ["iPhone 14", "iPhone 15", "iPhone 16", "iPhone 13", "iPhone SE (3rd Gen)"]
-                is_premium = any(pm in new_model for pm in premium_models)
-                
-                # En tracking.html, si no soporta la API, puede llegar como 'unknown'. 
-                # Asumiremos la red celular si no sabemos el connection_type en Apple pero tiene un IP celular, 
-                # o si manda cellular pero sin generacion.
-                if is_premium and (device_data.connection_generation in [None, 'unknown', '']) and device_data.connection_type != 'wifi':
-                    cursor.execute("""
-                        UPDATE scans SET connection_type = %s, connection_generation = %s WHERE session_id = %s
-                    """, ('cellular', '5g/4g+', device_data.session_id))
             
             # Ejecutar superposición si descubrimos algo nuevo
             if new_brand and new_model and (new_brand != "Unknown" or new_model != "Unknown"):
@@ -2824,11 +2815,11 @@ async def get_dashboard_analytics():
                     (SELECT AVG(duration_seconds) FROM scans) as avg_duration,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
                         (device_brand = 'Apple' AND (device_model LIKE '%iPhone 14 Pro%' OR device_model LIKE '%iPhone 15%' OR device_model LIKE '%iPhone 16%'))
-                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND connection_generation LIKE '%5g%')
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND connection_generation ILIKE '%5g%')
                     ) as seg1_count,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
                         (device_brand = 'Apple' AND (device_model LIKE '%iPhone 13%' OR device_model = 'iPhone 14' OR device_model = 'iPhone 14 Plus' OR device_model LIKE '%SE (3rd%'))
-                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND (connection_generation IS NULL OR connection_generation NOT LIKE '%5g%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND (connection_generation IS NULL OR connection_generation NOT ILIKE '%5g%'))
                     ) as seg2_count,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
                         (device_brand = 'Apple' AND (device_model LIKE '%iPhone 11%' OR device_model LIKE '%iPhone 12%'))
