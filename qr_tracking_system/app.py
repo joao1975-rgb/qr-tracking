@@ -2955,7 +2955,9 @@ async def get_dashboard_analytics():
                     SELECT 
                         CAST(EXTRACT(ISODOW FROM scan_timestamp) AS INTEGER) as day_of_week,
                         CAST(EXTRACT(HOUR FROM scan_timestamp) AS INTEGER) as hour_of_day,
-                        COUNT(*) as total
+                        COUNT(*) as total,
+                        SUM(CASE WHEN redirect_completed = TRUE THEN 1 ELSE 0 END) as connected,
+                        SUM(CASE WHEN redirect_completed = FALSE THEN 1 ELSE 0 END) as failed
                     FROM scans
                     GROUP BY 1, 2
                 """)
@@ -2964,7 +2966,9 @@ async def get_dashboard_analytics():
                     SELECT 
                         CAST(strftime('%w', scan_timestamp) AS INTEGER) as day_of_week,
                         CAST(strftime('%H', scan_timestamp) AS INTEGER) as hour_of_day,
-                        COUNT(*) as total
+                        COUNT(*) as total,
+                        SUM(CASE WHEN redirect_completed = 1 THEN 1 ELSE 0 END) as connected,
+                        SUM(CASE WHEN redirect_completed = 0 THEN 1 ELSE 0 END) as failed
                     FROM scans
                     GROUP BY 1, 2
                 """)
@@ -2972,7 +2976,7 @@ async def get_dashboard_analytics():
             heatmap_raw = cursor.fetchall()
             
             # Filas: 6 franjas horarias, Columnas: 7 días
-            heatmap_data = [[0 for _ in range(7)] for _ in range(6)]
+            heatmap_data = [[{"total": 0, "connected": 0, "failed": 0} for _ in range(7)] for _ in range(6)]
             
             for row in heatmap_raw:
                 day_raw = row['day_of_week']
@@ -2993,7 +2997,10 @@ async def get_dashboard_analytics():
                 else: row_idx = 5
                 
                 if 0 <= row_idx < 6 and 0 <= day_idx < 7:
-                    heatmap_data[row_idx][day_idx] += row['total']
+                    cell = heatmap_data[row_idx][day_idx]
+                    cell['total'] += row['total']
+                    cell['connected'] += row['connected'] or 0
+                    cell['failed'] += row['failed'] or 0
 
         return {
             "success": True,
