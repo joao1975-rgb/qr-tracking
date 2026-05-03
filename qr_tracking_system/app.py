@@ -2815,14 +2815,15 @@ async def get_dashboard_analytics():
                     (SELECT AVG(duration_seconds) FROM scans) as avg_duration,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
                         (device_brand = 'Apple' AND (device_model LIKE '%iPhone 14 Pro%' OR device_model LIKE '%iPhone 15%' OR device_model LIKE '%iPhone 16%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND connection_generation ILIKE '%5g%')
                     ) as seg1_count,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
                         (device_brand = 'Apple' AND (device_model LIKE '%iPhone 13%' OR device_model = 'iPhone 14' OR device_model = 'iPhone 14 Plus' OR device_model LIKE '%SE (3rd%'))
-                        OR (device_brand != 'Apple' AND ((device_pixel_ratio >= 3 AND connection_generation ILIKE '%5g%') OR (device_pixel_ratio >= 3.5)))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND (connection_generation IS NULL OR connection_generation NOT ILIKE '%5g%'))
                     ) as seg2_count,
                     (SELECT COUNT(DISTINCT ip_address) FROM scans WHERE 
                         (device_brand = 'Apple' AND (device_model LIKE '%iPhone 11%' OR device_model LIKE '%iPhone 12%'))
-                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 2.5 AND device_pixel_ratio < 3.5 AND (connection_generation IS NULL OR connection_generation NOT ILIKE '%5g%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 2 AND device_pixel_ratio < 3)
                     ) as seg3_count,
                     (SELECT COUNT(DISTINCT ip_address) * 100.0 / NULLIF((SELECT COUNT(DISTINCT ip_address) FROM scans), 0) FROM scans WHERE operating_system ILIKE '%ios%') as ios_pct,
                     (SELECT SUM(target_scans) FROM campaigns WHERE active = TRUE) as agg_target_scans,
