@@ -1271,6 +1271,116 @@ body {
 .detail-value { font-size: 12px; color: var(--text); font-weight: 500; line-height: 1.3; word-break: break-word; overflow-wrap: break-word; min-width: 0; white-space: normal; }
 .scan-row.expanded td { border-bottom: none !important; background: rgba(255,255,255,0.02); }
 
+/* INSIGHT MODALS */
+.insight-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.insight-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.insight-modal {
+  background: var(--surface-1);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  transform: translateY(20px);
+  transition: transform 0.3s;
+  overflow: hidden;
+}
+.insight-modal-overlay.active .insight-modal {
+  transform: translateY(0);
+}
+.insight-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-2);
+}
+.insight-modal-title {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+  font-weight: bold;
+}
+.insight-modal-close {
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 20px;
+  line-height: 1;
+}
+.insight-modal-close:hover {
+  color: var(--text);
+}
+.insight-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  font-size: 12px;
+  color: var(--text-2);
+}
+.insight-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.insight-table th {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-3);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+.insight-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: var(--text);
+}
+.insight-table tr:hover td {
+  background: rgba(255,255,255,0.03);
+}
+.comparative-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.comp-col {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 15px;
+}
+.comp-title {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border-color);
+}
+.comp-stat {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-family: var(--mono);
+}
 </style>
 </head>
 <body>
@@ -1867,24 +1977,24 @@ body {
       <div class="insight-icon" style="background:rgba(0,229,160,0.08);">📈</div>
       <div class="insight-content">
         <div class="insight-type" style="color:var(--green);">Oportunidad detectada</div>
-        <div class="insight-text">Viernes 18–20h muestra <strong style="color:var(--text);">+67% más escaneos</strong> que el promedio semanal. Considera aumentar la frecuencia de cambio creativo en ese horario.</div>
-        <div class="insight-action">Explorar datos ↗</div>
+        <div class="insight-text" id="insight1-text">Analizando datos del mapa de calor...</div>
+        <div class="insight-action" id="insight1-cta" onclick="openInsightModal('heatmap')" style="cursor:pointer;">Explorar datos ↗</div>
       </div>
     </div>
     <div class="insight-card" style="border-color:rgba(255,173,51,0.15);">
       <div class="insight-icon" style="background:rgba(255,173,51,0.08);">⚠</div>
       <div class="insight-content">
-        <div class="insight-type" style="color:var(--amber);">Alerta de rendimiento</div>
-        <div class="insight-text">CTR de <strong style="color:var(--text);">2.76%</strong> está 0.74 puntos por debajo del benchmark de tu sector. Las campañas top-10% del mismo grupo tienen <strong style="color:var(--text);">amplificación en RRSS activa.</strong></div>
-        <div class="insight-action" style="color:var(--amber);">Ver diagnóstico ↗</div>
+        <div class="insight-type" style="color:var(--amber);">Perfil Top de Audiencia</div>
+        <div class="insight-text" id="insight2-text">Analizando huella de dispositivos (SAI)...</div>
+        <div class="insight-action" id="insight2-cta" onclick="openInsightModal('top_profile')" style="color:var(--amber); cursor:pointer;">Ver detalles de tráfico ↗</div>
       </div>
     </div>
     <div class="insight-card" style="border-color:rgba(0,207,255,0.15);">
       <div class="insight-icon" style="background:rgba(0,207,255,0.08);">◎</div>
       <div class="insight-content">
-        <div class="insight-type" style="color:var(--accent);">Perfil de audiencia</div>
-        <div class="insight-text">El <strong style="color:var(--text);">67% de la audiencia</strong> es NSE A+B. Este perfil tiene 2.8x mayor propensión de compra en retail premium vs. audiencia masiva.</div>
-        <div class="insight-action">Ver perfilamiento ↗</div>
+        <div class="insight-type" style="color:var(--accent);">Poder Adquisitivo (A+B)</div>
+        <div class="insight-text" id="insight3-text">Evaluando proporción de usuarios premium...</div>
+        <div class="insight-action" id="insight3-cta" onclick="openInsightModal('compare_ab_cd')" style="cursor:pointer;">Ver comparativa completa ↗</div>
       </div>
     </div>
   </div>
@@ -2303,6 +2413,19 @@ body {
 
 </main>
 </div> <!-- /shell -->
+<!-- INSIGHT MODAL OVERLAY -->
+<div class="insight-modal-overlay" id="insightModal" onclick="if(event.target===this) closeInsightModal()">
+  <div class="insight-modal">
+    <div class="insight-modal-header">
+      <div class="insight-modal-title" id="insightModalTitle">Detalle de Insight</div>
+      <div class="insight-modal-close" onclick="closeInsightModal()">×</div>
+    </div>
+    <div class="insight-modal-body" id="insightModalBody">
+      <!-- Dynamic content will be injected here -->
+    </div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════════════
    NAVIGATION
@@ -2807,6 +2930,177 @@ function buildHeatmap() {
   grid.appendChild(gtCell);
 
   container.appendChild(grid);
+}
+
+/* ═══════════════════════════════════════════════
+   INSIGHTS & MODALS
+═══════════════════════════════════════════════ */
+let bestDayIdx = null;
+let bestHourIdx = null;
+
+function updateInsights() {
+  if (!globalHeatmapData || globalHeatmapData.length === 0) return;
+
+  // 1. Oportunidad Detectada (Heatmap)
+  let maxScans = -1;
+  let tScans = 0;
+  let cellCount = 0;
+  
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 7; c++) {
+      let val = globalHeatmapData[r][c].total || 0;
+      tScans += val;
+      cellCount++;
+      if (val > maxScans) {
+        maxScans = val;
+        bestDayIdx = c;
+        bestHourIdx = r;
+      }
+    }
+  }
+  const avgScans = tScans / cellCount;
+  const pctDiff = avgScans > 0 ? Math.round(((maxScans - avgScans) / avgScans) * 100) : 0;
+  
+  const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  const hours = ['00-06h', '06-09h', '09-12h', '12-15h', '15-18h', '18-24h'];
+  
+  const insight1El = document.getElementById('insight1-text');
+  if (insight1El && maxScans > 0) {
+    insight1El.innerHTML = `${days[bestDayIdx]} ${hours[bestHourIdx]} muestra <strong style="color:var(--text);">+${pctDiff}% más escaneos</strong> que el promedio semanal (${maxScans} totales).`;
+  }
+
+  // 2. Perfil Top y 3. Poder Adquisitivo
+  // For these, we could look at the segment sizes we updated earlier.
+  // We can use the existing HTML elements for segments if we can't extract them easily here,
+  // but let's grab them from the document.
+  setTimeout(() => {
+    const s1 = parseInt(document.getElementById('seg1-count')?.innerText.replace(/,/g,'')) || 0;
+    const s2 = parseInt(document.getElementById('seg2-count')?.innerText.replace(/,/g,'')) || 0;
+    const s3 = parseInt(document.getElementById('seg3-count')?.innerText.replace(/,/g,'')) || 0;
+    const s4 = parseInt(document.getElementById('seg4-count')?.innerText.replace(/,/g,'')) || 0;
+    
+    const totalSegs = s1 + s2 + s3 + s4;
+    
+    // Perfil Top
+    let topProfile = "A1";
+    let topVal = s1;
+    if(s2 > topVal) { topProfile = "B2"; topVal = s2; }
+    if(s3 > topVal) { topProfile = "C3"; topVal = s3; }
+    if(s4 > topVal) { topProfile = "D4"; topVal = s4; }
+    
+    const insight2El = document.getElementById('insight2-text');
+    if (insight2El && totalSegs > 0) {
+      let profileName = topProfile === "A1" ? "A1 (Premium)" : (topProfile === "B2" ? "B2 (Avanzado)" : (topProfile === "C3" ? "C3 (Medio)" : "D4 (Básico)"));
+      let pctTop = Math.round((topVal / totalSegs) * 100);
+      insight2El.innerHTML = `El perfil predominante es <strong style="color:var(--text);">${profileName}</strong> con el ${pctTop}% del tráfico analizado.`;
+      // Set attribute to use in fetch
+      document.getElementById('insight2-cta').setAttribute('data-profile', topProfile);
+    }
+    
+    // Poder Adquisitivo (A+B)
+    const abTotal = s1 + s2;
+    const cdTotal = s3 + s4;
+    const insight3El = document.getElementById('insight3-text');
+    if (insight3El && totalSegs > 0) {
+      let pctAB = Math.round((abTotal / totalSegs) * 100);
+      insight3El.innerHTML = `El <strong style="color:var(--text);">${pctAB}% de la audiencia</strong> es NSE A+B. Generando insights de propensión de compra.`;
+      
+      document.getElementById('insight3-cta').setAttribute('data-ab', abTotal);
+      document.getElementById('insight3-cta').setAttribute('data-cd', cdTotal);
+    }
+  }, 1000); // wait for segment counters to update
+}
+
+function openInsightModal(type) {
+  const overlay = document.getElementById('insightModal');
+  const title = document.getElementById('insightModalTitle');
+  const body = document.getElementById('insightModalBody');
+  
+  if (!overlay) return;
+  overlay.classList.add('active');
+  body.innerHTML = '<div style="text-align:center; padding: 20px;">Cargando detalles...</div>';
+  
+  let url = '';
+  
+  if (type === 'heatmap') {
+    title.innerText = "Detalle: Oportunidad Detectada";
+    url = `/api/analytics/insights_detail?insight_type=heatmap&day=${bestDayIdx}&hour_idx=${bestHourIdx}`;
+  } else if (type === 'top_profile') {
+    title.innerText = "Detalle: Perfil de Audiencia Top";
+    let profile = document.getElementById('insight2-cta').getAttribute('data-profile');
+    url = `/api/analytics/insights_detail?insight_type=sai_profile&profile=${profile}`;
+  } else if (type === 'compare_ab_cd') {
+    title.innerText = "Comparativa: Segmentos A+B vs C+D";
+    let ab = document.getElementById('insight3-cta').getAttribute('data-ab');
+    let cd = document.getElementById('insight3-cta').getAttribute('data-cd');
+    
+    // For comparison, we don't necessarily need to fetch raw records unless we want deep stats.
+    // We can render a visual comparison here immediately using existing data.
+    body.innerHTML = `
+      <div class="comparative-grid">
+        <div class="comp-col">
+          <div class="comp-title" style="color:var(--accent);">Segmento Premium (A+B)</div>
+          <div class="comp-stat"><span>Usuarios Estimados:</span> <strong>${ab}</strong></div>
+          <div class="comp-stat"><span>Predominancia OS:</span> <strong>iOS / High-end Android</strong></div>
+          <div class="comp-stat"><span>Calidad de Red:</span> <strong>4G LTE / 5G / WiFi Alta Vel.</strong></div>
+          <div class="comp-stat"><span>Resolución:</span> <strong>Alta (>3x Pixel Ratio)</strong></div>
+        </div>
+        <div class="comp-col">
+          <div class="comp-title" style="color:var(--text-3);">Segmento Masivo (C+D)</div>
+          <div class="comp-stat"><span>Usuarios Estimados:</span> <strong>${cd}</strong></div>
+          <div class="comp-stat"><span>Predominancia OS:</span> <strong>Android Entry/Mid</strong></div>
+          <div class="comp-stat"><span>Calidad de Red:</span> <strong>3G / 4G Básico</strong></div>
+          <div class="comp-stat"><span>Resolución:</span> <strong>Estándar (1.5x - 2x)</strong></div>
+        </div>
+      </div>
+      <div style="margin-top: 20px; font-size: 11px; text-align: center; color: var(--text-3);">
+        La clasificación SAI evalúa dinámicamente las capacidades de hardware renderizado, latencia de conexión y la huella digital del dispositivo durante la redirección.
+      </div>
+    `;
+    return; // Stop here, no need to fetch for this one
+  }
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.records) {
+        if (data.records.length === 0) {
+          body.innerHTML = '<div style="text-align:center; padding: 20px;">No hay registros detallados para este criterio.</div>';
+          return;
+        }
+        
+        let html = '<table class="insight-table"><thead><tr><th>Fecha/Hora</th><th>IP (Ofuscada)</th><th>Dispositivo</th><th>OS</th><th>Estado</th></tr></thead><tbody>';
+        data.records.forEach(r => {
+          let st = r.redirect_completed ? '<span style="color:var(--green)">✓ Éxito</span>' : '<span style="color:var(--amber)">✗ Fallo</span>';
+          let dev = (r.device_brand || 'Desconocido') + ' ' + (r.device_model || '');
+          let ip = r.ip_address || '0.0.0.0';
+          // Ofuscar IP
+          let parts = ip.split('.');
+          if (parts.length === 4) ip = `${parts[0]}.${parts[1]}.*.*`;
+          
+          html += `<tr>
+            <td>${r.scan_timestamp}</td>
+            <td style="font-family:var(--mono);">${ip}</td>
+            <td>${dev.trim()}</td>
+            <td>${r.operating_system || '-'}</td>
+            <td>${st}</td>
+          </tr>`;
+        });
+        html += '</tbody></table>';
+        html += `<div style="margin-top: 10px; font-size: 10px; text-align: right;">Mostrando últimos ${data.records.length} registros.</div>`;
+        body.innerHTML = html;
+      } else {
+        body.innerHTML = `<div style="text-align:center; padding: 20px; color:var(--amber);">Error: ${data.error || 'No se pudieron cargar los datos'}</div>`;
+      }
+    })
+    .catch(err => {
+      body.innerHTML = `<div style="text-align:center; padding: 20px; color:var(--amber);">Error de red.</div>`;
+    });
+}
+
+function closeInsightModal() {
+  const overlay = document.getElementById('insightModal');
+  if (overlay) overlay.classList.remove('active');
 }
 
 /* ═══════════════════════════════════════════════
@@ -3357,6 +3651,7 @@ document.addEventListener('DOMContentLoaded', () => {
             globalHeatmapData = data.heatmap_data;
             document.getElementById('heatmapContainer').innerHTML = '';
             buildHeatmap();
+            updateInsights();
         }
       }
     } catch (e) {

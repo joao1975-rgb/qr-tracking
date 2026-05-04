@@ -3042,6 +3042,90 @@ async def get_dashboard_analytics():
         logger.error(f"Error obteniendo analytics: {e}")
         return {"success": False, "error": str(e)}
 
+@app.get("/api/analytics/insights_detail")
+async def get_insights_detail(insight_type: str = Query(...), day: int = None, hour_idx: int = None, profile: str = None):
+    try:
+        from database import IS_POSTGRES
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            base_query = """
+                SELECT 
+                    ip_address, 
+                    scan_timestamp, 
+                    device_brand, 
+                    device_model, 
+                    operating_system, 
+                    connection_generation, 
+                    redirect_completed 
+                FROM scans 
+                WHERE 1=1
+            """
+            params = []
+            
+            if insight_type == "heatmap":
+                if day is not None and hour_idx is not None:
+                    # Postgres ISODOW (1=Mon, 7=Sun). Our day: 0=Mon, 6=Sun -> ISODOW = day + 1
+                    if IS_POSTGRES:
+                        base_query += " AND EXTRACT(ISODOW FROM scan_timestamp) = %s"
+                        params.append(day + 1)
+                    else:
+                        # SQLite strftime('%w'): 0=Sun, 1=Mon. Our day: 0=Mon, 6=Sun -> strftime = (day + 1) % 7
+                        base_query += " AND CAST(strftime('%w', scan_timestamp) AS INTEGER) = %s"
+                        params.append((day + 1) % 7)
+                    
+                    hour_ranges = [(0,5), (7,9), (10,12), (12,15), (15,18), (18,23)]
+                    if 0 <= hour_idx < len(hour_ranges):
+                        h_start, h_end = hour_ranges[hour_idx]
+                        if IS_POSTGRES:
+                            base_query += " AND EXTRACT(HOUR FROM scan_timestamp) >= %s AND EXTRACT(HOUR FROM scan_timestamp) <= %s"
+                        else:
+                            base_query += " AND CAST(strftime('%H', scan_timestamp) AS INTEGER) >= %s AND CAST(strftime('%H', scan_timestamp) AS INTEGER) <= %s"
+                        params.extend([h_start, h_end])
+                        
+            elif insight_type == "sai_profile":
+                if profile == "A1":
+                    base_query += """ AND (
+                        (device_brand = 'Apple' AND (device_model LIKE '%%iPhone 14 Pro%%' OR device_model LIKE '%%iPhone 15%%' OR device_model LIKE '%%iPhone 16%%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND connection_generation ILIKE '%%5g%%')
+                    )"""
+                elif profile == "B2":
+                    base_query += """ AND (
+                        (device_brand = 'Apple' AND (device_model LIKE '%%iPhone 13%%' OR device_model = 'iPhone 14' OR device_model = 'iPhone 14 Plus' OR device_model LIKE '%%SE (3rd%%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND (connection_generation IS NULL OR connection_generation NOT ILIKE '%%5g%%'))
+                    )"""
+                elif profile == "C3":
+                    base_query += """ AND (
+                        (device_brand = 'Apple' AND (device_model LIKE '%%iPhone 11%%' OR device_model LIKE '%%iPhone 12%%'))
+                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 2 AND device_pixel_ratio < 3)
+                    )"""
+                elif profile == "D4":
+                    base_query += """ AND (
+                        (device_brand = 'Apple' AND (device_model NOT LIKE '%%iPhone 16%%' AND device_model NOT LIKE '%%iPhone 15%%' AND device_model NOT LIKE '%%iPhone 14%%' AND device_model NOT LIKE '%%iPhone 13%%' AND device_model NOT LIKE '%%iPhone 12%%' AND device_model NOT LIKE '%%iPhone 11%%' AND device_model NOT LIKE '%%SE (3rd%%')) )
+                        OR (device_brand != 'Apple' AND device_pixel_ratio < 2)
+                    )"""
+
+            base_query += " ORDER BY scan_timestamp DESC LIMIT 100"
+            
+            if IS_POSTGRES:
+                cursor.execute(base_query.replace('%%', '%'), params)
+            else:
+                cursor.execute(base_query.replace('%%', '%').replace('%s', '?'), params)
+                
+            records = [dict(row) for row in cursor.fetchall()]
+            
+            # Format datetime for JSON serialization
+            for r in records:
+                if r['scan_timestamp']:
+                    if hasattr(r['scan_timestamp'], 'strftime'):
+                        r['scan_timestamp'] = r['scan_timestamp'].strftime("%Y-%m-%d %H:%M:%S")
+                    
+        return {"success": True, "records": records}
+    except Exception as e:
+        logger.error(f"Error fetching insights detail: {e}")
+        return {"success": False, "error": str(e)}
+
+
 @app.post("/api/analytics/qr-generated")
 async def log_qr_generation(qr_log: QRGenerationLog, request: Request):
     """Registrar generación de QR para analytics"""
