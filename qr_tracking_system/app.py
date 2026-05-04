@@ -47,7 +47,7 @@ Correcciones v2.7.3:
 - MEJORADO: Analytics con datos de marketing (UTM) para efectividad de campañas
 """
 
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, Query
 from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse, JSONResponse, StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -214,7 +214,7 @@ try:
     PIL_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
-    print("⚠️  ADVERTENCIA: Biblioteca 'Pillow' no instalada.")
+    print("ADVERTENCIA: Biblioteca 'Pillow' no instalada.")
     print("   Ejecute: pip install Pillow")
 
 from logos_base64 import CENTAURO_LOGO_BASE64, CENTAURO_BANNER_BASE64
