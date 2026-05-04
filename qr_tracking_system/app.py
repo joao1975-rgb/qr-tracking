@@ -3049,121 +3049,181 @@ async def get_insights_detail(insight_type: str = Query(...), day: int = None, h
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
-            base_query = """
+            cursor.execute("""
                 SELECT 
                     ip_address, 
                     scan_timestamp, 
                     device_brand, 
                     device_model, 
-                    operating_system, 
-                    connection_generation, 
+                    device_pixel_ratio,
+                    connection_generation,
                     redirect_completed 
-                FROM scans 
-                WHERE 1=1
-            """
-            params = []
+                FROM scans
+            """)
+            all_scans = [dict(row) for row in cursor.fetchall()]
             
-            if insight_type == "heatmap":
-                if day is not None and hour_idx is not None:
-                    # Postgres ISODOW (1=Mon, 7=Sun). Our day: 0=Mon, 6=Sun -> ISODOW = day + 1
-                    if IS_POSTGRES:
-                        base_query += " AND EXTRACT(ISODOW FROM scan_timestamp) = %s"
-                        params.append(day + 1)
-                    else:
-                        # SQLite strftime('%w'): 0=Sun, 1=Mon. Our day: 0=Mon, 6=Sun -> strftime = (day + 1) % 7
-                        base_query += " AND CAST(strftime('%w', scan_timestamp) AS INTEGER) = %s"
-                        params.append((day + 1) % 7)
-                    
-                    hour_ranges = [(0,5), (7,9), (10,12), (12,15), (15,18), (18,23)]
-                    if 0 <= hour_idx < len(hour_ranges):
-                        h_start, h_end = hour_ranges[hour_idx]
-                        if IS_POSTGRES:
-                            base_query += " AND EXTRACT(HOUR FROM scan_timestamp) >= %s AND EXTRACT(HOUR FROM scan_timestamp) <= %s"
-                        else:
-                            base_query += " AND CAST(strftime('%H', scan_timestamp) AS INTEGER) >= %s AND CAST(strftime('%H', scan_timestamp) AS INTEGER) <= %s"
-                        params.extend([h_start, h_end])
-                        
-            elif insight_type == "sai_profile":
-                if profile == "A1":
-                    base_query += """ AND (
-                        (device_brand = 'Apple' AND (device_model LIKE '%%iPhone 14 Pro%%' OR device_model LIKE '%%iPhone 15%%' OR device_model LIKE '%%iPhone 16%%'))
-                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND connection_generation ILIKE '%%5g%%')
-                    )"""
-                elif profile == "B2":
-                    base_query += """ AND (
-                        (device_brand = 'Apple' AND (device_model LIKE '%%iPhone 13%%' OR device_model = 'iPhone 14' OR device_model = 'iPhone 14 Plus' OR device_model LIKE '%%SE (3rd%%'))
-                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 3 AND (connection_generation IS NULL OR connection_generation NOT ILIKE '%%5g%%'))
-                    )"""
-                elif profile == "C3":
-                    base_query += """ AND (
-                        (device_brand = 'Apple' AND (device_model LIKE '%%iPhone 11%%' OR device_model LIKE '%%iPhone 12%%'))
-                        OR (device_brand != 'Apple' AND device_pixel_ratio >= 2 AND device_pixel_ratio < 3)
-                    )"""
-                elif profile == "D4":
-                    base_query += """ AND (
-                        (device_brand = 'Apple' AND (device_model NOT LIKE '%%iPhone 16%%' AND device_model NOT LIKE '%%iPhone 15%%' AND device_model NOT LIKE '%%iPhone 14%%' AND device_model NOT LIKE '%%iPhone 13%%' AND device_model NOT LIKE '%%iPhone 12%%' AND device_model NOT LIKE '%%iPhone 11%%' AND device_model NOT LIKE '%%SE (3rd%%')) )
-                        OR (device_brand != 'Apple' AND device_pixel_ratio < 2)
-                    )"""
-
-            if insight_type == "compare_ab_cd":
-                # Special block for comparing aggregated stats directly in Python
-                cursor.execute("""
-                    SELECT 
-                        ip_address, 
-                        scan_timestamp, 
-                        device_brand, 
-                        device_model, 
-                        device_pixel_ratio,
-                        connection_generation,
-                        redirect_completed 
-                    FROM scans
-                """)
-                all_scans = [dict(row) for row in cursor.fetchall()]
+            def parse_ts(ts):
+                if not ts: return None
+                if isinstance(ts, str):
+                    from datetime import datetime
+                    try:
+                        ts = ts.replace("T", " ").replace("Z", "")
+                        return datetime.strptime(ts.split(".")[0], "%Y-%m-%d %H:%M:%S")
+                    except:
+                        return None
+                return ts
                 
+            def get_profile(row):
+                brand = row.get('device_brand', '') or ''
+                model = row.get('device_model', '') or ''
+                dpr = row.get('device_pixel_ratio') or 1.0
+                conn_gen = row.get('connection_generation') or ''
+                
+                is_a1 = (brand == 'Apple' and ('iPhone 14 Pro' in model or 'iPhone 15' in model or 'iPhone 16' in model)) or \
+                        (brand != 'Apple' and dpr >= 3 and '5g' in conn_gen.lower())
+                if is_a1: return "A1"
+                
+                is_b2 = (brand == 'Apple' and ('iPhone 13' in model or model == 'iPhone 14' or model == 'iPhone 14 Plus' or 'SE (3rd' in model)) or \
+                        (brand != 'Apple' and dpr >= 3 and '5g' not in conn_gen.lower())
+                if is_b2: return "B2"
+                
+                is_c3 = (brand == 'Apple' and ('iPhone 11' in model or 'iPhone 12' in model)) or \
+                        (brand != 'Apple' and dpr >= 2 and dpr < 3)
+                if is_c3: return "C3"
+                
+                return "D4"
+
+            def get_heatmap_key(ts):
+                if not ts: return None
+                h = ts.hour
+                if 0 <= h <= 6: h_idx = 0
+                elif 7 <= h <= 9: h_idx = 1
+                elif 10 <= h <= 12: h_idx = 2
+                elif 13 <= h <= 15: h_idx = 3
+                elif 16 <= h <= 18: h_idx = 4
+                else: h_idx = 5
+                return f"{ts.weekday()}_{h_idx}"
+            
+            def parse_heatmap_key(k):
+                d, h_idx = k.split('_')
+                days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+                ranges = ['00:00-06:00', '07:00-09:00', '10:00-12:00', '13:00-15:00', '16:00-18:00', '19:00-23:59']
+                return f"{days[int(d)]} ({ranges[int(h_idx)]})"
+
+            if insight_type == "heatmap":
+                heatmap_slots = {}
+                for row in all_scans:
+                    ts = parse_ts(row['scan_timestamp'])
+                    if not ts: continue
+                    key = get_heatmap_key(ts)
+                    prof = get_profile(row)
+                    
+                    if key not in heatmap_slots:
+                        heatmap_slots[key] = {
+                            "key": key, "name": parse_heatmap_key(key), "total_scans": 0,
+                            "profiles": {p: {"total": 0, "unique_ips": set(), "failed": 0} for p in ["A1", "B2", "C3", "D4"]}
+                        }
+                    
+                    slot = heatmap_slots[key]
+                    slot["total_scans"] += 1
+                    slot["profiles"][prof]["total"] += 1
+                    slot["profiles"][prof]["unique_ips"].add(row['ip_address'])
+                    if not row['redirect_completed']:
+                        slot["profiles"][prof]["failed"] += 1
+                
+                sorted_slots = sorted(heatmap_slots.values(), key=lambda x: x["total_scans"], reverse=True)[:5]
+                
+                for slot in sorted_slots:
+                    for p in ["A1", "B2", "C3", "D4"]:
+                        p_data = slot["profiles"][p]
+                        u_count = len(p_data["unique_ips"])
+                        t_count = p_data["total"]
+                        slot["profiles"][p] = {
+                            "total": t_count,
+                            "unique": u_count,
+                            "multi": t_count - u_count,
+                            "failed": p_data["failed"],
+                            "rate": round(t_count / u_count, 2) if u_count > 0 else 0
+                        }
+                return {"success": True, "matrix": sorted_slots}
+                
+            elif insight_type == "sai_profile":
+                profiles_data = {
+                    p: {"name": p, "total": 0, "unique_ips": set(), "failed": 0, "heatmap": {}} 
+                    for p in ["A1", "B2", "C3", "D4"]
+                }
+                
+                for row in all_scans:
+                    prof = get_profile(row)
+                    target = profiles_data[prof]
+                    
+                    target["total"] += 1
+                    target["unique_ips"].add(row['ip_address'])
+                    if not row['redirect_completed']:
+                        target["failed"] += 1
+                        
+                    ts = parse_ts(row['scan_timestamp'])
+                    if ts:
+                        key = get_heatmap_key(ts)
+                        if key not in target["heatmap"]:
+                            target["heatmap"][key] = {"total": 0, "unique_ips": set(), "failed": 0}
+                        h_target = target["heatmap"][key]
+                        h_target["total"] += 1
+                        h_target["unique_ips"].add(row['ip_address'])
+                        if not row['redirect_completed']:
+                            h_target["failed"] += 1
+                
+                for p_key, p_data in profiles_data.items():
+                    u_count = len(p_data["unique_ips"])
+                    t_count = p_data["total"]
+                    
+                    sorted_heatmap = sorted(p_data["heatmap"].items(), key=lambda x: x[1]["total"], reverse=True)[:3]
+                    top_slots = []
+                    for h_key, h_val in sorted_heatmap:
+                        h_u = len(h_val["unique_ips"])
+                        h_t = h_val["total"]
+                        top_slots.append({
+                            "name": parse_heatmap_key(h_key),
+                            "total": h_t,
+                            "unique": h_u,
+                            "multi": h_t - h_u,
+                            "failed": h_val["failed"],
+                            "rate": round(h_t / h_u, 2) if h_u > 0 else 0
+                        })
+                    
+                    profiles_data[p_key] = {
+                        "name": p_key,
+                        "total": t_count,
+                        "unique": u_count,
+                        "multi": t_count - u_count,
+                        "failed": p_data["failed"],
+                        "rate": round(t_count / u_count, 2) if u_count > 0 else 0,
+                        "top_slots": top_slots
+                    }
+                
+                return {"success": True, "profiles": profiles_data}
+
+            elif insight_type == "compare_ab_cd":
                 data_AB = {'total': 0, 'unique_ips': set(), 'failed': 0, 'heatmap': {}}
                 data_CD = {'total': 0, 'unique_ips': set(), 'failed': 0, 'heatmap': {}}
                 
                 for row in all_scans:
-                    brand = row.get('device_brand', '') or ''
-                    model = row.get('device_model', '') or ''
-                    dpr = row.get('device_pixel_ratio') or 1.0
-                    conn = row.get('connection_generation') or ''
-                    
-                    is_a1 = (brand == 'Apple' and ('iPhone 14 Pro' in model or 'iPhone 15' in model or 'iPhone 16' in model)) or \
-                            (brand != 'Apple' and dpr >= 3 and '5g' in conn.lower())
-                    is_b2 = (brand == 'Apple' and ('iPhone 13' in model or model == 'iPhone 14' or model == 'iPhone 14 Plus' or 'SE (3rd' in model)) or \
-                            (brand != 'Apple' and dpr >= 3 and '5g' not in conn.lower())
-                            
-                    is_ab = is_a1 or is_b2
-                    target = data_AB if is_ab else data_CD
+                    prof = get_profile(row)
+                    target = data_AB if prof in ["A1", "B2"] else data_CD
                     
                     target['total'] += 1
                     target['unique_ips'].add(row['ip_address'])
                     if not row['redirect_completed']:
                         target['failed'] += 1
                         
-                    ts = row['scan_timestamp']
+                    ts = parse_ts(row['scan_timestamp'])
                     if ts:
-                        if isinstance(ts, str):
-                            from datetime import datetime
-                            try:
-                                ts = ts.replace("T", " ").replace("Z", "")
-                                ts = datetime.strptime(ts.split(".")[0], "%Y-%m-%d %H:%M:%S")
-                            except:
-                                pass
-                        
-                        if hasattr(ts, 'weekday'):
-                            key = f"{ts.weekday()}_{ts.hour}"
-                            target['heatmap'][key] = target['heatmap'].get(key, 0) + 1
+                        key = get_heatmap_key(ts)
+                        target['heatmap'][key] = target['heatmap'].get(key, 0) + 1
 
                 best_ab_key = max(data_AB['heatmap'], key=data_AB['heatmap'].get) if data_AB['heatmap'] else "0_0"
                 best_cd_key = max(data_CD['heatmap'], key=data_CD['heatmap'].get) if data_CD['heatmap'] else "0_0"
                 
-                def parse_key(k):
-                    d, h = k.split('_')
-                    days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
-                    return f"{days[int(d)]} a las {h}:00"
-                    
                 return {"success": True, "compare": {
                     "AB": {
                         "total": data_AB['total'],
@@ -3171,7 +3231,7 @@ async def get_insights_detail(insight_type: str = Query(...), day: int = None, h
                         "multi": data_AB['total'] - len(data_AB['unique_ips']),
                         "failed": data_AB['failed'],
                         "rate": round(data_AB['total'] / len(data_AB['unique_ips']), 2) if len(data_AB['unique_ips']) > 0 else 0,
-                        "best_time": parse_key(best_ab_key)
+                        "best_time": parse_heatmap_key(best_ab_key)
                     },
                     "CD": {
                         "total": data_CD['total'],
@@ -3179,26 +3239,11 @@ async def get_insights_detail(insight_type: str = Query(...), day: int = None, h
                         "multi": data_CD['total'] - len(data_CD['unique_ips']),
                         "failed": data_CD['failed'],
                         "rate": round(data_CD['total'] / len(data_CD['unique_ips']), 2) if len(data_CD['unique_ips']) > 0 else 0,
-                        "best_time": parse_key(best_cd_key)
+                        "best_time": parse_heatmap_key(best_cd_key)
                     }
                 }}
-
-            base_query += " ORDER BY scan_timestamp DESC LIMIT 100"
             
-            if IS_POSTGRES:
-                cursor.execute(base_query.replace('%%', '%'), params)
-            else:
-                cursor.execute(base_query.replace('%%', '%').replace('%s', '?'), params)
-                
-            records = [dict(row) for row in cursor.fetchall()]
-            
-            # Format datetime for JSON serialization
-            for r in records:
-                if r['scan_timestamp']:
-                    if hasattr(r['scan_timestamp'], 'strftime'):
-                        r['scan_timestamp'] = r['scan_timestamp'].strftime("%Y-%m-%d %H:%M:%S")
-                    
-        return {"success": True, "records": records}
+            return {"success": False, "error": "Invalid insight_type"}
     except Exception as e:
         logger.error(f"Error fetching insights detail: {e}")
         return {"success": False, "error": str(e)}

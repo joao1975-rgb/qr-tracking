@@ -3023,12 +3023,11 @@ function openInsightModal(type) {
   let url = '';
   
   if (type === 'heatmap') {
-    title.innerText = "Detalle: Oportunidad Detectada";
-    url = `/api/analytics/insights_detail?insight_type=heatmap&day=${bestDayIdx}&hour_idx=${bestHourIdx}`;
+    title.innerText = "Detalle: Oportunidad Detectada (Top 5 Casillas)";
+    url = `/api/analytics/insights_detail?insight_type=heatmap`;
   } else if (type === 'top_profile') {
     title.innerText = "Detalle: Perfil de Audiencia Top";
-    let profile = document.getElementById('insight2-cta').getAttribute('data-profile');
-    url = `/api/analytics/insights_detail?insight_type=sai_profile&profile=${profile}`;
+    url = `/api/analytics/insights_detail?insight_type=sai_profile`;
   } else if (type === 'compare_ab_cd') {
     title.innerText = "Comparativa: Segmentos A+B vs C+D";
     url = `/api/analytics/insights_detail?insight_type=compare_ab_cd`;
@@ -3080,31 +3079,102 @@ function openInsightModal(type) {
               La clasificación SAI evalúa dinámicamente las capacidades de hardware renderizado, latencia de conexión y la huella digital del dispositivo durante la redirección.
             </div>
           `;
-        } else if (data.records) {
-          if (data.records.length === 0) {
-            body.innerHTML = '<div style="text-align:center; padding: 20px;">No hay registros detallados para este criterio.</div>';
+        } else if (data.matrix) {
+          // Heatmap Matrix (Oportunidad Detectada)
+          if (data.matrix.length === 0) {
+            body.innerHTML = '<div style="text-align:center; padding: 20px;">No hay registros para generar la matriz.</div>';
             return;
           }
           
-          let html = '<table class="insight-table"><thead><tr><th>Fecha/Hora</th><th>IP (Ofuscada)</th><th>Dispositivo</th><th>OS</th><th>Estado</th></tr></thead><tbody>';
-          data.records.forEach(r => {
-            let st = r.redirect_completed ? '<span style="color:var(--green)">✓ Éxito</span>' : '<span style="color:var(--amber)">✗ Fallo</span>';
-            let dev = (r.device_brand || 'Desconocido') + ' ' + (r.device_model || '');
-            let ip = r.ip_address || '0.0.0.0';
-            // Ofuscar IP
-            let parts = ip.split('.');
-            if (parts.length === 4) ip = `${parts[0]}.${parts[1]}.*.*`;
+          let html = `
+            <div style="display: flex; gap: 15px; overflow-x: auto;">
+              <div style="width: 20px; background: linear-gradient(to bottom, var(--accent), var(--bg-3)); border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);"></div>
+              <div style="flex: 1; min-width: 600px;">
+                <table class="insight-table" style="width: 100%;">
+                  <thead>
+                    <tr>
+                      <th style="width: 20%;">Pico de Tráfico</th>
+                      <th style="width: 20%;">Perfil A1</th>
+                      <th style="width: 20%;">Perfil B2</th>
+                      <th style="width: 20%;">Perfil C3</th>
+                      <th style="width: 20%;">Perfil D4</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+          `;
+          
+          const rowColors = [
+            'rgba(0, 207, 255, 0.25)',
+            'rgba(0, 207, 255, 0.15)',
+            'rgba(0, 207, 255, 0.08)',
+            'rgba(255, 255, 255, 0.05)',
+            'rgba(255, 255, 255, 0.02)'
+          ];
+          
+          data.matrix.forEach((slot, idx) => {
+            const bg = rowColors[idx] || 'transparent';
+            html += `<tr style="background-color: ${bg};">
+              <td style="font-weight:bold; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px;">${slot.name}</td>`;
             
-            html += `<tr>
-              <td>${r.scan_timestamp}</td>
-              <td style="font-family:var(--mono);">${ip}</td>
-              <td>${dev.trim()}</td>
-              <td>${r.operating_system || '-'}</td>
-              <td>${st}</td>
-            </tr>`;
+            ['A1', 'B2', 'C3', 'D4'].forEach(p => {
+              const pData = slot.profiles[p];
+              html += `<td style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px;">
+                <div style="font-size:11px; margin-bottom: 2px;">Totales: <strong>${pData.total}</strong></div>
+                <div style="font-size:11px; margin-bottom: 2px;">Únicos/Devices: <strong>${pData.unique}</strong></div>
+                <div style="font-size:11px; margin-bottom: 2px;">Multi-Scans: <strong>${pData.multi}</strong></div>
+                <div style="font-size:11px;">Ratio: <strong>${pData.rate}x</strong></div>
+              </td>`;
+            });
+            html += `</tr>`;
           });
-          html += '</tbody></table>';
-          html += `<div style="margin-top: 10px; font-size: 10px; text-align: right;">Mostrando últimos ${data.records.length} registros.</div>`;
+          html += `</tbody></table></div></div>`;
+          body.innerHTML = html;
+
+        } else if (data.profiles) {
+          // Top Profiles Matrix (Perfil Top de Audiencia)
+          let html = `
+            <div style="overflow-x: auto;">
+              <table class="insight-table" style="width: 100%; min-width: 800px;">
+                <thead>
+                  <tr>
+                    <th style="width: 25%;">Perfil de Audiencia</th>
+                    <th style="width: 25%;">Pico Principal (Top 1)</th>
+                    <th style="width: 25%;">Pico Secundario (Top 2)</th>
+                    <th style="width: 25%;">Tercer Pico (Top 3)</th>
+                  </tr>
+                </thead>
+                <tbody>
+          `;
+          
+          ['A1', 'B2', 'C3', 'D4'].forEach(pKey => {
+            const prof = data.profiles[pKey];
+            html += `<tr>
+              <td style="background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px;">
+                <div style="color:var(--accent); font-weight:bold; font-size:14px; margin-bottom:8px;">Perfil ${prof.name}</div>
+                <div style="font-size:11px; margin-bottom: 2px;">Escaneos Totales: <strong>${prof.total}</strong></div>
+                <div style="font-size:11px; margin-bottom: 2px;">Dispositivos Únicos: <strong>${prof.unique}</strong></div>
+                <div style="font-size:11px; margin-bottom: 2px;">Multi-Scans: <strong>${prof.multi}</strong></div>
+                <div style="font-size:11px; margin-bottom: 2px; color:var(--amber);">Fallidos: <strong>${prof.failed}</strong></div>
+                <div style="font-size:11px;">Tasa Multi-Scan: <strong>${prof.rate}x</strong></div>
+              </td>`;
+            
+            for(let i=0; i<3; i++) {
+              const slot = prof.top_slots[i];
+              if (slot) {
+                html += `<td style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px;">
+                  <div style="color:var(--text); font-weight:bold; margin-bottom:8px; font-size:12px;">${slot.name}</div>
+                  <div style="font-size:11px; margin-bottom: 2px;">Totales: <strong>${slot.total}</strong></div>
+                  <div style="font-size:11px; margin-bottom: 2px;">Únicos: <strong>${slot.unique}</strong></div>
+                  <div style="font-size:11px; margin-bottom: 2px;">Multi: <strong>${slot.multi}</strong></div>
+                  <div style="font-size:11px;">Ratio: <strong>${slot.rate}x</strong></div>
+                </td>`;
+              } else {
+                html += `<td style="border-bottom: 1px solid rgba(255,255,255,0.1); padding: 10px; color:var(--text-3); font-style:italic; text-align:center;">Sin datos</td>`;
+              }
+            }
+            html += `</tr>`;
+          });
+          html += `</tbody></table></div>`;
           body.innerHTML = html;
         }
       } else {
