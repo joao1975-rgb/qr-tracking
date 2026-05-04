@@ -3105,6 +3105,84 @@ async def get_insights_detail(insight_type: str = Query(...), day: int = None, h
                         OR (device_brand != 'Apple' AND device_pixel_ratio < 2)
                     )"""
 
+            if insight_type == "compare_ab_cd":
+                # Special block for comparing aggregated stats directly in Python
+                cursor.execute("""
+                    SELECT 
+                        ip_address, 
+                        scan_timestamp, 
+                        device_brand, 
+                        device_model, 
+                        device_pixel_ratio,
+                        connection_generation,
+                        redirect_completed 
+                    FROM scans
+                """)
+                all_scans = [dict(row) for row in cursor.fetchall()]
+                
+                data_AB = {'total': 0, 'unique_ips': set(), 'failed': 0, 'heatmap': {}}
+                data_CD = {'total': 0, 'unique_ips': set(), 'failed': 0, 'heatmap': {}}
+                
+                for row in all_scans:
+                    brand = row.get('device_brand', '') or ''
+                    model = row.get('device_model', '') or ''
+                    dpr = row.get('device_pixel_ratio') or 1.0
+                    conn = row.get('connection_generation') or ''
+                    
+                    is_a1 = (brand == 'Apple' and ('iPhone 14 Pro' in model or 'iPhone 15' in model or 'iPhone 16' in model)) or \
+                            (brand != 'Apple' and dpr >= 3 and '5g' in conn.lower())
+                    is_b2 = (brand == 'Apple' and ('iPhone 13' in model or model == 'iPhone 14' or model == 'iPhone 14 Plus' or 'SE (3rd' in model)) or \
+                            (brand != 'Apple' and dpr >= 3 and '5g' not in conn.lower())
+                            
+                    is_ab = is_a1 or is_b2
+                    target = data_AB if is_ab else data_CD
+                    
+                    target['total'] += 1
+                    target['unique_ips'].add(row['ip_address'])
+                    if not row['redirect_completed']:
+                        target['failed'] += 1
+                        
+                    ts = row['scan_timestamp']
+                    if ts:
+                        if isinstance(ts, str):
+                            from datetime import datetime
+                            try:
+                                ts = ts.replace("T", " ").replace("Z", "")
+                                ts = datetime.strptime(ts.split(".")[0], "%Y-%m-%d %H:%M:%S")
+                            except:
+                                pass
+                        
+                        if hasattr(ts, 'weekday'):
+                            key = f"{ts.weekday()}_{ts.hour}"
+                            target['heatmap'][key] = target['heatmap'].get(key, 0) + 1
+
+                best_ab_key = max(data_AB['heatmap'], key=data_AB['heatmap'].get) if data_AB['heatmap'] else "0_0"
+                best_cd_key = max(data_CD['heatmap'], key=data_CD['heatmap'].get) if data_CD['heatmap'] else "0_0"
+                
+                def parse_key(k):
+                    d, h = k.split('_')
+                    days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+                    return f"{days[int(d)]} a las {h}:00"
+                    
+                return {"success": True, "compare": {
+                    "AB": {
+                        "total": data_AB['total'],
+                        "unique": len(data_AB['unique_ips']),
+                        "multi": data_AB['total'] - len(data_AB['unique_ips']),
+                        "failed": data_AB['failed'],
+                        "rate": round(data_AB['total'] / len(data_AB['unique_ips']), 2) if len(data_AB['unique_ips']) > 0 else 0,
+                        "best_time": parse_key(best_ab_key)
+                    },
+                    "CD": {
+                        "total": data_CD['total'],
+                        "unique": len(data_CD['unique_ips']),
+                        "multi": data_CD['total'] - len(data_CD['unique_ips']),
+                        "failed": data_CD['failed'],
+                        "rate": round(data_CD['total'] / len(data_CD['unique_ips']), 2) if len(data_CD['unique_ips']) > 0 else 0,
+                        "best_time": parse_key(best_cd_key)
+                    }
+                }}
+
             base_query += " ORDER BY scan_timestamp DESC LIMIT 100"
             
             if IS_POSTGRES:

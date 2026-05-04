@@ -3031,64 +3031,68 @@ function openInsightModal(type) {
     url = `/api/analytics/insights_detail?insight_type=sai_profile&profile=${profile}`;
   } else if (type === 'compare_ab_cd') {
     title.innerText = "Comparativa: Segmentos A+B vs C+D";
-    let ab = document.getElementById('insight3-cta').getAttribute('data-ab');
-    let cd = document.getElementById('insight3-cta').getAttribute('data-cd');
-    
-    // For comparison, we don't necessarily need to fetch raw records unless we want deep stats.
-    // We can render a visual comparison here immediately using existing data.
-    body.innerHTML = `
-      <div class="comparative-grid">
-        <div class="comp-col">
-          <div class="comp-title" style="color:var(--accent);">Segmento Premium (A+B)</div>
-          <div class="comp-stat"><span>Usuarios Estimados:</span> <strong>${ab}</strong></div>
-          <div class="comp-stat"><span>Predominancia OS:</span> <strong>iOS / High-end Android</strong></div>
-          <div class="comp-stat"><span>Calidad de Red:</span> <strong>4G LTE / 5G / WiFi Alta Vel.</strong></div>
-          <div class="comp-stat"><span>Resolución:</span> <strong>Alta (>3x Pixel Ratio)</strong></div>
-        </div>
-        <div class="comp-col">
-          <div class="comp-title" style="color:var(--text-3);">Segmento Masivo (C+D)</div>
-          <div class="comp-stat"><span>Usuarios Estimados:</span> <strong>${cd}</strong></div>
-          <div class="comp-stat"><span>Predominancia OS:</span> <strong>Android Entry/Mid</strong></div>
-          <div class="comp-stat"><span>Calidad de Red:</span> <strong>3G / 4G Básico</strong></div>
-          <div class="comp-stat"><span>Resolución:</span> <strong>Estándar (1.5x - 2x)</strong></div>
-        </div>
-      </div>
-      <div style="margin-top: 20px; font-size: 11px; text-align: center; color: var(--text-3);">
-        La clasificación SAI evalúa dinámicamente las capacidades de hardware renderizado, latencia de conexión y la huella digital del dispositivo durante la redirección.
-      </div>
-    `;
-    return; // Stop here, no need to fetch for this one
+    url = `/api/analytics/insights_detail?insight_type=compare_ab_cd`;
   }
 
   fetch(url)
     .then(res => res.json())
     .then(data => {
-      if (data.success && data.records) {
-        if (data.records.length === 0) {
-          body.innerHTML = '<div style="text-align:center; padding: 20px;">No hay registros detallados para este criterio.</div>';
-          return;
-        }
-        
-        let html = '<table class="insight-table"><thead><tr><th>Fecha/Hora</th><th>IP (Ofuscada)</th><th>Dispositivo</th><th>OS</th><th>Estado</th></tr></thead><tbody>';
-        data.records.forEach(r => {
-          let st = r.redirect_completed ? '<span style="color:var(--green)">✓ Éxito</span>' : '<span style="color:var(--amber)">✗ Fallo</span>';
-          let dev = (r.device_brand || 'Desconocido') + ' ' + (r.device_model || '');
-          let ip = r.ip_address || '0.0.0.0';
-          // Ofuscar IP
-          let parts = ip.split('.');
-          if (parts.length === 4) ip = `${parts[0]}.${parts[1]}.*.*`;
+      if (data.success) {
+        if (data.compare) {
+          const ab = data.compare.AB;
+          const cd = data.compare.CD;
+          body.innerHTML = `
+            <div class="comparative-grid">
+              <div class="comp-col" style="border: 1px solid var(--accent); background: rgba(0, 207, 255, 0.05);">
+                <div class="comp-title" style="color:var(--accent); font-size: 16px;">Segmento Premium (A+B)</div>
+                <div class="comp-stat"><span>Escaneos Totales:</span> <strong>${ab.total}</strong></div>
+                <div class="comp-stat"><span>Escaneos Únicos:</span> <strong>${ab.unique}</strong></div>
+                <div class="comp-stat"><span>Escaneos Fallidos:</span> <strong style="color:var(--amber);">${ab.failed}</strong></div>
+                <div class="comp-stat"><span>Multi-Scans:</span> <strong>${ab.multi}</strong></div>
+                <div class="comp-stat"><span>Tasa de Escaneo:</span> <strong>${ab.rate}x</strong></div>
+                <div class="comp-stat" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(0, 207, 255, 0.3);"><span>Pico de Tráfico:</span> <strong style="color:var(--text);">${ab.best_time}</strong></div>
+              </div>
+              <div class="comp-col" style="border: 1px solid var(--text-3); background: rgba(255, 255, 255, 0.02);">
+                <div class="comp-title" style="color:var(--text-3); font-size: 16px;">Segmento Masivo (C+D)</div>
+                <div class="comp-stat"><span>Escaneos Totales:</span> <strong>${cd.total}</strong></div>
+                <div class="comp-stat"><span>Escaneos Únicos:</span> <strong>${cd.unique}</strong></div>
+                <div class="comp-stat"><span>Escaneos Fallidos:</span> <strong style="color:var(--amber);">${cd.failed}</strong></div>
+                <div class="comp-stat"><span>Multi-Scans:</span> <strong>${cd.multi}</strong></div>
+                <div class="comp-stat"><span>Tasa de Escaneo:</span> <strong>${cd.rate}x</strong></div>
+                <div class="comp-stat" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, 0.1);"><span>Pico de Tráfico:</span> <strong style="color:var(--text);">${cd.best_time}</strong></div>
+              </div>
+            </div>
+            <div style="margin-top: 20px; font-size: 11px; text-align: center; color: var(--text-3);">
+              La clasificación SAI evalúa dinámicamente las capacidades de hardware renderizado, latencia de conexión y la huella digital del dispositivo durante la redirección.
+            </div>
+          `;
+        } else if (data.records) {
+          if (data.records.length === 0) {
+            body.innerHTML = '<div style="text-align:center; padding: 20px;">No hay registros detallados para este criterio.</div>';
+            return;
+          }
           
-          html += `<tr>
-            <td>${r.scan_timestamp}</td>
-            <td style="font-family:var(--mono);">${ip}</td>
-            <td>${dev.trim()}</td>
-            <td>${r.operating_system || '-'}</td>
-            <td>${st}</td>
-          </tr>`;
-        });
-        html += '</tbody></table>';
-        html += `<div style="margin-top: 10px; font-size: 10px; text-align: right;">Mostrando últimos ${data.records.length} registros.</div>`;
-        body.innerHTML = html;
+          let html = '<table class="insight-table"><thead><tr><th>Fecha/Hora</th><th>IP (Ofuscada)</th><th>Dispositivo</th><th>OS</th><th>Estado</th></tr></thead><tbody>';
+          data.records.forEach(r => {
+            let st = r.redirect_completed ? '<span style="color:var(--green)">✓ Éxito</span>' : '<span style="color:var(--amber)">✗ Fallo</span>';
+            let dev = (r.device_brand || 'Desconocido') + ' ' + (r.device_model || '');
+            let ip = r.ip_address || '0.0.0.0';
+            // Ofuscar IP
+            let parts = ip.split('.');
+            if (parts.length === 4) ip = `${parts[0]}.${parts[1]}.*.*`;
+            
+            html += `<tr>
+              <td>${r.scan_timestamp}</td>
+              <td style="font-family:var(--mono);">${ip}</td>
+              <td>${dev.trim()}</td>
+              <td>${r.operating_system || '-'}</td>
+              <td>${st}</td>
+            </tr>`;
+          });
+          html += '</tbody></table>';
+          html += `<div style="margin-top: 10px; font-size: 10px; text-align: right;">Mostrando últimos ${data.records.length} registros.</div>`;
+          body.innerHTML = html;
+        }
       } else {
         body.innerHTML = `<div style="text-align:center; padding: 20px; color:var(--amber);">Error: ${data.error || 'No se pudieron cargar los datos'}</div>`;
       }
